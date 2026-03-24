@@ -40,3 +40,10 @@ Cada archivo JSON define cómo se comportará la aplicación dependiendo del ent
   }
 }
 
+Interpretación
+
+Esto permite que:
+
+El mismo código funcione en diferentes entornos sin modificaciones.
+Se puedan activar o desactivar funcionalidades sin cambiar el código.
+Se mantenga una separación clara entre configuración y lógica de la aplicación.
