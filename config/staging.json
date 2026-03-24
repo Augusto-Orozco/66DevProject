@@ -1,0 +1,11 @@
+{
+  "APP_NAME": "SmarTask",
+  "PORT": 4000,
+  "ENVIRONMENT": "development",
+  "DB_HOST": "localhost",
+  "DB_PORT": 5432,
+  "DEBUG": true,
+  "FEATURE_FLAGS": {
+    "newUI": true
+  }
+}
