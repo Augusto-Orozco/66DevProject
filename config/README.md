@@ -25,3 +25,18 @@ Convenciones de nomenclatura
     - development - entorno local
     - staging - pruebas
     - production - entorno final
+
+Cada archivo JSON define cómo se comportará la aplicación dependiendo del entorno en el que se ejecute. A continuación se muestra un ejemplo práctico:
+{
+  "APP_NAME": "MiAplicacion",
+  "PORT": 3000,
+  "ENVIRONMENT": "development",
+  "DB_HOST": "localhost",
+  "DB_PORT": 5432,
+  "DEBUG": true,
+  "FEATURE_FLAGS": {
+    "ENABLE_LOGIN": true,
+    "ENABLE_PAYMENTS": false
+  }
+}
+
