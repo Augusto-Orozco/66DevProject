@@ -33,7 +33,7 @@ Actualmente en la mayoría de empresas no existe un sistema automático de organ
 
 # 3. Objetivos del Proyecto
 
-Disminuir el tiempo promedio de desarrollo de proyectos en un 20%,
+Disminuir el tiempo promedio de desarrollo de proyectos en un 20%.
 Disminuir la cantidad de tareas incompletas en un 30%.
 Implementar la interacción con el chatbot de Telegram que alcance una calificación mínima de 4/5 en usabilidad, que se puede evaluar mediante encuestas.
 
