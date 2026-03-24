@@ -14,3 +14,14 @@ Los archivos siguen la misma estructura unicamente cambiando los valores dependi
 | DB_PORT          | Puerto de la base de datos |
 | DEBUG            | Activa o desactiva logs de depuración |
 | FEATURE_FLAGS    | Objeto para habilitar o deshabilitar funcionalidades |
+
+Convenciones de nomenclatura
+- Los nombres de variables están en MAYÚSCULAS con guiones bajos (snake_case en mayúsculas).
+- Los archivos siguen el nombre del entorno:
+    - development.json
+    - staging.json
+    - production.json
+- Los valores deben ser coherentes con el entorno:
+    - development → entorno local
+    - staging → pruebas
+    - production → entorno final

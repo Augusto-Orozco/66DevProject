@@ -1,7 +1,7 @@
 {
   "APP_NAME": "SmarTask",
   "PORT": 80,
-  "ENVIRONMENT": "development",
+  "ENVIRONMENT": "production",
   "DB_HOST": "localhost",
   "DB_PORT": 5432,
   "DEBUG": true,
