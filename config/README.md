@@ -22,6 +22,6 @@ Convenciones de nomenclatura
     - staging.json
     - production.json
 - Los valores deben ser coherentes con el entorno:
-    - development → entorno local
-    - staging → pruebas
-    - production → entorno final
+    - development - entorno local
+    - staging - pruebas
+    - production - entorno final
