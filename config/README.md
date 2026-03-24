@@ -16,7 +16,7 @@ Los archivos siguen la misma estructura unicamente cambiando los valores dependi
 | FEATURE_FLAGS    | Objeto para habilitar o deshabilitar funcionalidades |
 
 Convenciones de nomenclatura
-- Los nombres de variables están en MAYÚSCULAS con guiones bajos (snake_case en mayúsculas).
+- Los nombres de variables están en MAYÚSCULAS con guiones bajos (FEATURE_FLAGS por ejemplo).
 - Los archivos siguen el nombre del entorno:
     - development.json
     - staging.json
