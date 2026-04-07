@@ -2,6 +2,10 @@ import { useState } from 'react'
 import { TextField, Button, Container, Typography, Box, InputAdornment, IconButton} from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import videoBg from '../Assets/BackgroundOracleVid.mp4'
+import logo from '../Assets/OracleLogoWOT.jpeg'
+import logo2 from '../Assets/OracleLogoWT.png'
+import logo3 from '../Assets/OracleLogoBlack.png'
+import logo4 from '../Assets/OracleLogoWhite.png'
 import Visibility from '@mui/icons-material/Visibility'
 import VisibilityOff from '@mui/icons-material/VisibilityOff'
 
@@ -23,6 +27,21 @@ function Login({ setIsAuth }) {
 
   return (
     <Box sx={{ position: 'relative', height: '100vh', overflow: 'hidden' }}>
+
+      {/* LOGO */}
+      <Box
+        component="img"
+        src={logo4}
+        alt="Logo"
+        sx={{
+          position: 'absolute',
+          top: 20,
+          left: 40,
+          width: '120px',
+          zIndex: 2
+        }}
+      />
+
       {/* Video */}
       <video
         autoPlay
@@ -34,7 +53,8 @@ function Login({ setIsAuth }) {
           width: '100%',
           height: '100%',
           objectFit: 'cover',
-          zIndex: -2
+          zIndex: -2,
+          rotate: '180deg'
         }}
       >
         <source src={videoBg} type="video/mp4" />
@@ -45,7 +65,7 @@ function Login({ setIsAuth }) {
           position: 'absolute',
           width: '100%',
           height: '100%',
-          backgroundColor: 'rgba(233, 117, 117, 0.5)',
+          backgroundColor: 'rgba(237, 154, 154, 0.35)',
           zIndex: -1
         }}
       />
@@ -117,6 +137,7 @@ function Login({ setIsAuth }) {
           Iniciar sesión
         </Button>
       </Container>
+
       <Box
         component="footer"
         sx={{
