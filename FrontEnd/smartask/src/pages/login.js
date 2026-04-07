@@ -1,6 +1,10 @@
 import { useState } from 'react'
-import { TextField, Button, Container } from '@mui/material'
+import { TextField, Button, Container, Typography, Box, InputAdornment, IconButton} from '@mui/material'
 import { useNavigate } from 'react-router-dom'
+import videoBg from '../Assets/BackgroundOracleVid.mp4'
+import Visibility from '@mui/icons-material/Visibility'
+import VisibilityOff from '@mui/icons-material/VisibilityOff'
+
 
 function Login({ setIsAuth }) {
   const navigate = useNavigate()
@@ -8,58 +12,127 @@ function Login({ setIsAuth }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
+  const [showPassword, setShowPassword] = useState(false)
+
   const handleLogin = () => {
-    // 🔥 Simulación de login (luego aquí va backend)
     if (email && password) {
       setIsAuth(true)
       navigate('/dashboard')
     }
   }
 
-  /*
-  const handleLogin = async () => {
-  try {
-    const res = await fetch('http://localhost:3001/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    })
-
-    const data = await res.json()
-
-    if (data.success) {
-      setIsAuth(true)
-      navigate('/dashboard')
-    }
-  } catch (error) {
-    console.error(error)
-  }
-}
-*/
-
   return (
-    <Container>
-      <h2>Login</h2>
+    <Box sx={{ position: 'relative', height: '100vh', overflow: 'hidden' }}>
+      {/* Video */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        style={{
+          position: 'absolute',
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          zIndex: -2
+        }}
+      >
+        <source src={videoBg} type="video/mp4" />
+      </video>
 
-      <TextField
-        label="Email"
-        fullWidth
-        margin="normal"
-        onChange={(e) => setEmail(e.target.value)}
+      <Box
+        sx={{
+          position: 'absolute',
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(233, 117, 117, 0.5)',
+          zIndex: -1
+        }}
       />
 
-      <TextField
-        label="Password"
-        type="password"
-        fullWidth
-        margin="normal"
-        onChange={(e) => setPassword(e.target.value)}
-      />
+      {/* LOGIN */}
+      <Container
+        maxWidth="xs"
+        sx={{
+          minHeight: '400px',
+          mt: 20,
+          p: 5,
+          borderRadius: 4,
+          backgroundColor: 'rgba(255, 255, 255, 0.94)', 
+          boxShadow: 10            
+        }}
+      >
+        <Typography variant="h4" sx={{ textAlign: 'center', mb: 2 }}>
+          Iniciar sesión
+        </Typography>
 
-      <Button variant="contained" fullWidth onClick={handleLogin}>
-        Iniciar sesión
-      </Button>
-    </Container>
+        <TextField
+          label="Correo electrónico"
+          fullWidth
+          margin="normal"
+          onChange={(e) => setEmail(e.target.value)}
+          sx={{
+            '& label': { color: 'Gray' },
+            '& label.Mui-focused': { color: '#ff5722' },
+            '& .MuiOutlinedInput-root': {
+              '& fieldset': { borderColor: 'Gray' },
+              '&:hover fieldset': { borderColor: '#ff5722' },
+              '&.Mui-focused fieldset': { borderColor: '#ff5722' },
+            },
+          }}
+        />
+        <TextField
+          label="Contraseña"
+          type={showPassword ? "text" : "password"}
+          fullWidth
+          margin="normal"
+          onChange={(e) => setPassword(e.target.value)}
+          sx={{
+            '& label': { color: 'Gray' },
+            '& label.Mui-focused': { color: '#ff5722' },
+            '& .MuiOutlinedInput-root': {
+              '& fieldset': { borderColor: 'Gray' },
+              '&:hover fieldset': { borderColor: '#ff5722' },
+              '&.Mui-focused fieldset': { borderColor: '#ff5722' },
+            },
+          }}
+          slotProps={{
+            input: {
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={() => setShowPassword(!showPassword)}>
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              )
+            }
+          }}
+        />
+
+        <Button
+          sx={{ width: '200px', display: 'block', mx: 'auto', mt: 4, backgroundColor: '#d26735', '&:hover': { backgroundColor: '#b22323' }}}
+          variant="contained"
+          onClick={handleLogin}
+        >
+          Iniciar sesión
+        </Button>
+      </Container>
+      <Box
+        component="footer"
+        sx={{
+          position: 'absolute',
+          bottom: 0,
+          width: '100%',
+          textAlign: 'center',
+          py: 2,
+          color: 'white',
+        }}
+      >
+        <Typography variant="body2">
+          © 2026 SmartAsk
+        </Typography>
+      </Box>
+    </Box>
   )
 }
 
