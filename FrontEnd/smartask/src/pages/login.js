@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { TextField, Button, Container, Typography, Box, InputAdornment, IconButton} from '@mui/material'
 import { useNavigate } from 'react-router-dom'
-import videoBg from '../Assets/BackgroundOracleVid3.mp4'
+import videoBg from '../Assets/BackgroundOracleVid8.mp4'
 import logo from '../Assets/OracleLogoWOT.jpeg'
 import logo2 from '../Assets/OracleLogoWT.png'
 import logo3 from '../Assets/OracleLogoBlack.png'
@@ -66,7 +66,7 @@ function Login({ setIsAuth }) {
           position: 'absolute',
           width: '100%',
           height: '100%',
-          backgroundColor: 'rgba(237, 154, 154, 0)',
+          backgroundColor: 'rgba(84, 4, 4, 0.53)',
           zIndex: -1
         }}
       />

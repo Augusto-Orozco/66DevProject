@@ -10,7 +10,7 @@ function Navbar(props) {
   }
 
   return (
-    <AppBar position="static">
+    <AppBar position="static" sx={{ backgroundColor: '#bb4100' }}>
       <Toolbar>
         <Typography variant="h6" sx={{ flexGrow: 1 }}> </Typography>
 
