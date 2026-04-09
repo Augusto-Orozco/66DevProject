@@ -2,6 +2,10 @@ import { useState } from 'react'
 import {Box} from '@mui/material'
 
 function Dashboard() {
+    const [active, setActive] = useState(null)
+    const handleClick = (id) => {
+      setActive(id === active ? null : id)
+    }
     const card = {
     backgroundColor: 'white',
     transition: '0.3s',

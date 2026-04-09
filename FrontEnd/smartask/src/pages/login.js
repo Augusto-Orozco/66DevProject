@@ -131,7 +131,7 @@ function Login({ setIsAuth }) {
         />
 
         <Button
-          sx={{ width: '200px', display: 'block', mx: 'auto', mt: 4, backgroundColor: '#d26735', '&:hover': { backgroundColor: '#b22323' }}}
+          sx={{ width: '200px', display: 'block', mx: 'auto', mt: 4, backgroundColor: '#bd5a2b', '&:hover': { backgroundColor: '#b22323' }}}
           variant="contained"
           onClick={handleLogin}
         >
