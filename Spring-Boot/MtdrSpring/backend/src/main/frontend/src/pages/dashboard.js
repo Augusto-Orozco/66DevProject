@@ -86,7 +86,6 @@ function Dashboard() {
           <Table stickyHeader aria-label="tasks table">
             <TableHead>
               <TableRow>
-                <TableCell><strong>ID</strong></TableCell>
                 <TableCell><strong>Título</strong></TableCell>
                 <TableCell><strong>Descripción</strong></TableCell>
                 <TableCell><strong>Estado</strong></TableCell>
