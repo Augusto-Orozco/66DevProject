@@ -1,6 +1,8 @@
 package com.springboot.MyTodoList.controller;
 
+import com.springboot.MyTodoList.model.Credential;
 import com.springboot.MyTodoList.model.User;
+import com.springboot.MyTodoList.service.CredentialService;
 import com.springboot.MyTodoList.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -16,6 +18,16 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private CredentialService credentialService;
+
+    @PostMapping(value = "/login")
+    public ResponseEntity<?> login(@RequestBody Credential loginRequest) {
+        return credentialService.authenticate(loginRequest.getEmail(), loginRequest.getPassword())
+                .map(credential -> ResponseEntity.ok(credential))
+                .orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
+    }
 
     @GetMapping(value = "/users")
     public List<User> getAllUsers() {

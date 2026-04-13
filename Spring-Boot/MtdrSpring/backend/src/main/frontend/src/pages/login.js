@@ -2,9 +2,6 @@ import { useState } from 'react'
 import { TextField, Button, Container, Typography, Box, InputAdornment, IconButton} from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import videoBg from '../Assets/BackgroundOracleVid8.mp4'
-import logo from '../Assets/OracleLogoWOT.jpeg'
-import logo2 from '../Assets/OracleLogoWT.png'
-import logo3 from '../Assets/OracleLogoBlack.png'
 import logo4 from '../Assets/OracleLogoWhite.png'
 import Visibility from '@mui/icons-material/Visibility'
 import VisibilityOff from '@mui/icons-material/VisibilityOff'
@@ -15,13 +12,35 @@ function Login({ setIsAuth }) {
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
 
   const [showPassword, setShowPassword] = useState(false)
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
+    setError(''); // Limpiar errores previos
     if (email && password) {
-      setIsAuth(true)
-      navigate('/dashboard')
+      try {
+        const response = await fetch('http://localhost:8080/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password }),
+        });
+
+        if (response.ok) {
+          setIsAuth(true);
+          navigate('/dashboard');
+        } else if (response.status === 401) {
+          setError('Usuario o contraseña incorrectos');
+        } else {
+          setError('Error en el servidor. Intente más tarde.');
+        }
+      } catch (err) {
+        setError('No se pudo conectar con el servidor.');
+      }
+    } else {
+      setError('Por favor complete todos los campos');
     }
   }
 
@@ -87,10 +106,17 @@ function Login({ setIsAuth }) {
           Iniciar sesión
         </Typography>
 
+        {error && (
+          <Typography color="error" sx={{ textAlign: 'center', mb: 2, fontWeight: 'bold' }}>
+            {error}
+          </Typography>
+        )}
+
         <TextField
           label="Correo electrónico"
           fullWidth
           margin="normal"
+          value={email}
           onChange={(e) => setEmail(e.target.value)}
           sx={{
             '& label': { color: 'Gray' },
@@ -107,6 +133,7 @@ function Login({ setIsAuth }) {
           type={showPassword ? "text" : "password"}
           fullWidth
           margin="normal"
+          value={password}
           onChange={(e) => setPassword(e.target.value)}
           sx={{
             '& label': { color: 'Gray' },
