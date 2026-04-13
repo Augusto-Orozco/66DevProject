@@ -52,12 +52,11 @@ function Dashboard() {
   return (
     <Box
       sx={{
-        height: '80vh',
         display: 'grid',
         gridTemplateColumns: 'repeat(4, 1fr)',
-        gridTemplateRows: 'repeat(3, 1fr)',
+        gridTemplateRows: 'auto', // Permite que la altura de las filas sea dinámica
         gap: 4,
-        mt: 5,
+        my: 5, // Margen arriba y abajo para que no se pegue a los bordes de la pantalla
         mx: 4
       }}
     >
@@ -70,20 +69,16 @@ function Dashboard() {
           <h2>{items.length}</h2>
         )}
       </Box>
-
-      <Box sx={card}>2</Box>
-      <Box sx={card}>3</Box>
-      <Box sx={card}>4</Box>
     
-      <Box sx={{ ...card, gridColumn: 'span 2' }}>Gráfica</Box>
-      <Box sx={card}>Alertas</Box>
-    
-      <Box sx={{ ...card, gridColumn: 'span 4', overflow: 'auto', display: 'block' }}>
+      {/* Se eliminó overflow: 'auto' */}
+      <Box sx={{ ...card, gridColumn: 'span 4', display: 'block' }}>
         <Typography variant="h6" gutterBottom component="div" sx={{ width: '100%', textAlign: 'left', fontWeight: 'bold' }}>
           Listado de Tareas (Base de Datos)
         </Typography>
-        <TableContainer component={Paper} sx={{ maxHeight: 350, boxShadow: 'none' }}>
-          <Table stickyHeader aria-label="tasks table">
+        {/* Se eliminó maxHeight */}
+        <TableContainer component={Paper} sx={{ boxShadow: 'none' }}>
+          {/* Se eliminó stickyHeader */}
+          <Table aria-label="tasks table">
             <TableHead>
               <TableRow>
                 <TableCell><strong>Título</strong></TableCell>
@@ -96,7 +91,6 @@ function Dashboard() {
               {items.length > 0 ? (
                 items.map((item) => (
                   <TableRow key={item.taskId} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-                    <TableCell component="th" scope="row">{item.taskId}</TableCell>
                     <TableCell>{item.title}</TableCell>
                     <TableCell>{item.description}</TableCell>
                     <TableCell>{item.status}</TableCell>
