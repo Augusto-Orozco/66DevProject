@@ -35,7 +35,7 @@ function DashDevs() {
     >
 
       <Box sx={{ ...card, gridRow: 'span 2'}}>
-        Sidebar
+        Tareas
       </Box>
 
       <Box sx={card}>Cuadro 1</Box>

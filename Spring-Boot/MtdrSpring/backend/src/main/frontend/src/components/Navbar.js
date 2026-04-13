@@ -17,11 +17,11 @@ function Navbar(props) {
         <Button color="inherit" onClick={() => window.open('https://youtu.be/iik25wqIuFo?si=GYn0Ofjlz-kD9mxD', '_blank')}>
           Dashboard
         </Button>
-        {/*
-        <Button color="inherit" onClick={() => navigate('/creador')}>
-          Creador
+        {
+        <Button color="inherit" onClick={() => navigate('/DashDevs')}>
+          DashboardDevs
         </Button>
-        */}
+        }
 
         <Button color="inherit" onClick={handleLogout}>
           Logout
