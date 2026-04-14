@@ -13,7 +13,7 @@ import java.util.List;
 public class ToDoItemController {
     @Autowired
     private ToDoItemService toDoItemService;
-    //@CrossOrigin
+    @CrossOrigin
     @GetMapping(value = "/todolist")
     public List<ToDoItem> getAllToDoItems(){
         return toDoItemService.findAll();
