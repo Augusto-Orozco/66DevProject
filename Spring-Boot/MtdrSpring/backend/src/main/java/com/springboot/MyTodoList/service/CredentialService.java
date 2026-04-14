@@ -29,4 +29,9 @@ public class CredentialService {
     public void deleteCredential(Long id) {
         credentialRepository.deleteById(id);
     }
+
+    public Optional<Credential> authenticate(String email, String password) {
+        return credentialRepository.findByEmail(email)
+                .filter(c -> c.getPassword().equals(password));
+    }
 }

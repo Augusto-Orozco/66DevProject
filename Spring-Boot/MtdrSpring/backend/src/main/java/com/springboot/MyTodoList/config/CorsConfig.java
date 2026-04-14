@@ -2,6 +2,7 @@ package com.springboot.MyTodoList.config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -19,6 +20,7 @@ import java.util.List;
 @Configuration
 public class CorsConfig {
     Logger logger = LoggerFactory.getLogger(CorsConfig.class);
+    @Bean
     public CorsFilter corsFilter(){
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of("http://localhost:3000","https://objectstorage.us-phoenix-1.oraclecloud.com",

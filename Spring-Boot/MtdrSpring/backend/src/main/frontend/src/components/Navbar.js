@@ -15,13 +15,16 @@ function Navbar(props) {
         <Typography variant="h6" sx={{ flexGrow: 1 }}> </Typography>
 
         <Button color="inherit" onClick={() => window.open('https://youtu.be/iik25wqIuFo?si=GYn0Ofjlz-kD9mxD', '_blank')}>
+          Webito Chopecha
+        </Button>
+        <Button color="inherit" onClick={() => navigate('/Dashboard')}>
           Dashboard
         </Button>
-        {/*
-        <Button color="inherit" onClick={() => navigate('/creador')}>
-          Creador
+        {
+        <Button color="inherit" onClick={() => navigate('/DashDevs')}>
+          Dashboard (Devs)
         </Button>
-        */}
+        }
 
         <Button color="inherit" onClick={handleLogout}>
           Logout
