@@ -10,13 +10,13 @@ import java.util.List;
 
 @RestController
 @CrossOrigin
-@RequestMapping("/api/DevTask")
+@RequestMapping({"/api/DevTask", "/tasks"})
 public class TaskController {
 
     @Autowired
     private TaskService taskService;
 
-    @GetMapping("/tasks")
+    @GetMapping("/api/tasks")
     public List<Task> getTasksAlias() {
         return taskService.getAllTasks();
     }

@@ -16,7 +16,7 @@ function Dashboard() {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    fetch('http://localhost:8080/tasks')
+    fetch('/tasks')
       .then(res => {
         if (!res.ok) throw new Error('Error en la respuesta del servidor')
         return res.json()
@@ -69,6 +69,13 @@ function Dashboard() {
           <h2>{items.length}</h2>
         )}
       </Box>
+
+      <Box sx={card}>2</Box>
+      <Box sx={card}>3</Box>
+      <Box sx={card}>4</Box>
+
+      <Box sx={{ ...card, gridColumn: 'span 2' }}>Gráfica</Box>
+      <Box sx={{ ...card, gridColumn: 'span 2' }}>Alertas</Box>
     
       {/* Se eliminó overflow: 'auto' */}
       <Box sx={{ ...card, gridColumn: 'span 4', display: 'block' }}>
