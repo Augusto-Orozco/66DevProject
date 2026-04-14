@@ -30,7 +30,7 @@ function DashDevs() {
 
   const fetchTasks = () => {
     setLoading(true)
-    const API_LIST = '/api/tasks'; 
+    const API_LIST = '/api/DevTask'; 
     fetch(API_LIST)
       .then(res => {
         if (!res.ok) throw new Error('Error al cargar tareas')
