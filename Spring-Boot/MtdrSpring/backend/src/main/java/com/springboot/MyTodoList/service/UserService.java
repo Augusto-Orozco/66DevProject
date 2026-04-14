@@ -26,6 +26,10 @@ public class UserService {
         return userRepository.findById(id);
     }
 
+    public Optional<User> getUserByTelegramId(Long telegramId) {
+        return userRepository.findByTelegramId(telegramId);
+    }
+
     public void deleteUser(Long id) {
         userRepository.deleteById(id);
     }

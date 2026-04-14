@@ -2,6 +2,7 @@ package com.springboot.MyTodoList.service;
 
 import com.springboot.MyTodoList.model.TaskUser;
 import com.springboot.MyTodoList.model.TaskUser.TaskUserId;
+import com.springboot.MyTodoList.model.User;
 import com.springboot.MyTodoList.repository.TaskUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,10 @@ public class TaskUserService {
 
     public List<TaskUser> getAllTaskUsers() {
         return taskUserRepository.findAll();
+    }
+
+    public List<TaskUser> getTasksByUser(User user) {
+        return taskUserRepository.findByUser(user);
     }
 
     public Optional<TaskUser> getTaskUserById(TaskUserId id) {
