@@ -90,8 +90,8 @@ function Dashboard() {
         {!loading && items.length > 0 && (
           <Box sx={{ display: 'flex', width: '100%', px: 2, mb: 1, opacity: 0.6 }}>
             <Typography variant="caption" sx={{ flex: 2, fontWeight: 'bold', ml: '6px' }}>TAREA</Typography>
-            <Typography variant="caption" sx={{ flex: 2, fontWeight: 'bold', ml: '6px' }}>ESTATUS</Typography>
-            <Typography variant="caption" sx={{ flex: 2, fontWeight: 'bold', ml: '6px' }}>PRIORIDAD</Typography>
+            <Typography variant="caption" sx={{ flex: 1, fontWeight: 'bold', textAlign: 'center', mr: '13.5px' }}>ESTATUS</Typography>
+            <Typography variant="caption" sx={{ flex: 1, fontWeight: 'bold', textAlign: 'right', mr: '18px' }}>PRIORIDAD</Typography>
           </Box>
         )}
 
