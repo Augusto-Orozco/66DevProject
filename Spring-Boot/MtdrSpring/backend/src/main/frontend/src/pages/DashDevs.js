@@ -121,7 +121,7 @@ function DashDevs() {
           
             let color = '#fbc02d'
             if (item.status === 'COMPLETADO') color = '#4caf50'
-            if (item.priority === 'HIGH' || item.priority === 'ALTA') color = '#f44336'
+            if (item.status === 'CON RETRASO') color = '#ff2020'
           
             return (
               <Box
@@ -135,7 +135,7 @@ function DashDevs() {
                   mb: 1,
                   borderRadius: 1.5,
                   backgroundColor: '#f9f9f9',
-                  borderLeft: `4px solid ${color}`
+                  borderLeft: `6px solid ${color}`
                 }}
               >
                 <Typography variant="subtitle2" fontSize="0.85rem" fontWeight="bold">

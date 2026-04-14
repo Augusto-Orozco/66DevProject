@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
-import { Box, Typography, CircularProgress } from '@mui/material'
+import { Box, Typography, CircularProgress, Button } from '@mui/material'
 import { PieChart, Pie, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import RefreshIcon from '@mui/icons-material/Refresh'
 
 function Dashboard() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  useEffect(() => {
+  const fetchTasks = () => {
     setLoading(true)
     fetch('/tasks')
       .then(res => {
@@ -22,9 +23,13 @@ function Dashboard() {
         setError(error.message)
         setLoading(false)
       })
+  }
+
+  useEffect(() => {
+    fetchTasks()
   }, [])
 
-  // 🔥 Agrupar tareas por status
+  // Agrupar tareas por status
   const statusCount = items.reduce((acc, item) => {
     const status = item.status || 'SIN ESTATUS'
     acc[status] = (acc[status] || 0) + 1
@@ -73,13 +78,13 @@ function Dashboard() {
         mx: 4
       }}
     >
-      {/* --- MÉTRICA --- */}
+      {/* --- Metrica total tareas --- */}
       <Box sx={card}>
         <strong>Total Tareas</strong>
         {loading ? <CircularProgress size={20} sx={{ mt: 1 }} /> : <h2>{items.length}</h2>}
       </Box>
 
-      {/* --- PIE CHART --- */}
+      {/* --- Grafica de Pastel --- */}
       <Box sx={card}>
         <Typography variant="h6" sx={{ mb: 1 }}>
           Estado de Tareas
@@ -96,9 +101,6 @@ function Dashboard() {
                 nameKey="name"
                 outerRadius={80}
                 innerRadius={40}
-                label={({percent }) =>
-                  `${(percent * 100).toFixed(0)}%`
-                }
               />
               <Legend wrapperStyle={{ fontSize: '12px' }} />
               <Tooltip contentStyle={{ fontSize: '12px' }} />
@@ -115,7 +117,7 @@ function Dashboard() {
       <Box sx={card}>Alertas</Box>
       <Box sx={card}>Filtros</Box>
 
-      {/* --- LISTADO --- */}
+      {/* --- LISTA --- */}
       <Box
         sx={{
           ...card,
@@ -125,22 +127,27 @@ function Dashboard() {
           p: 3
         }}
       >
-        <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 3 }}>
-          Listado de Tareas
-        </Typography>
+        <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+            Listado de Tareas
+          </Typography>
+          <Button 
+            size="small" 
+            variant="outlined" 
+            startIcon={<RefreshIcon />} 
+            onClick={fetchTasks}
+            disabled={loading}
+          >
+            Actualizar
+          </Button>
+        </Box>
 
-        {/* ENCABEZADO */}
+        {/* Header fijo */}
         {!loading && items.length > 0 && (
-          <Box sx={{ display: 'flex', width: '100%', px: 2, mb: 1, opacity: 0.8 }}>
-            <Typography variant="caption" sx={{ flex: 2, fontWeight: 'bold' }}>
-              TAREA
-            </Typography>
-            <Typography variant="caption" sx={{ flex: 1, textAlign: 'center', fontWeight: 'bold' }}>
-              ESTATUS
-            </Typography>
-            <Typography variant="caption" sx={{ flex: 1, textAlign: 'right', fontWeight: 'bold' }}>
-              PRIORIDAD
-            </Typography>
+          <Box sx={{ display: 'flex', width: '100%', px: 2, mb: 1, opacity: 0.6 }}>
+            <Typography variant="caption" sx={{ flex: 2, fontWeight: 'bold', ml: '6px' }}>TAREA</Typography>
+            <Typography variant="caption" sx={{ flex: 1, fontWeight: 'bold', textAlign: 'center', mr: '13.5px' }}>ESTATUS</Typography>
+            <Typography variant="caption" sx={{ flex: 1, fontWeight: 'bold', textAlign: 'right', mr: '18px' }}>PRIORIDAD</Typography>
           </Box>
         )}
 
@@ -149,7 +156,7 @@ function Dashboard() {
         <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 2 }}>
           {!loading && items.map((item) => {
 
-            // 🔥 PRIORIDAD
+            // PRIORIDAD COLOR
             let priorityColor = '#292929'
             let priorityBg = '#f5f5f5'
 
@@ -158,9 +165,9 @@ function Dashboard() {
               priorityBg = '#ffebee'
             }
 
-            // 🔥 STATUS
-            let statusColor = '#342809'
-            let statusBg = '#fdecb5'
+            // STATUS COLOR
+            let statusColor = '#000000'
+            let statusBg = '#a9a9a9'
 
             if (item.status === 'COMPLETADO') {
               statusColor = '#123013'
@@ -173,11 +180,10 @@ function Dashboard() {
               statusBg = '#fdb4bf'
             }
 
-            // 🔥 BORDE
+            // BORDE COLOR
             let color = '#fbc02d'
             if (item.status === 'COMPLETADO') color = '#4caf50'
             if (item.status === 'CON RETRASO') color = '#ff2020'
-            if (item.priority === 'High' || item.priority === 'ALTA') color = '#f44336'
 
             return (
               <Box
