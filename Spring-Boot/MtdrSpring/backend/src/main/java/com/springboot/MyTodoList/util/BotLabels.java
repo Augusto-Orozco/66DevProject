@@ -2,13 +2,14 @@ package com.springboot.MyTodoList.util;
 
 public enum BotLabels {
 	
-	SHOW_MAIN_SCREEN("Show Main Screen"), 
-	HIDE_MAIN_SCREEN("Hide Main Screen"),
-	LIST_ALL_ITEMS("List All Items"), 
-	ADD_NEW_ITEM("Add New Item"),
-	DONE("DONE"),
-	UNDO("UNDO"),
-	DELETE("DELETE"),
+	SHOW_MAIN_SCREEN("Reiniciar conversación"), 
+	HIDE_MAIN_SCREEN("Cerrar conversación"),
+	LIST_ALL_ITEMS("Lista de Tareas"), 
+	ADD_NEW_ITEM("Borrar este Label"),
+	DONE("Completada"),
+	IN_PROGRESS("En Progreso"),
+	UNDO("Pendiente"),
+	DELETE("Borrar este label"),
 	MY_TODO_LIST("MY TODO LIST"),
 	DASH("-");
 
