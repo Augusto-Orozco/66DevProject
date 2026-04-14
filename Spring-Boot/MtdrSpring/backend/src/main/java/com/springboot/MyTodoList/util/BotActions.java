@@ -1,12 +1,14 @@
 package com.springboot.MyTodoList.util;
 
-// import com.springboot.MyTodoList.model.ToDoItem;
+import com.springboot.MyTodoList.model.Task;
+import com.springboot.MyTodoList.model.UserStory;
 import com.springboot.MyTodoList.service.DeepSeekService;
-import com.springboot.MyTodoList.service.ToDoItemService;
-// import java.time.OffsetDateTime;
-// import java.util.ArrayList;
-// import java.util.List;
-// import java.util.stream.Collectors;
+import com.springboot.MyTodoList.service.TaskService;
+import com.springboot.MyTodoList.service.UserStoryService;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
@@ -22,12 +24,14 @@ public class BotActions{
     TelegramClient telegramClient;
     boolean exit;
 
-    ToDoItemService todoService;
+    TaskService taskService;
+    UserStoryService userStoryService;
     DeepSeekService deepSeekService;
 
-    public BotActions(TelegramClient tc,ToDoItemService ts, DeepSeekService ds){
+    public BotActions(TelegramClient tc, TaskService ts, UserStoryService uss, DeepSeekService ds){
         telegramClient = tc;
-        todoService = ts;
+        taskService = ts;
+        userStoryService = uss;
         deepSeekService = ds;
         exit  = false;
     }
@@ -44,12 +48,12 @@ public class BotActions{
         telegramClient=tc;
     }
 
-    public void setTodoService(ToDoItemService tsvc){
-        todoService = tsvc;
+    public void setTaskService(TaskService tsvc){
+        taskService = tsvc;
     }
 
-    public ToDoItemService getTodoService(){
-        return todoService;
+    public TaskService getTaskService(){
+        return taskService;
     }
 
     public void setDeepSeekService(DeepSeekService dssvc){
@@ -77,68 +81,46 @@ public class BotActions{
     }
 
     public void fnDone() {
-        /*
-        if (!(requestText.indexOf(BotLabels.DONE.getLabel()) != -1) || exit) 
+        if (!(requestText.contains(BotLabels.DONE.getLabel())) || exit) 
             return;
             
-        String done = requestText.substring(0, requestText.indexOf(BotLabels.DASH.getLabel()));
-        Integer id = Integer.valueOf(done);
-
         try {
+            String doneStr = requestText.substring(0, requestText.indexOf(BotLabels.DASH.getLabel())).trim();
+            Long id = Long.valueOf(doneStr);
 
-            ToDoItem item = todoService.getToDoItemById(id);
-            item.setDone(true);
-            todoService.updateToDoItem(id, item);
-            BotHelper.sendMessageToTelegram(chatId, BotMessages.ITEM_DONE.getMessage(), telegramClient);
+            taskService.getTaskById(id).ifPresent(task -> {
+                task.setStatus("COMPLETADO");
+                taskService.saveTask(task);
+                BotHelper.sendMessageToTelegram(chatId, "¡Tarea marcada como COMPLETADA!", telegramClient);
+            });
 
         } catch (Exception e) {
-            logger.error(e.getLocalizedMessage(), e);
+            logger.error("Error al marcar como completada: " + e.getLocalizedMessage());
         }
         exit = true;
-        */
     }
 
-    public void fnUndo() {
-        /*
-        if (requestText.indexOf(BotLabels.UNDO.getLabel()) == -1 || exit)
+    public void fnUndo() { // Reutilizado para "En Progreso"
+        if (!(requestText.contains(BotLabels.IN_PROGRESS.getLabel())) || exit) 
             return;
 
-        String undo = requestText.substring(0,
-                requestText.indexOf(BotLabels.DASH.getLabel()));
-        Integer id = Integer.valueOf(undo);
-
         try {
+            String idStr = requestText.substring(0, requestText.indexOf(BotLabels.DASH.getLabel())).trim();
+            Long id = Long.valueOf(idStr);
 
-            ToDoItem item = todoService.getToDoItemById(id);
-            item.setDone(false);
-            todoService.updateToDoItem(id, item);
-            BotHelper.sendMessageToTelegram(chatId, BotMessages.ITEM_UNDONE.getMessage(), telegramClient);
+            taskService.getTaskById(id).ifPresent(task -> {
+                task.setStatus("EN PROGRESO");
+                taskService.saveTask(task);
+                BotHelper.sendMessageToTelegram(chatId, "Tarea marcada como EN PROGRESO.", telegramClient);
+            });
 
         } catch (Exception e) {
-            logger.error(e.getLocalizedMessage(), e);
+            logger.error("Error al marcar en progreso: " + e.getLocalizedMessage());
         }
         exit = true;
-        */
     }
 
     public void fnDelete(){
-        /*
-        if (requestText.indexOf(BotLabels.DELETE.getLabel()) == -1 || exit)
-            return;
-
-        String delete = requestText.substring(0,
-                requestText.indexOf(BotLabels.DASH.getLabel()));
-        Integer id = Integer.valueOf(delete);
-
-        try {
-            todoService.deleteToDoItem(id);
-            BotHelper.sendMessageToTelegram(chatId, BotMessages.ITEM_DELETED.getMessage(), telegramClient);
-
-        } catch (Exception e) {
-            logger.error(e.getLocalizedMessage(), e);
-        }
-        exit = true;
-        */
     }
 
     public void fnHide(){
@@ -151,90 +133,49 @@ public class BotActions{
     }
 
     public void fnListAll(){
-        /*
         if (!(requestText.equals(BotCommands.TODO_LIST.getCommand())
 				|| requestText.equals(BotLabels.LIST_ALL_ITEMS.getLabel())
 				|| requestText.equals(BotLabels.MY_TODO_LIST.getLabel())) || exit)
             return;
-        logger.info("todoSvc: "+todoService);
-        List<ToDoItem> allItems = todoService.findAll();
-        ReplyKeyboardMarkup keyboardMarkup = ReplyKeyboardMarkup.builder()
-            .resizeKeyboard(true)
-            .oneTimeKeyboard(false)
-            .selective(true)
-            .build();
 
+        List<Task> allItems = taskService.getAllTasks();
+        
         List<KeyboardRow> keyboard = new ArrayList<>();
 
-        // command back to main screen
-        KeyboardRow mainScreenRowTop = new KeyboardRow();
-        mainScreenRowTop.add(BotLabels.SHOW_MAIN_SCREEN.getLabel());
-        keyboard.add(mainScreenRowTop);
+        // Botón volver
+        keyboard.add(new KeyboardRow(BotLabels.SHOW_MAIN_SCREEN.getLabel()));
 
-        KeyboardRow firstRow = new KeyboardRow();
-        firstRow.add(BotLabels.ADD_NEW_ITEM.getLabel());
-        keyboard.add(firstRow);
+        // Solo mostrar tareas no completadas (o todas si prefieres)
+        for (Task task : allItems) {
+            if ("COMPLETADO".equals(task.getStatus())) continue;
 
-        KeyboardRow myTodoListTitleRow = new KeyboardRow();
-        myTodoListTitleRow.add(BotLabels.MY_TODO_LIST.getLabel());
-        keyboard.add(myTodoListTitleRow);
-
-        List<ToDoItem> activeItems = allItems.stream().filter(item -> item.isDone() == false)
-                .collect(Collectors.toList());
-
-        for (ToDoItem item : activeItems) {
-            KeyboardRow currentRow = new KeyboardRow();
-            currentRow.add(item.getDescription());
-            currentRow.add(item.getID() + BotLabels.DASH.getLabel() + BotLabels.DONE.getLabel());
-            keyboard.add(currentRow);
+            KeyboardRow row = new KeyboardRow();
+            row.add(task.getTitle());
+            row.add(task.getTaskId() + " " + BotLabels.DASH.getLabel() + " " + BotLabels.DONE.getLabel());
+            row.add(task.getTaskId() + " " + BotLabels.DASH.getLabel() + " " + BotLabels.IN_PROGRESS.getLabel());
+            keyboard.add(row);
         }
 
-        List<ToDoItem> doneItems = allItems.stream().filter(item -> item.isDone() == true)
-                .collect(Collectors.toList());
+        ReplyKeyboardMarkup keyboardMarkup = ReplyKeyboardMarkup.builder()
+            .resizeKeyboard(true)
+            .keyboard(keyboard)
+            .build();
 
-        for (ToDoItem item : doneItems) {
-            KeyboardRow currentRow = new KeyboardRow();
-            currentRow.add(item.getDescription());
-            currentRow.add(item.getID() + BotLabels.DASH.getLabel() + BotLabels.UNDO.getLabel());
-            currentRow.add(item.getID() + BotLabels.DASH.getLabel() + BotLabels.DELETE.getLabel());
-            keyboard.add(currentRow);
-        }
-
-        // command back to main screen
-        KeyboardRow mainScreenRowBottom = new KeyboardRow();
-        mainScreenRowBottom.add(BotLabels.SHOW_MAIN_SCREEN.getLabel());
-        keyboard.add(mainScreenRowBottom);
-
-        keyboardMarkup.setKeyboard(keyboard);
-
-        //
-        BotHelper.sendMessageToTelegram(chatId, BotLabels.MY_TODO_LIST.getLabel(), telegramClient,  keyboardMarkup);//
+        BotHelper.sendMessageToTelegram(chatId, "📋 Tus tareas pendientes:", telegramClient, keyboardMarkup);
         exit = true;
-        */
     }
 
     public void fnAddItem(){
-        logger.info("Adding item");
-		if (!(requestText.contains(BotCommands.ADD_ITEM.getCommand())
-				|| requestText.contains(BotLabels.ADD_NEW_ITEM.getLabel())) || exit )
-            return;
-        logger.info("Adding item by BotHelper");
-        BotHelper.sendMessageToTelegram(chatId, BotMessages.TYPE_NEW_TODO_ITEM.getMessage(), telegramClient);
-        exit = true;
+        // Deshabilitado por solicitud: solo lectura y gestión
     }
 
     public void fnElse(){
-        /*
         if(exit)
             return;
-        ToDoItem newItem = new ToDoItem();
-        newItem.setDescription(requestText);
-        newItem.setCreation_ts(OffsetDateTime.now());
-        newItem.setDone(false);
-        todoService.addToDoItem(newItem);
-
-        BotHelper.sendMessageToTelegram(chatId, BotMessages.NEW_ITEM_ADDED.getMessage(), telegramClient, null);
-        */
+        
+        // Si no es un comando conocido, simplemente no hace nada o envía mensaje de ayuda
+        BotHelper.sendMessageToTelegram(chatId, "Usa /todolist para ver tus tareas.", telegramClient);
+        exit = true;
     }
 
     public void fnLLM(){
