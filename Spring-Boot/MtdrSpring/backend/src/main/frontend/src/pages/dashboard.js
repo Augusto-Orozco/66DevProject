@@ -181,9 +181,10 @@ function Dashboard() {
             }
 
             // BORDE COLOR
-            let color = '#fbc02d'
+            let color = '#858585'
             if (item.status === 'COMPLETADO') color = '#4caf50'
-            if (item.status === 'CON RETRASO') color = '#ff2020'
+            if (item.status === 'EN PROGRESO') color = '#fbc02d'
+            if (item.status === 'Finish') color = '#ff2020' // Pendiente de cambio por que deberia ser "Con Retraso"
 
             return (
               <Box
