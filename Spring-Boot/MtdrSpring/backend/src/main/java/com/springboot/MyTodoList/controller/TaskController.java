@@ -9,11 +9,17 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
+@CrossOrigin
 @RequestMapping("/api/DevTask")
 public class TaskController {
 
     @Autowired
     private TaskService taskService;
+
+    @GetMapping("/tasks")
+    public List<Task> getTasksAlias() {
+        return taskService.getAllTasks();
+    }
 
     @GetMapping
     public List<Task> getAllTasks() {
