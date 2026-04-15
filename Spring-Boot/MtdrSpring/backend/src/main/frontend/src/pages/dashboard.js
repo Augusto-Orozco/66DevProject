@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Box, Typography, CircularProgress, Button } from '@mui/material'
-import { PieChart, Pie, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import RefreshIcon from '@mui/icons-material/Refresh'
+import { 
+  PieChart, Pie, Tooltip, Legend, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid
+} from 'recharts'
+import { Cell } from 'recharts'
 
 function Dashboard() {
   const [items, setItems] = useState([])
@@ -68,6 +72,17 @@ function Dashboard() {
     minHeight: '150px'
   }
 
+  const kpiPie1 = [
+    { name: 'Completadas', value: 8, fill: '#4caf50' },
+    { name: 'Pendientes', value: 4, fill: '#fbc02d' }
+  ]
+  
+  const priorityBarData = [
+    { name: 'Alta', value: 5, fill: '#f44336' },
+    { name: 'Media', value: 6, fill: '#ff9800' },
+    { name: 'Baja', value: 3, fill: '#4caf50' }
+  ]
+
   return (
     <Box
       sx={{
@@ -109,8 +124,40 @@ function Dashboard() {
         )}
       </Box>
 
-      <Box sx={card}>3</Box>
-      <Box sx={card}>4</Box>
+      <Box sx={card}>
+  <Typography variant="h6">Estado General</Typography>
+
+  <ResponsiveContainer width="100%" height={200}>
+    <PieChart>
+      <Pie
+        data={kpiPie1}
+        dataKey="value"
+        nameKey="name"
+        outerRadius={70}
+      />
+      <Tooltip />
+      <Legend />
+    </PieChart>
+  </ResponsiveContainer>
+</Box>
+
+      <Box sx={card}>
+  <Typography variant="h6">Prioridades</Typography>
+
+  <ResponsiveContainer width="100%" height={200}>
+    <BarChart data={priorityBarData}>
+      <CartesianGrid strokeDasharray="3 3" />
+      <XAxis dataKey="name" />
+      <YAxis />
+      <Tooltip />
+      <Bar dataKey="value">
+        {priorityBarData.map((entry, index) => (
+          <Cell key={`cell-${index}`} fill={entry.fill} />
+        ))}
+      </Bar>
+    </BarChart>
+  </ResponsiveContainer>
+</Box>
 
       {/* --- SEGUNDA FILA --- */}
       <Box sx={{ ...card, gridColumn: 'span 2' }}>Gráfica</Box>
