@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { Toolbar, Box } from '@mui/material'
 import Login from '../pages/login'
 import Dashboard from '../pages/dashboard'
 import DashDevs from '../pages/DashDevs'
@@ -10,20 +11,26 @@ function AppRouter({ isAuth, setIsAuth }) {
 
       {isAuth && <Navbar setIsAuth={setIsAuth} />}
 
-      <Routes>
-        <Route path="/" element={<Login setIsAuth={setIsAuth} />} />
+      <Box>
+        {/* Esto empuja TODO el contenido debajo del navbar */}
+        {isAuth && <Toolbar />}
 
-        <Route 
-          path="/dashboard" 
-          element={isAuth ? <Dashboard /> : <Navigate to="/" />} 
-        />
-        <Route
-          path="/DashDevs"
-          element={isAuth ? <DashDevs /> : <Navigate to="/" />}
-        />
+        <Routes>
+          <Route path="/" element={<Login setIsAuth={setIsAuth} />} />
 
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
+          <Route 
+            path="/dashboard" 
+            element={isAuth ? <Dashboard /> : <Navigate to="/" />} 
+          />
+
+          <Route
+            path="/DashDevs"
+            element={isAuth ? <DashDevs /> : <Navigate to="/" />}
+          />
+
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </Box>
 
     </BrowserRouter>
   )
