@@ -22,6 +22,10 @@ public class UserService {
         return userRepository.findAll();
     }
 
+    public List<User> getDevelopers() {
+        return userRepository.findByRole_RoleId(2L);
+    }
+
     public Optional<User> getUserById(Long id) {
         return userRepository.findById(id);
     }
