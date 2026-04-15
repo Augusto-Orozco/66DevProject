@@ -72,15 +72,12 @@ function Dashboard() {
     minHeight: '150px'
   }
 
-  const kpiPie1 = [
-    { name: 'Completadas', value: 8, fill: '#4caf50' },
-    { name: 'Pendientes', value: 4, fill: '#fbc02d' }
+  const completionRateData = [
+    { name: 'Completadas', value: 18, fill: '#4caf50' },
+    { name: 'Pendientes', value: 7, fill: '#fbc02d' }
   ]
-  
-  const priorityBarData = [
-    { name: 'Alta', value: 5, fill: '#f44336' },
-    { name: 'Media', value: 6, fill: '#ff9800' },
-    { name: 'Baja', value: 3, fill: '#4caf50' }
+  const sprintProgressData = [
+    { name: 'Sprint', completado: 70, restante: 30 }
   ]
 
   return (
@@ -125,12 +122,12 @@ function Dashboard() {
       </Box>
 
       <Box sx={card}>
-  <Typography variant="h6">Estado General</Typography>
+  <Typography variant="h6">Tasa de Finalización</Typography>
 
   <ResponsiveContainer width="100%" height={200}>
     <PieChart>
       <Pie
-        data={kpiPie1}
+        data={completionRateData}
         dataKey="value"
         nameKey="name"
         outerRadius={70}
@@ -141,20 +138,24 @@ function Dashboard() {
   </ResponsiveContainer>
 </Box>
 
-      <Box sx={card}>
-  <Typography variant="h6">Prioridades</Typography>
+<Box sx={card}>
+  <Typography variant="h6">Progreso del Sprint</Typography>
+  <Typography 
+  variant="h4" 
+  fontWeight="bold" 
+  sx={{ mb: 1, textAlign: 'center' }}
+>
+  70%
+</Typography>
 
   <ResponsiveContainer width="100%" height={200}>
-    <BarChart data={priorityBarData}>
-      <CartesianGrid strokeDasharray="3 3" />
-      <XAxis dataKey="name" />
-      <YAxis />
+    <BarChart data={sprintProgressData} layout="vertical">
+      <XAxis type="number" hide />
+      <YAxis type="category" dataKey="name" hide />
       <Tooltip />
-      <Bar dataKey="value">
-        {priorityBarData.map((entry, index) => (
-          <Cell key={`cell-${index}`} fill={entry.fill} />
-        ))}
-      </Bar>
+
+      <Bar dataKey="completado" stackId="a" fill="#4caf50" />
+      <Bar dataKey="restante" stackId="a" fill="#e0e0e0" />
     </BarChart>
   </ResponsiveContainer>
 </Box>
