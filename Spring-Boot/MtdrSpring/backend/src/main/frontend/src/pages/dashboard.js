@@ -158,10 +158,34 @@ function Dashboard() {
       <Bar dataKey="restante" stackId="a" fill="#e0e0e0" />
     </BarChart>
   </ResponsiveContainer>
-</Box>
+      </Box>
 
-      {/* --- SEGUNDA FILA --- */}
-      <Box sx={{ ...card, gridColumn: 'span 2' }}>Gráfica</Box>
+            {/* --- SEGUNDA FILA --- */}
+            <Box sx={{ ...card, gridColumn: 'span 2' }}>
+        <Typography variant="h6" sx={{ mb: 2 }}>
+          Desviación Estimado vs Real (Horas)
+        </Typography>
+
+        <ResponsiveContainer width="100%" height={250}>
+          <BarChart
+            data={[
+              { tarea: 'Login', estimado: 2, real: 3 },
+              { tarea: 'API Tasks', estimado: 3, real: 2 },
+              { tarea: 'Dashboard', estimado: 4, real: 5 },
+              { tarea: 'Fix Bugs', estimado: 2, real: 4 }
+            ]}
+          >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="tarea" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+
+            <Bar dataKey="estimado" fill="#42a5f5" name="Horas Estimadas" />
+            <Bar dataKey="real" fill="#ef5350" name="Horas Reales" />
+          </BarChart>
+        </ResponsiveContainer>
+      </Box>
       <Box sx={card}>Alertas</Box>
       <Box sx={card}>Filtros</Box>
 
