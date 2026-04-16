@@ -52,7 +52,6 @@ function DashDevs() {
 
   // Separar tareas por status si es necesario
   
-
   return (
     <Box
       sx={{
@@ -75,7 +74,7 @@ function DashDevs() {
         }}
       >
 
-        {/* 🔥 HEADER FIJO */}
+        {/* HEADER FIJO */}
         <Box 
           sx={{ 
             width: '100%',
@@ -114,7 +113,7 @@ function DashDevs() {
           </Typography>
         )}
 
-        {/* 🔥 LISTA SCROLLABLE */}
+        {/* LISTA SCROLLABLE */}
         <Box sx={{ width: '100%', overflowY: 'auto', overflowX: 'hidden', flexGrow: 1 }}>
       
           {!loading && items.map(item => {
@@ -155,11 +154,11 @@ function DashDevs() {
 
         </Box>
       </Box>
-      <Box sx={card}>Cuadro 1</Box>
-      <Box sx={card}>Cuadro 2</Box>
+      <Box sx={card}>Grafica</Box>
+      <Box sx={card}>Grafica</Box>
 
       <Box sx={{ ...card, gridColumn: 'span 2'}}> 
-        Angelsin
+        Grafica
       </Box>
 
     </Box>
