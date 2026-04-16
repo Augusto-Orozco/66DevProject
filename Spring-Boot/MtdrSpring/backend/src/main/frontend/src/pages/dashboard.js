@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Box, Typography, CircularProgress, Button } from '@mui/material'
-import { PieChart, Pie, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import RefreshIcon from '@mui/icons-material/Refresh'
+import { 
+  PieChart, Pie, Tooltip, Legend, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid
+} from 'recharts'
+import { Cell } from 'recharts'
 
 function Dashboard() {
   const [items, setItems] = useState([])
@@ -68,6 +72,14 @@ function Dashboard() {
     minHeight: '150px'
   }
 
+  const completionRateData = [
+    { name: 'Completadas', value: 18, fill: '#4caf50' },
+    { name: 'Pendientes', value: 7, fill: '#fbc02d' }
+  ]
+  const sprintProgressData = [
+    { name: 'Sprint', completado: 70, restante: 30 }
+  ]
+
   return (
     <Box
       sx={{
@@ -109,11 +121,71 @@ function Dashboard() {
         )}
       </Box>
 
-      <Box sx={card}>3</Box>
-      <Box sx={card}>4</Box>
+      <Box sx={card}>
+  <Typography variant="h6">Tasa de Finalización</Typography>
 
-      {/* --- SEGUNDA FILA --- */}
-      <Box sx={{ ...card, gridColumn: 'span 2' }}>Gráfica</Box>
+  <ResponsiveContainer width="100%" height={200}>
+    <PieChart>
+      <Pie
+        data={completionRateData}
+        dataKey="value"
+        nameKey="name"
+        outerRadius={70}
+      />
+      <Tooltip />
+      <Legend />
+    </PieChart>
+  </ResponsiveContainer>
+</Box>
+
+<Box sx={card}>
+  <Typography variant="h6">Progreso del Sprint</Typography>
+  <Typography 
+  variant="h4" 
+  fontWeight="bold" 
+  sx={{ mb: 1, textAlign: 'center' }}
+>
+  70%
+</Typography>
+
+  <ResponsiveContainer width="100%" height={200}>
+    <BarChart data={sprintProgressData} layout="vertical">
+      <XAxis type="number" hide />
+      <YAxis type="category" dataKey="name" hide />
+      <Tooltip />
+
+      <Bar dataKey="completado" stackId="a" fill="#4caf50" />
+      <Bar dataKey="restante" stackId="a" fill="#e0e0e0" />
+    </BarChart>
+  </ResponsiveContainer>
+      </Box>
+
+            {/* --- SEGUNDA FILA --- */}
+            <Box sx={{ ...card, gridColumn: 'span 2' }}>
+        <Typography variant="h6" sx={{ mb: 2 }}>
+          Desviación Estimado vs Real (Horas)
+        </Typography>
+
+        <ResponsiveContainer width="100%" height={250}>
+          <BarChart
+            data={[
+              { tarea: 'Login', estimado: 2, real: 3 },
+              { tarea: 'API Tasks', estimado: 3, real: 2 },
+              { tarea: 'Dashboard', estimado: 4, real: 5 },
+              { tarea: 'Fix Bugs', estimado: 2, real: 4 }
+            ]}
+          >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="tarea" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+
+            <Bar dataKey="estimado" fill="#42a5f5" name="Horas Estimadas" />
+            <Bar dataKey="real" fill="#ef5350" name="Horas Reales" />
+          </BarChart>
+        </ResponsiveContainer>
+      </Box>
       <Box sx={card}>Alertas</Box>
       <Box sx={card}>Filtros</Box>
 
