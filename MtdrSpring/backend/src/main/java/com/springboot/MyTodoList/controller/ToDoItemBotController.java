@@ -59,12 +59,18 @@ public class ToDoItemBotController  implements SpringLongPollingBot, LongPolling
 	@Override
 	public void consume(Update update) {
 
-		if (!update.hasMessage() || !update.getMessage().hasText()) return;
+		String messageTextFromTelegram = "";
+		long chatId = 0;
 
-		
-
-		String messageTextFromTelegram = update.getMessage().getText();
-		long chatId = update.getMessage().getChatId();
+		if (update.hasMessage() && update.getMessage().hasText()) {
+			messageTextFromTelegram = update.getMessage().getText();
+			chatId = update.getMessage().getChatId();
+		} else if (update.hasCallbackQuery()) {
+			messageTextFromTelegram = update.getCallbackQuery().getData();
+			chatId = update.getCallbackQuery().getMessage().getChatId();
+		} else {
+			return;
+		}
 
 		BotActions actions =  new BotActions(telegramClient, taskService, userStoryService, deepSeekService);
 		actions.setRequestText(messageTextFromTelegram);
@@ -72,6 +78,8 @@ public class ToDoItemBotController  implements SpringLongPollingBot, LongPolling
 
 
 		actions.fnStart();
+		actions.fnRecordHours();
+		actions.fnActivatePendingTask();
 		actions.fnDone();
 		actions.fnUndo();
 		actions.fnDelete();
@@ -89,5 +97,3 @@ public class ToDoItemBotController  implements SpringLongPollingBot, LongPolling
     }
 
 }
-
-
