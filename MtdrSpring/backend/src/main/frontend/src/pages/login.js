@@ -119,12 +119,12 @@ function Login({ setIsAuth }) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           sx={{
-            '& label': { color: 'Gray' },
-            '& label.Mui-focused': { color: '#ff5722' },
+            '& label': { color: '#3c4545' },
+            '& label.Mui-focused': { color: '#c74634' },
             '& .MuiOutlinedInput-root': {
-              '& fieldset': { borderColor: 'Gray' },
-              '&:hover fieldset': { borderColor: '#ff5722' },
-              '&.Mui-focused fieldset': { borderColor: '#ff5722' },
+              '& fieldset': { borderColor: '#3c4545' },
+              '&:hover fieldset': { borderColor: '#c74634' },
+              '&.Mui-focused fieldset': { borderColor: '#c74634' },
             },
           }}
         />
@@ -136,12 +136,12 @@ function Login({ setIsAuth }) {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           sx={{
-            '& label': { color: 'Gray' },
-            '& label.Mui-focused': { color: '#ff5722' },
+            '& label': { color: '#3c4545' },
+            '& label.Mui-focused': { color: '#c74634' },
             '& .MuiOutlinedInput-root': {
-              '& fieldset': { borderColor: 'Gray' },
-              '&:hover fieldset': { borderColor: '#ff5722' },
-              '&.Mui-focused fieldset': { borderColor: '#ff5722' },
+              '& fieldset': { borderColor: '#3c4545' },
+              '&:hover fieldset': { borderColor: '#c74634' },
+              '&.Mui-focused fieldset': { borderColor: '#c74634' },
             },
           }}
           slotProps={{
@@ -158,7 +158,7 @@ function Login({ setIsAuth }) {
         />
 
         <Button
-          sx={{ width: '200px', display: 'block', mx: 'auto', mt: 4, backgroundColor: '#bd5a2b', '&:hover': { backgroundColor: '#b22323' }}}
+          sx={{ width: '200px', display: 'block', mx: 'auto', mt: 4, backgroundColor: '#c74634', '&:hover': { backgroundColor: '#78251a' }}}
           variant="contained"
           onClick={handleLogin}
         >

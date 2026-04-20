@@ -233,8 +233,16 @@ function Dashboard() {
             let priorityBg = '#f5f5f5'
 
             if (item.priority === 'High' || item.priority === 'ALTA') {
-              priorityColor = '#c62828'
-              priorityBg = '#ffebee'
+              priorityColor = '#ff002f'
+              priorityBg = '#ffd0e0'
+            }
+            if (item.priority === 'Medium' || item.priority === 'MEDIA') {
+              priorityColor = '#693ff6'
+              priorityBg = '#eddfff'
+            }
+            if (item.priority === 'Low' || item.priority === 'BAJA') {
+              priorityColor = '#2698a2'
+              priorityBg = '#bdf2fc'
             }
 
             // STATUS COLOR
