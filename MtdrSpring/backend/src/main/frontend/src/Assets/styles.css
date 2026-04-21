@@ -8,7 +8,7 @@
   --dark-text: #3C4545;
   --oracle-red: #c74534;
   --oracle-red-hover: #78251a;
-  --oracle-red-transparent: rgba(199, 69, 52, 0.86);
+  --oracle-red-transparent: #c74534db;
 }
 
 /* --- NAVBAR --- */
@@ -31,7 +31,7 @@
 }
 
 .navbar-appbar.scrolled {
-  width: 95% !important;
+  width: 96% !important;
   background-color: var(--oracle-red-transparent) !important;
   backdrop-filter: blur(5px);
   border-radius: 50px !important;
@@ -75,16 +75,19 @@
   content: "";
   position: absolute;
   top: 0;
-  left: 0;
-  width: 0%;
+  left: 50%;
+  width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.08);
+  transform: translateX(-50%) scaleX(0);
+  transform-origin: center;
   z-index: -1;
-  transition: width 0.3s ease;
+  transition: transform 0.3s ease;
 }
 
 .nav-button:hover::before {
-  width: 100%;
+  transform: translateX(-50%) scaleX(1);
+  /*width: 100%;*/
 }
 
 /* Hover original (sin fondo directo) */
