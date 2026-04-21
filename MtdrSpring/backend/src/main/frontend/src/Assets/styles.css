@@ -210,6 +210,13 @@
   box-shadow: 0px 8px 16px rgba(0,0,0,0.2) !important;
 }
 
+.kanban-column {
+  min-width: 300px;
+  background: #fafafa;
+  border-radius: 12px;
+  padding: 12px;
+}
+
 .dashboard-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
