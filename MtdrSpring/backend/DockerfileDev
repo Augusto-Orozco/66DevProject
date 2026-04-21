@@ -7,12 +7,12 @@ WORKDIR /tmp/
 EXPOSE 8080
 COPY target/MyTodoList-0.0.1-SNAPSHOT.jar MyTodoList.jar
 
-ENV ui_username="your_user"
-ENV ui_password="your_password"
+ENV ui_username="admin"
+ENV ui_password="None0001"
 
-ENV db_user="your_db_user" 
-ENV dbpassword="your_db_password"
-ENV db_url="jdbc:oracle:thin:@*******_tp?TNS_ADMIN=/mtdrworkshop/creds"
+ENV db_user="admin" 
+ENV dbpassword="None00010001"
+ENV db_url="jdbc:oracle:thin:@reacttodo5c3kz_tp?TNS_ADMIN=/mtdrworkshop/creds"
 ENV driver_class_name="oracle.jdbc.OracleDriver"
 
 ENTRYPOINT ["java","-jar","MyTodoList.jar"]
