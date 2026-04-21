@@ -1,0 +1,232 @@
+/* --- ESTILOS GENERALES --- */
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --primary-gray: #F1EFED;
+  --dark-text: #3C4545;
+  --oracle-red: #c74534;
+  --oracle-red-hover: #78251a;
+  --oracle-red-transparent: rgba(199, 69, 52, 0.86);
+}
+
+/* --- NAVBAR --- */
+.navbar-wrapper {
+  position: fixed;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  z-index: 1100;
+  transition: top 0.3s ease;
+}
+
+.navbar-appbar {
+  width: 100% !important;
+  background-color: var(--primary-gray) !important;
+  transition: all 0.2s ease-in-out !important;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+.navbar-appbar.scrolled {
+  width: 95% !important;
+  background-color: var(--oracle-red-transparent) !important;
+  backdrop-filter: blur(5px);
+  border-radius: 50px !important;
+  transition: all 0.5s ease-in-out !important;
+}
+
+.navbar-logo-container {
+  background-color: #F1EFED;
+  padding: 4px 16px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  height: 32px;
+  transition: all 0.3s ease;
+}
+
+.navbar-logo-container.scrolled {
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+.nav-button {
+  text-transform: uppercase !important;
+  font-weight: 500 !important;
+  font-size: 0.75rem !important;
+  letter-spacing: 0.1em !important;
+  margin: 0 8px !important;
+  color: var(--dark-text) !important;
+  transition: all 0.3s ease !important;
+}
+
+.nav-button.scrolled {
+  color: #ffffff !important;
+}
+
+.nav-button:hover {
+  color: #000000 !important;
+  background-color: transparent !important;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+.nav-button.scrolled:hover {
+  background-color: var(--primary-gray) !important;
+  box-shadow: none !important;
+}
+
+.nav-button-logout {
+  border-radius: 20px !important;
+  padding: 6px 24px !important;
+  margin-left: 16px !important;
+  border: 1px solid rgba(241, 239, 237, 0.3) !important;
+}
+
+/* --- DASHBOARD & CARDS --- */
+.base-card {
+  background-color: white !important;
+  border-radius: 8px !important;
+  box-shadow: 0px 2px 4px rgba(0,0,0,0.1) !important;
+  padding: 24px !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 150px;
+  transition: all 0.3s ease !important;
+  width: 100%;
+}
+
+.base-card:hover {
+  transform: scale(1.01);
+  border-radius: 24px !important;
+  box-shadow: 0px 8px 16px rgba(0,0,0,0.2) !important;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 32px;
+  margin: 40px 32px;
+}
+
+/* --- LISTADO DE TAREAS --- */
+.task-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-radius: 8px;
+  background-color: #fcfcfc;
+  box-shadow: 0px 2px 4px rgba(0,0,0,0.05);
+  transition: background-color 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.task-row:hover {
+  background-color: #f5f5f5;
+}
+
+.badge-base {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 0.75rem;
+  display: inline-block;
+}
+
+/* --- DEVS DASHBOARD --- */
+.devs-grid {
+  height: 80vh;
+  display: grid;
+  grid-template-columns: 350px 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 32px;
+  margin: 40px 32px;
+}
+
+.devs-task-card {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5px;
+  padding: 8px;
+  margin-bottom: 8px;
+  border-radius: 12px;
+  background-color: #f9f9f9;
+  box-sizing: border-box;
+}
+
+/* --- LOGIN --- */
+.login-wrapper {
+  position: relative;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.login-logo {
+  position: absolute;
+  top: 20px;
+  left: 40px;
+  width: 120px;
+  z-index: 2;
+}
+
+.login-video {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -2;
+  transform: rotate(180deg) scaleY(-1);
+}
+
+.login-overlay {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(84, 4, 4, 0.53);
+  z-index: -1;
+}
+
+.login-container {
+  min-height: 400px;
+  margin-top: 160px;
+  padding: 40px;
+  border-radius: 16px;
+  background-color: rgba(255, 255, 255, 0.94);
+  box-shadow: 0px 10px 30px rgba(0,0,0,0.2);
+}
+
+.login-button {
+  width: 200px !important;
+  display: block !important;
+  margin: 32px auto 0 auto !important;
+  background-color: var(--oracle-red) !important;
+  color: white !important;
+  transition: background-color 0.3s ease !important;
+}
+
+.login-button:hover {
+  background-color: var(--oracle-red-hover) !important;
+}
+
+/* MUI TextField Overrides para Login */
+.login-field .MuiOutlinedInput-root fieldset {
+  border-color: var(--dark-text);
+}
+.login-field .MuiOutlinedInput-root:hover fieldset {
+  border-color: var(--oracle-red);
+}
+.login-field .MuiOutlinedInput-root.Mui-focused fieldset {
+  border-color: var(--oracle-red);
+}
+.login-field label {
+  color: var(--dark-text);
+}
+.login-field label.Mui-focused {
+  color: var(--oracle-red);
+}
