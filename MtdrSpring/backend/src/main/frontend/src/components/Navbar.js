@@ -1,10 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { AppBar, Toolbar, Button, Box } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+
+/* ICONOS MUI */
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import CodeIcon from '@mui/icons-material/Code';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import LogoutIcon from '@mui/icons-material/Logout';
+
 import '../Assets/styles.css';
 
 function Navbar(props) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -21,8 +29,14 @@ function Navbar(props) {
     navigate('/');
   };
 
+  // Función para verificar si la ruta es la activa
+  const isActive = (path) => location.pathname === path;
+
   return (
-    <Box className="navbar-wrapper" style={{ top: scrolled ? '10px' : '0px' }}>
+    <Box
+      className="navbar-wrapper"
+      style={{ top: scrolled ? '10px' : '0px' }}
+    >
       <AppBar
         position="static"
         elevation={0}
@@ -33,7 +47,7 @@ function Navbar(props) {
       >
         <Toolbar sx={{ justifyContent: 'space-between' }}>
 
-          {/* Logo */}
+          {/* LOGO */}
           <Box className={`navbar-logo-container ${scrolled ? 'scrolled' : ''}`}>
             <img
               src="https://upload.wikimedia.org/wikipedia/commons/5/50/Oracle_logo.svg"
@@ -44,37 +58,58 @@ function Navbar(props) {
 
           <Box sx={{ flexGrow: 1 }} />
 
-          {/* Navigation */}
+          {/* BOTONES */}
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
 
-            <Button 
-              className={`nav-button ${scrolled ? 'scrolled' : ''}`} 
-              onClick={() =>  window.open('https://youtu.be/Z4tsxrheEJw?si=oZrfUPq_412usZTf', '_blank')}
+            {/* HELP */}
+            <Button
+              className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''}`}
+              onClick={() =>
+                window.open(
+                  'https://youtu.be/Z4tsxrheEJw?si=oZrfUPq_412usZTf',
+                  '_blank'
+                )
+              }
             >
-              (?)
+              <span className="icon">
+                <HelpOutlineIcon fontSize="small" />
+              </span>
+              <span className="label">???</span>
             </Button>
 
-            <Button 
-              className={`nav-button ${scrolled ? 'scrolled' : ''}`} 
-              onClick={() => navigate('/Dashboard')}
+            {/* DASHBOARD */}
+            <Button
+              className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/dashboard') ? 'active' : ''}`}
+              onClick={() => navigate('/dashboard')}
             >
-              Dashboard
+              <span className="icon">
+                <DashboardIcon fontSize="small" />
+              </span>
+              <span className="label">Dashboard</span>
             </Button>
 
-            <Button 
-              className={`nav-button ${scrolled ? 'scrolled' : ''}`} 
+            {/* DEVELOPERS */}
+            <Button
+              className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/DashDevs') ? 'active' : ''}`}
               onClick={() => navigate('/DashDevs')}
             >
-              Dashboards Developers
+              <span className="icon">
+                <CodeIcon fontSize="small" />
+              </span>
+              <span className="label">Developers</span>
             </Button>
 
+            {/* LOGOUT */}
             <Button
-              variant="outlined"
               onClick={handleLogout}
-              className={`nav-button nav-button-logout ${scrolled ? 'scrolled' : ''}`}
+              className={`nav-button nav-button-logout icon-btn ${scrolled ? 'scrolled' : ''}`}
             >
-              Logout
+              <span className="icon">
+                <LogoutIcon fontSize="small" />
+              </span>
+              <span className="label">Logout</span>
             </Button>
+
           </Box>
 
         </Toolbar>
