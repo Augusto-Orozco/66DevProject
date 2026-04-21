@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
-import {Box, CircularProgress, Typography, Button} from '@mui/material'
+import {Box, CircularProgress, Typography, Button, IconButton} from '@mui/material'
 import RefreshIcon from '@mui/icons-material/Refresh'
+import CachedIcon from '@mui/icons-material/Cached';
+import Footer from '../components/Footer'
 import '../Assets/styles.css'
 
 function DashDevs() {
@@ -31,13 +33,15 @@ function DashDevs() {
     }, [])
 
   return (
+    <>
     <Box className="devs-grid">
       <Box className="base-card" sx={{ gridRow: 'span 2', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'flex-start' }}>
         
         {/* HEADER FIJO */}
         <Box sx={{ width: '100%', boxSizing: 'border-box', display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, position: 'sticky', top: 0, backgroundColor: 'white', zIndex: 1, pb: 1 }}>
           <Typography variant="h6">Tareas</Typography>
-          <Button size="small" variant="outlined" startIcon={<RefreshIcon />} onClick={fetchTasks} disabled={loading}>Actualizar</Button>
+          {/* <Button size="small" variant="outlined" startIcon={<CachedIcon/>} onClick={fetchTasks} disabled={loading}></Button> */}
+          <IconButton size="small" onClick={fetchTasks} disabled={loading}><CachedIcon /></IconButton>
         </Box>
         
         {loading && <CircularProgress />}
@@ -64,6 +68,8 @@ function DashDevs() {
       <Box className="base-card">Grafica</Box>
       <Box className="base-card" sx={{ gridColumn: 'span 2'}}>Grafica</Box>
     </Box>
+    <Footer />
+    </>
   ) 
 }
 

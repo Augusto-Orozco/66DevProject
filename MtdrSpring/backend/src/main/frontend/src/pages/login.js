@@ -5,6 +5,7 @@ import videoBg from '../Assets/BackgroundOracleVid8.mp4'
 import logo4 from '../Assets/OracleLogoWhite.png'
 import Visibility from '@mui/icons-material/Visibility'
 import VisibilityOff from '@mui/icons-material/VisibilityOff'
+import Footer from '../components/Footer'
 import '../Assets/styles.css'
 
 function Login({ setIsAuth }) {
@@ -40,6 +41,7 @@ function Login({ setIsAuth }) {
   }
 
   return (
+    <>
     <Box className="login-wrapper">
 
       {/* LOGO */}
@@ -102,6 +104,8 @@ function Login({ setIsAuth }) {
         <Typography variant="body2">© 2026 SmartAsk</Typography>
       </Box>
     </Box>
+    <Footer />
+    </>
   )
 }
 

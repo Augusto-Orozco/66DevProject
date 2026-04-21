@@ -11,6 +11,7 @@ import {
   useSortable
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import Footer from '../components/Footer'
 import '../Assets/styles.css'
 
 /* --- TARJETA DRAGGABLE --- */
@@ -106,14 +107,12 @@ function Gestion() {
 
     const from = findContainer(active.id)
 
-    // 🔥 Detecta correctamente destino
     const to =
       Object.keys(columns).includes(over.id)
         ? over.id
         : findContainer(over.id)
 
     if (!from || !to) return
-
     if (from === to) return
 
     const task = columns[from].find(item => item.id === active.id)
@@ -128,25 +127,40 @@ function Gestion() {
   return (
     <Box
       sx={{
+        minHeight: '100vh',
         display: 'flex',
-        gap: 2,
-        padding: 3,
-        overflowX: 'auto'
+        flexDirection: 'column'
       }}
     >
-      <DndContext
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
+      
+      {/* CONTENIDO PRINCIPAL */}
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 2,
+          padding: 3,
+          overflowX: 'auto',
+          flexGrow: 1
+        }}
       >
-        {Object.entries(columns).map(([id, tasks]) => (
-          <Column
-            key={id}
-            id={id}
-            title={id.toUpperCase()}
-            tasks={tasks}
-          />
-        ))}
-      </DndContext>
+        <DndContext
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          {Object.entries(columns).map(([id, tasks]) => (
+            <Column
+              key={id}
+              id={id}
+              title={id.toUpperCase()}
+              tasks={tasks}
+            />
+          ))}
+        </DndContext>
+      </Box>
+
+      {/* FOOTER */}
+      <Footer />
+
     </Box>
   )
 }
