@@ -89,7 +89,7 @@
   background-color: white !important;
   border-radius: 8px !important;
   box-shadow: 0px 2px 4px rgba(0,0,0,0.1) !important;
-  padding: 24px !important; /* Reducido un poco para dar más aire */
+  padding: 24px !important;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -123,7 +123,7 @@
   box-shadow: 0px 2px 4px rgba(0,0,0,0.05);
   transition: background-color 0.2s ease;
   width: 100%;
-  box-sizing: border-box; /* Asegura que el borde de 6px no ensanche la caja */
+  box-sizing: border-box;
 }
 
 .task-row:hover {
