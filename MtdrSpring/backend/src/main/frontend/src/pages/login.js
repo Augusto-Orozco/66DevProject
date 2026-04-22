@@ -41,7 +41,6 @@ function Login({ setIsAuth }) {
   }
 
   return (
-    <>
     <Box className="login-wrapper">
 
       {/* LOGO */}
@@ -104,8 +103,6 @@ function Login({ setIsAuth }) {
         <Typography variant="body2">© 2026 SmartAsk</Typography>
       </Box>
     </Box>
-    <Footer />
-    </>
   )
 }
 
