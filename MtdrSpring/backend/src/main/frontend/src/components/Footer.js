@@ -16,21 +16,12 @@ function Footer() {
 
         <span className="footer-divider">|</span>
 
-        <a className="footer-link">Términos de uso y privacidad</a>
-        <a className="footer-link">Preferencias sobre cookies</a>
-        <a className="footer-link">Opciones para los anuncios</a>
-        <a className="footer-link">Oportunidades profesionales</a>
-        <a className="footer-link">Línea de ayuda de integridad</a>
-        <a className="footer-link">Contáctanos</a>
+        <a href="*" target="_blank" rel="noopener noreferrer" className="footer-link">Contáctanos</a>
       </Box>
 
       {/* RIGHT SIDE */}
       <Box className="footer-right">
-        <IconButton><FacebookIcon /></IconButton>
-        <IconButton><XIcon /></IconButton>
-        <IconButton><LinkedInIcon /></IconButton>
-        <IconButton><YouTubeIcon /></IconButton>
-        <IconButton><InstagramIcon /></IconButton>
+        <IconButton component="a" href="https://youtu.be/u4ecB57jFhI?si=JUfH5BoH6iR1yHxP" target="_blank"><YouTubeIcon /></IconButton>
       </Box>
 
     </Box>
