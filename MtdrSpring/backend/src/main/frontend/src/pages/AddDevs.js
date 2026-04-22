@@ -95,15 +95,30 @@ function AddDevs() {
             )}
 
             {members.map(member => (
+          
               <Box
-                key={member.id}
-                className="devs-task-card"
-                sx={{ mb: 1 }}
-              >
-                <Typography fontWeight="bold" fontSize="0.9rem">
-                  {member.name} {member.lastName}
-                </Typography>
-              </Box>
+              key={member.id}
+              className="devs-task-card"
+              sx={{
+                mb: 1,
+                p: 4,              // más espacio interno
+                minHeight: 60,     // altura mínima
+                display: 'flex',
+                alignItems: 'center'
+              }}
+            >
+              
+              <Typography variant="h6" fontWeight={600}>
+                {member.name} {member.lastName}
+              </Typography>
+
+
+
+              
+            </Box>
+
+              
+              
             ))}
           </Box>
         </Box>
