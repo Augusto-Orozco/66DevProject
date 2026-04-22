@@ -16,7 +16,7 @@ function Footer() {
 
         <span className="footer-divider">|</span>
 
-        <a href="*" target="_blank" rel="noopener noreferrer" className="footer-link">Contáctanos</a>
+        {/*<a href="*" target="_blank" rel="noopener noreferrer" className="footer-link">Contáctanos</a>*/}
       </Box>
 
       {/* RIGHT SIDE */}
