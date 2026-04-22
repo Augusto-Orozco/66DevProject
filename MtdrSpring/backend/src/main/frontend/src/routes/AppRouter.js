@@ -4,6 +4,8 @@ import Login from '../pages/login'
 import Dashboard from '../pages/dashboard'
 import DashDevs from '../pages/DashDevs'
 import Navbar from '../components/Navbar'
+import Gestion from '../pages/gestion'
+import AddDevs from '../pages/AddDevs'
 
 function AppRouter({ isAuth, setIsAuth }) {
   return (
@@ -26,6 +28,16 @@ function AppRouter({ isAuth, setIsAuth }) {
           <Route
             path="/DashDevs"
             element={isAuth ? <DashDevs /> : <Navigate to="/" />}
+          />
+
+          <Route
+            path="/AddDevs"
+            element={isAuth ? <AddDevs /> : <Navigate to="/" />}
+          />
+
+          <Route 
+            path="/gestion" 
+            element={isAuth ? <Gestion /> : <Navigate to="/" />} 
           />
 
           <Route path="*" element={<Navigate to="/" />} />

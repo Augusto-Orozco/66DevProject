@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react'
-import { Box, Typography, CircularProgress, Button } from '@mui/material'
+import { Box, Typography, CircularProgress, Button, IconButton } from '@mui/material'
 import RefreshIcon from '@mui/icons-material/Refresh'
+import CachedIcon from '@mui/icons-material/Cached';
 import { 
   PieChart, Pie, Tooltip, Legend, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid
 } from 'recharts'
+
+import Footer from '../components/Footer'
 import '../Assets/styles.css'
 
 function Dashboard() {
@@ -57,6 +60,7 @@ function Dashboard() {
   ]
 
   return (
+    <>
     <Box className="dashboard-grid">
       
       {/* --- Metricas --- */}
@@ -117,7 +121,8 @@ function Dashboard() {
       <Box className="base-card" sx={{ gridColumn: 'span 4', alignItems: 'flex-start', justifyContent: 'flex-start', p: 3 }}>
         <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h6" fontWeight="bold">Listado de Tareas</Typography>
-          <Button size="small" variant="outlined" startIcon={<RefreshIcon />} onClick={fetchTasks} disabled={loading}>Actualizar</Button>
+          {/* <Button size="small" variant="outlined" startIcon={<CachedIcon/>} onClick={fetchTasks} disabled={loading}></Button> */}
+          <IconButton size="small" onClick={fetchTasks} disabled={loading}><CachedIcon /></IconButton>
         </Box>
 
         {!loading && items.length > 0 && (
@@ -158,6 +163,8 @@ function Dashboard() {
         </Box>
       </Box>
     </Box>
+    <Footer />
+    </>
   )
 }
 

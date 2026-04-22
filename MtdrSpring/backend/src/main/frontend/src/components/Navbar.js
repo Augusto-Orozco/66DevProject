@@ -7,6 +7,8 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import CodeIcon from '@mui/icons-material/Code';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import LogoutIcon from '@mui/icons-material/Logout';
+import AppRegistrationIcon from '@mui/icons-material/AppRegistration';
+import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
 
 import '../Assets/styles.css';
 
@@ -88,6 +90,18 @@ function Navbar(props) {
               <span className="label">Dashboard</span>
             </Button>
 
+            {/* GESTION DE TAREAS */}
+            <Button
+              className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/gestion') ? 'active' : ''}`}
+              onClick={() => navigate('/gestion')}
+            >
+              <span className="icon">
+                <AppRegistrationIcon fontSize="small" />
+              </span>
+              <span className="label">Gestion</span>
+            </Button>
+
+
             {/* DEVELOPERS */}
             <Button
               className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/DashDevs') ? 'active' : ''}`}
@@ -98,6 +112,18 @@ function Navbar(props) {
               </span>
               <span className="label">Developers</span>
             </Button>
+
+            {/* ADD DEVELOPERS */}
+            <Button
+              className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/AddDevs') ? 'active' : ''}`}
+              onClick={() => navigate('/AddDevs')}
+            >
+              <span className="icon">
+                <AssignmentIndIcon fontSize="small" />
+              </span>
+              <span className="label">Registrar</span>
+            </Button>
+
 
             {/* LOGOUT */}
             <Button
