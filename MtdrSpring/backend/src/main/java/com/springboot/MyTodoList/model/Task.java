@@ -22,14 +22,16 @@ public class Task {
     @Column(name = "DESCRIPTION", nullable = false, length = 500)
     private String description;
 
-    @Column(name = "STATUS", nullable = false, length = 20)
-    private String status;
+    @ManyToOne
+    @JoinColumn(name = "STATUS")
+    private TaskStatus status;
 
     @Column(name = "STORY_POINTS", nullable = false, columnDefinition = "NUMBER")
     private Integer storyPoints;
 
-    @Column(name = "PRIORITY", nullable = false, length = 10)
-    private String priority;
+    @ManyToOne
+    @JoinColumn(name = "PRIORITY")
+    private TaskPriority priority;
 
     @Column(name = "OBJETIVE_TIME", nullable = false, columnDefinition = "NUMBER")
     private Integer objetiveTime; // Matching typo: OBJETIVE
@@ -51,7 +53,7 @@ public class Task {
 
     public Task() {}
 
-    public Task(UserStory userStory, String title, String description, String status, Integer storyPoints, String priority, Integer objetiveTime) {
+    public Task(UserStory userStory, String title, String description, TaskStatus status, Integer storyPoints, TaskPriority priority, Integer objetiveTime) {
         this.userStory = userStory;
         this.title = title;
         this.description = description;
@@ -94,11 +96,11 @@ public class Task {
         this.description = description;
     }
 
-    public String getStatus() {
+    public TaskStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(TaskStatus status) {
         this.status = status;
     }
 
@@ -110,11 +112,11 @@ public class Task {
         this.storyPoints = storyPoints;
     }
 
-    public String getPriority() {
+    public TaskPriority getPriority() {
         return priority;
     }
 
-    public void setPriority(String priority) {
+    public void setPriority(TaskPriority priority) {
         this.priority = priority;
     }
 
@@ -171,7 +173,8 @@ public class Task {
         return "Task{" +
                 "taskId=" + taskId +
                 ", title='" + title + '\'' +
-                ", status='" + status + '\'' +
+                ", status=" + (status != null ? status.getStatus() : "null") +
+                ", priority=" + (priority != null ? priority.getPriorityName() : "null") +
                 '}';
     }
 }

@@ -25,6 +25,8 @@ public class ToDoItemBotController  implements SpringLongPollingBot, LongPolling
 	private TaskService taskService;
 	private UserStoryService userStoryService;
 	private DeepSeekService deepSeekService;
+	private com.springboot.MyTodoList.service.TaskStatusService taskStatusService;
+	private com.springboot.MyTodoList.service.TaskPriorityService taskPriorityService;
 	private final TelegramClient telegramClient;
 	
 	private final BotProps botProps;
@@ -43,12 +45,16 @@ public class ToDoItemBotController  implements SpringLongPollingBot, LongPolling
     }
 
 
-	public ToDoItemBotController( BotProps bp, TaskService tsvc, UserStoryService usvc, DeepSeekService ds) {
+	public ToDoItemBotController( BotProps bp, TaskService tsvc, UserStoryService usvc, DeepSeekService ds, 
+								  com.springboot.MyTodoList.service.TaskStatusService tss, 
+								  com.springboot.MyTodoList.service.TaskPriorityService tps) {
 		this.botProps = bp;
 		telegramClient = new OkHttpTelegramClient(getBotToken());
 		this.taskService = tsvc;
 		this.userStoryService = usvc;
-		deepSeekService = ds;
+		this.deepSeekService = ds;
+		this.taskStatusService = tss;
+		this.taskPriorityService = tps;
 	}
 
 	@Override
@@ -72,7 +78,7 @@ public class ToDoItemBotController  implements SpringLongPollingBot, LongPolling
 			return;
 		}
 
-		BotActions actions =  new BotActions(telegramClient, taskService, userStoryService, deepSeekService);
+		BotActions actions =  new BotActions(telegramClient, taskService, userStoryService, deepSeekService, taskStatusService, taskPriorityService);
 		actions.setRequestText(messageTextFromTelegram);
 		actions.setChatId(chatId);
 

@@ -1,9 +1,12 @@
 package com.springboot.MyTodoList.util;
 
 import com.springboot.MyTodoList.model.Task;
+import com.springboot.MyTodoList.model.TaskStatus;
 import com.springboot.MyTodoList.model.UserStory;
 import com.springboot.MyTodoList.service.DeepSeekService;
 import com.springboot.MyTodoList.service.TaskService;
+import com.springboot.MyTodoList.service.TaskStatusService;
+import com.springboot.MyTodoList.service.TaskPriorityService;
 import com.springboot.MyTodoList.service.UserStoryService;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -30,12 +33,16 @@ public class BotActions{
     TaskService taskService;
     UserStoryService userStoryService;
     DeepSeekService deepSeekService;
+    TaskStatusService taskStatusService;
+    TaskPriorityService taskPriorityService;
 
-    public BotActions(TelegramClient tc, TaskService ts, UserStoryService uss, DeepSeekService ds){
+    public BotActions(TelegramClient tc, TaskService ts, UserStoryService uss, DeepSeekService ds, TaskStatusService tss, TaskPriorityService tps){
         telegramClient = tc;
         taskService = ts;
         userStoryService = uss;
         deepSeekService = ds;
+        taskStatusService = tss;
+        taskPriorityService = tps;
         exit  = false;
     }
 
@@ -93,7 +100,8 @@ public class BotActions{
         keyboard.add(new KeyboardRow(BotLabels.SHOW_MAIN_SCREEN.getLabel()));
 
         for (Task task : allItems) {
-            if (!"PENDIENTE".equalsIgnoreCase(task.getStatus())) continue;
+            // Estado 1: Pendiente
+            if (task.getStatus() == null || task.getStatus().getStatusId() != 1L) continue;
 
             KeyboardRow row = new KeyboardRow();
             row.add(task.getTaskId() + " " + BotLabels.DASH.getLabel() + " " + task.getTitle() + ": " + task.getDescription());
@@ -120,8 +128,10 @@ public class BotActions{
             Long id = Long.valueOf(idStr);
 
             taskService.getTaskById(id).ifPresent(task -> {
-                if ("PENDIENTE".equalsIgnoreCase(task.getStatus())) {
-                    task.setStatus("EN PROGRESO");
+                // Estado 1: Pendiente
+                if (task.getStatus() != null && task.getStatus().getStatusId() == 1L) {
+                    // Cambiar a Estado 2: En Progreso
+                    taskStatusService.getTaskStatusById(2L).ifPresent(task::setStatus);
                     task.setFinishedAt(null);
                     taskService.saveTask(task);
                     BotHelper.sendMessageToTelegram(chatId, "¡Tarea \"" + task.getTitle() + "\" iniciada correctamente!", telegramClient);
@@ -162,7 +172,8 @@ public class BotActions{
             Long taskId = pendingTaskHours.remove(chatId);
 
             taskService.getTaskById(taskId).ifPresent(task -> {
-                task.setStatus("COMPLETADO");
+                // Cambiar a Estado 3: Completado
+                taskStatusService.getTaskStatusById(3L).ifPresent(task::setStatus);
                 task.setRealTime(hours);
                 task.setFinishedAt(LocalDateTime.now());
                 taskService.saveTask(task);
@@ -188,7 +199,8 @@ public class BotActions{
             Long id = Long.valueOf(idStr);
 
             taskService.getTaskById(id).ifPresent(task -> {
-                task.setStatus("EN PROGRESO");
+                // Cambiar a Estado 2: En Progreso
+                taskStatusService.getTaskStatusById(2L).ifPresent(task::setStatus);
                 task.setFinishedAt(null);
                 taskService.saveTask(task);
                 BotHelper.sendMessageToTelegram(chatId, "Tarea \"" + task.getTitle() + "\" marcada como EN PROGRESO.", telegramClient);
@@ -227,9 +239,9 @@ public class BotActions{
         // Botón volver
         keyboard.add(new KeyboardRow(BotLabels.SHOW_MAIN_SCREEN.getLabel()));
 
-        // Solo mostrar tareas en progreso
+        // Solo mostrar tareas en progreso (Estado 2)
         for (Task task : allItems) {
-            if (!"EN PROGRESO".equalsIgnoreCase(task.getStatus())) continue;
+            if (task.getStatus() == null || task.getStatus().getStatusId() != 2L) continue;
 
             KeyboardRow row = new KeyboardRow();
             row.add(task.getTitle());
