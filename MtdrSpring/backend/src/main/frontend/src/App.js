@@ -11,10 +11,21 @@ const theme = createTheme({
 
 function App() {
 
-  const [isAuth, setIsAuth] = useState(false)
+  const [isAuth, setIsAuth] = useState(
+    localStorage.getItem('isAuth') === 'true'
+  )
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem('user')
+    return savedUser ? JSON.parse(savedUser) : null
+  })
   return (
     <ThemeProvider theme={theme}>
-    <AppRouter isAuth={isAuth} setIsAuth={setIsAuth} />
+    <AppRouter
+      isAuth={isAuth}
+      setIsAuth={setIsAuth}
+      user={user}
+      setUser={setUser}
+    />
     </ThemeProvider>
   )
 }
