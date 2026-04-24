@@ -8,7 +8,7 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff'
 import Footer from '../components/Footer'
 import '../Assets/styles.css'
 
-function Login({ setIsAuth }) {
+function Login({ setIsAuth, setUser }) {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -25,6 +25,10 @@ function Login({ setIsAuth }) {
           body: JSON.stringify({ email, password }),
         });
         if (response.ok) {
+          const data = await response.json();
+          localStorage.setItem('isAuth', 'true');
+          localStorage.setItem('user', JSON.stringify(data));
+          setUser(data);
           setIsAuth(true);
           navigate('/dashboard');
         } else if (response.status === 401) {

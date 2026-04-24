@@ -10,7 +10,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -24,9 +26,30 @@ public class UserController {
 
     @PostMapping(value = "/login")
     public ResponseEntity<?> login(@RequestBody Credential loginRequest) {
-        return credentialService.authenticate(loginRequest.getEmail(), loginRequest.getPassword())
-                .map(credential -> ResponseEntity.ok(credential))
-                .orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
+        Optional<Credential> credentialOpt =
+                credentialService.authenticate(loginRequest.getEmail(), loginRequest.getPassword());
+
+        if (credentialOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Optional<User> userOpt = userService.getUserByEmail(loginRequest.getEmail());
+
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
+        }
+
+        User user = userOpt.get();
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("userId", user.getUserId());
+        response.put("email", user.getCredential().getEmail());
+        response.put("roleId", user.getRole().getRoleId());
+        response.put("roleName", user.getRole().getRoleName());
+        response.put("firstName", user.getFirtsName());
+        response.put("lastName", user.getLastName());
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping(value = "/users")

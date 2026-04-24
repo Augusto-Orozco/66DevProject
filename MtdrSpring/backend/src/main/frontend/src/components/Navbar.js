@@ -27,6 +27,9 @@ function Navbar(props) {
   }, []);
 
   const handleLogout = () => {
+    localStorage.removeItem('isAuth');
+    localStorage.removeItem('user');
+    props.setUser(null);
     props.setIsAuth(false);
     navigate('/');
   };
@@ -80,49 +83,57 @@ function Navbar(props) {
             </Button>
 
             {/* DASHBOARD */}
-            <Button
-              className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/dashboard') ? 'active' : ''}`}
-              onClick={() => navigate('/dashboard')}
-            >
-              <span className="icon">
-                <DashboardIcon fontSize="small" />
-              </span>
-              <span className="label">Dashboard</span>
-            </Button>
+            {props.user?.roleName === 'Product Owner' && (
+              <Button
+                className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/dashboard') ? 'active' : ''}`}
+                onClick={() => navigate('/dashboard')}
+              >
+                <span className="icon">
+                  <DashboardIcon fontSize="small" />
+                </span>
+                <span className="label">Dashboard</span>
+              </Button>
+            )}
 
             {/* GESTION DE TAREAS */}
-            <Button
-              className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/gestion') ? 'active' : ''}`}
-              onClick={() => navigate('/gestion')}
-            >
-              <span className="icon">
-                <AppRegistrationIcon fontSize="small" />
-              </span>
-              <span className="label">Gestion</span>
-            </Button>
+            {props.user?.roleName === 'Product Owner' && (
+              <Button
+                className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/gestion') ? 'active' : ''}`}
+                onClick={() => navigate('/gestion')}
+              >
+                <span className="icon">
+                  <AppRegistrationIcon fontSize="small" />
+                </span>
+                <span className="label">Gestion</span>
+              </Button>
+            )}
 
 
             {/* DEVELOPERS */}
-            <Button
-              className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/DashDevs') ? 'active' : ''}`}
-              onClick={() => navigate('/DashDevs')}
-            >
-              <span className="icon">
-                <CodeIcon fontSize="small" />
-              </span>
-              <span className="label">Developers</span>
-            </Button>
+            {props.user?.roleName === 'Developer' && (
+              <Button
+                className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/DashDevs') ? 'active' : ''}`}
+                onClick={() => navigate('/DashDevs')}
+              >
+                <span className="icon">
+                  <CodeIcon fontSize="small" />
+                </span>
+                <span className="label">Developers</span>
+              </Button>
+            )}
 
             {/* ADD DEVELOPERS */}
-            <Button
-              className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/AddDevs') ? 'active' : ''}`}
-              onClick={() => navigate('/AddDevs')}
-            >
-              <span className="icon">
-                <AssignmentIndIcon fontSize="small" />
-              </span>
-              <span className="label">Registrar</span>
-            </Button>
+            {props.user?.roleName === 'Product Owner' && (
+              <Button
+                className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/AddDevs') ? 'active' : ''}`}
+                onClick={() => navigate('/AddDevs')}
+              >
+                <span className="icon">
+                  <AssignmentIndIcon fontSize="small" />
+                </span>
+                <span className="label">Registrar</span>
+              </Button>
+            )}
 
 
             {/* LOGOUT */}

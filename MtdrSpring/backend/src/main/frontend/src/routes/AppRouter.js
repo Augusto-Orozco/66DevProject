@@ -7,37 +7,60 @@ import Navbar from '../components/Navbar'
 import Gestion from '../pages/gestion'
 import AddDevs from '../pages/AddDevs'
 
-function AppRouter({ isAuth, setIsAuth }) {
+function AppRouter({ isAuth, setIsAuth, user, setUser }) {
   return (
     <BrowserRouter>
 
-      {isAuth && <Navbar setIsAuth={setIsAuth} />}
+      {isAuth && <Navbar setIsAuth={setIsAuth} setUser={setUser} user={user} />}
 
       <Box>
         {/* Esto empuja TODO el contenido debajo del navbar */}
         {isAuth && <Toolbar />}
 
         <Routes>
-          <Route path="/" element={<Login setIsAuth={setIsAuth} />} />
+          <Route
+            path="/"
+            element={
+              isAuth
+                ? <Navigate to="/dashboard" />
+                : <Login setIsAuth={setIsAuth} setUser={setUser} />
+            }
+          />
 
           <Route 
             path="/dashboard" 
-            element={isAuth ? <Dashboard /> : <Navigate to="/" />} 
+            element={
+              isAuth && user?.roleName === 'Product Owner'
+                ? <Dashboard />
+                : <Navigate to={isAuth ? "/DashDevs" : "/"} />
+            }
           />
 
           <Route
             path="/DashDevs"
-            element={isAuth ? <DashDevs /> : <Navigate to="/" />}
+            element={
+              isAuth && user?.roleName === 'Developer'
+                ? <DashDevs />
+                : <Navigate to="/dashboard" />
+            }
           />
 
           <Route
             path="/AddDevs"
-            element={isAuth ? <AddDevs /> : <Navigate to="/" />}
+            element={
+              isAuth && user?.roleName === 'Product Owner'
+                ? <AddDevs />
+                : <Navigate to={isAuth ? "/DashDevs" : "/"} />
+            }
           />
 
           <Route 
             path="/gestion" 
-            element={isAuth ? <Gestion /> : <Navigate to="/" />} 
+            element={
+              isAuth && user?.roleName === 'Product Owner'
+                ? <Gestion />
+                : <Navigate to={isAuth ? "/DashDevs" : "/"} />
+            }
           />
 
           <Route path="*" element={<Navigate to="/" />} />
