@@ -10,4 +10,6 @@ import java.util.List;
 @Repository
 public interface SprintTaskRepository extends JpaRepository<SprintTask, SprintTaskId> {
     List<SprintTask> findById_SprintId(Long sprintId);
+    java.util.Optional<SprintTask> findById_TaskId(Long taskId);
+    void deleteById_TaskId(Long taskId);
 }

@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @CrossOrigin
@@ -28,6 +29,11 @@ public class TaskController {
     @GetMapping("/tasks")
     public List<Task> getAllTasks() {
         return taskService.getAllTasks();
+    }
+
+    @GetMapping("/tasks/unassigned")
+    public List<Task> getUnassignedTasks() {
+        return taskService.getUnassignedTasks();
     }
 
     @GetMapping("/sprints")
@@ -55,6 +61,28 @@ public class TaskController {
         return taskService.getTaskById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/tasks/{taskId}/assign/{sprintId}")
+    public ResponseEntity<Void> assignTaskToSprint(@PathVariable Long taskId, @PathVariable Long sprintId) {
+        Optional<Task> taskOpt = taskService.getTaskById(taskId);
+        Optional<Sprint> sprintOpt = sprintService.getSprintById(sprintId);
+
+        if (taskOpt.isPresent() && sprintOpt.isPresent()) {
+            sprintTaskService.assignTaskToSprint(taskOpt.get(), sprintOpt.get());
+            return ResponseEntity.ok().build();
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    @PutMapping("/tasks/{taskId}/unassign")
+    public ResponseEntity<Void> unassignTaskFromSprint(@PathVariable Long taskId) {
+        Optional<Task> taskOpt = taskService.getTaskById(taskId);
+        if (taskOpt.isPresent()) {
+            sprintTaskService.assignTaskToSprint(taskOpt.get(), null);
+            return ResponseEntity.ok().build();
+        }
+        return ResponseEntity.notFound().build();
     }
 
     @DeleteMapping("/tasks/{id}")
