@@ -38,7 +38,7 @@ function Dashboard() {
 
   // Agrupar tareas por status
   const statusCount = items.reduce((acc, item) => {
-    const status = item.status || 'SIN ESTATUS'
+    const status = item.status?.status || 'SIN ESTATUS'
     acc[status] = (acc[status] || 0) + 1
     return acc
   }, {})
@@ -136,14 +136,16 @@ function Dashboard() {
         <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 2 }}>
           {!loading && items.map((item) => {
             let pCol = '#292929', pBg = '#f5f5f5'
-            if (item.priority === 'High' || item.priority === 'ALTA') { pCol = '#ff002f'; pBg = '#ffd0e0' }
-            else if (item.priority === 'Medium' || item.priority === 'MEDIA') { pCol = '#693ff6'; pBg = '#f4edff' }
-            else if (item.priority === 'Low' || item.priority === 'BAJA') { pCol = '#2698a2'; pBg = '#bdf2fc' }
+            const priorityName = item.priority?.priorityName;
+            if (priorityName === 'High' || priorityName === 'ALTA') { pCol = '#ff002f'; pBg = '#ffd0e0' }
+            else if (priorityName === 'Medium' || priorityName === 'MEDIA') { pCol = '#693ff6'; pBg = '#f4edff' }
+            else if (priorityName === 'Low' || priorityName === 'BAJA') { pCol = '#2698a2'; pBg = '#bdf2fc' }
 
             let sCol = '#000000', sBg = '#a9a9a9', border = '#858585'
-            if (item.status === 'COMPLETADO') { sCol = '#123013'; sBg = '#bbffc1'; border = '#4caf50' }
-            else if (item.status === 'EN PROGRESO') { sCol = '#483009'; sBg = '#fff9b9'; border = '#fbc02d' }
-            else if (item.status === 'Finish') { sCol = '#541111'; sBg = '#fdb4bf'; border = '#ff2020' }
+            const statusStr = item.status?.status;
+            if (statusStr === 'COMPLETADO') { sCol = '#123013'; sBg = '#bbffc1'; border = '#4caf50' }
+            else if (statusStr === 'EN PROGRESO') { sCol = '#483009'; sBg = '#fff9b9'; border = '#fbc02d' }
+            else if (statusStr === 'Finish') { sCol = '#541111'; sBg = '#fdb4bf'; border = '#ff2020' }
 
             return (
               <Box key={item.taskId} className="task-row" style={{ borderLeft: `6px solid ${border}` }}>
@@ -152,10 +154,10 @@ function Dashboard() {
                   <Typography variant="body2" color="text.secondary">{item.description}</Typography>
                 </Box>
                 <Box sx={{ flex: 1, textAlign: 'center' }}>
-                  <span className="badge-base" style={{ backgroundColor: sBg, color: sCol }}>{item.status}</span>
+                  <span className="badge-base" style={{ backgroundColor: sBg, color: sCol }}>{statusStr || 'SIN ESTATUS'}</span>
                 </Box>
                 <Box sx={{ flex: 1, textAlign: 'right' }}>
-                  <span className="badge-base" style={{ backgroundColor: pBg, color: pCol }}>{item.priority}</span>
+                  <span className="badge-base" style={{ backgroundColor: pBg, color: pCol }}>{priorityName || 'N/A'}</span>
                 </Box>
               </Box>
             )

@@ -27,6 +27,10 @@ public class SprintTaskService {
         return sprintTaskRepository.findById(id);
     }
 
+    public List<SprintTask> getSprintTasksBySprintId(Long sprintId) {
+        return sprintTaskRepository.findById_SprintId(sprintId);
+    }
+
     public void deleteSprintTask(SprintTaskId id) {
         sprintTaskRepository.deleteById(id);
     }

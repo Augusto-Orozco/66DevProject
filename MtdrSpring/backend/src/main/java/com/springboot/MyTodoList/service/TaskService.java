@@ -22,6 +22,10 @@ public class TaskService {
         return taskRepository.findAll();
     }
 
+    public List<Task> getTasksByUserStoryId(String userStoryId) {
+        return taskRepository.findByUserStory_UserStoriesId(userStoryId);
+    }
+
     public Optional<Task> getTaskById(Long id) {
         return taskRepository.findById(id);
     }
