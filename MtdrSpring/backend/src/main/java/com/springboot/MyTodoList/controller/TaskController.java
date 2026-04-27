@@ -74,6 +74,11 @@ public class TaskController {
         return taskService.getTasksByUserStoryId(userStoryId);
     }
 
+    @PostMapping("/sprints")
+    public Sprint createSprint(@RequestBody Sprint sprint) {
+        return sprintService.saveSprint(sprint);
+    }
+
     @GetMapping("/sprints")
     public List<Sprint> getAllSprints() {
         return sprintService.getAllSprints();
