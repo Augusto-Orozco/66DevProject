@@ -2,10 +2,7 @@ import { useState, useEffect } from 'react'
 import { Box, Typography, CircularProgress, Button, IconButton } from '@mui/material'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import CachedIcon from '@mui/icons-material/Cached';
-import { 
-  PieChart, Pie, Tooltip, Legend, ResponsiveContainer,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid
-} from 'recharts'
+import { PieChart, Pie, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid} from 'recharts'
 
 import Footer from '../components/Footer'
 import '../Assets/styles.css'

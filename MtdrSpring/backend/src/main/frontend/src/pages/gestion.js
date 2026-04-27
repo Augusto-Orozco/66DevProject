@@ -202,7 +202,7 @@ function Gestion() {
     const taskId = active.id
     const task = columns[from].tasks.find(item => item.id === taskId)
 
-    // Actualización optimista del estado
+    // Actualización del estado
     setColumns(prev => {
       const sourceTasks = [...prev[from].tasks]
       const destTasks = [...prev[to].tasks]

@@ -40,7 +40,7 @@ function AppRouter({ isAuth, setIsAuth, user, setUser }) {
             path="/DashDevs"
             element={
               isAuth && user?.roleName === 'Developer'
-                ? <DashDevs />
+                ? <DashDevs user={user} />
                 : <Navigate to="/dashboard" />
             }
           />

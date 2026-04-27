@@ -254,10 +254,10 @@
 .devs-grid {
   height: 80vh;
   display: grid;
-  grid-template-columns: 350px 1fr 1fr;
+  grid-template-columns: 400px 1fr 1fr;
   grid-template-rows: 1fr 1fr;
-  gap: 32px;
-  margin: 40px 32px;
+  gap: 20px;
+  padding: 20px;
 }
 
 .devs-task-card {

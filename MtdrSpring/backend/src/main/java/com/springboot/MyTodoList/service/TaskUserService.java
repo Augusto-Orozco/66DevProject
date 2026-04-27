@@ -23,8 +23,8 @@ public class TaskUserService {
         return taskUserRepository.findAll();
     }
 
-    public Optional<TaskUser> getTaskUserById(TaskUserId id) {
-        return taskUserRepository.findById(id);
+    public List<TaskUser> getTasksByUserId(Long userId) {
+        return taskUserRepository.findByIdUserId(userId);
     }
 
     public void deleteTaskUser(TaskUserId id) {

@@ -5,15 +5,16 @@ import CachedIcon from '@mui/icons-material/Cached';
 import Footer from '../components/Footer'
 import '../Assets/styles.css'
 
-function DashDevs() {
+function DashDevs({ user }) {
     const [active, setActive] = useState(null)
     const [items, setItems] = useState([])
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
 
     const fetchTasks = () => {
+      if (!user?.userId) return
       setLoading(true)
-      fetch('/tasks')
+      fetch(`/tasks/user/${user.userId}`)
         .then(res => {
           if (!res.ok) throw new Error('Error al cargar tareas')
           return res.json()
@@ -37,24 +38,24 @@ function DashDevs() {
     <Box className="devs-grid">
       <Box className="base-card" sx={{ gridRow: 'span 2', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'flex-start' }}>
 
-        {/* HEADER FIJO */}
+        {/* HEADER */}
         <Box sx={{ width: '100%', boxSizing: 'border-box', display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, position: 'sticky', top: 0, backgroundColor: 'white', zIndex: 1, pb: 1 }}>
           <Typography variant="h6">Tareas</Typography>
-          {/* <Button size="small" variant="outlined" startIcon={<CachedIcon/>} onClick={fetchTasks} disabled={loading}></Button> */}
           <IconButton size="small" onClick={fetchTasks} disabled={loading}><CachedIcon /></IconButton>
         </Box>
 
         {loading && <CircularProgress />}
         {error && <Typography color="error">Error al cargar tareas</Typography>}
 
-        {/* LISTA SCROLLABLE */}
+        {/* LISTA TAREAS */}
         <Box sx={{ width: '100%', overflowY: 'auto', overflowX: 'hidden', flexGrow: 1 }}>
           {!loading && items.map(item => {
-            let color = '#fbc02d'
+            let color = '#898989'
             const statusStr = item.status?.status;
             const priorityName = item.priority?.priorityName;
-            if (statusStr === 'COMPLETADO') color = '#4caf50'
-            if (statusStr === 'CON RETRASO') color = '#ff2020'
+            if (statusStr === 'Completado') color = '#4caf50'
+            if (statusStr === 'En Progreso') color = '#fbc02d'
+            if (statusStr === 'Atrasado') color = '#e53935'
             return (
               <Box key={item.taskId} className="devs-task-card" style={{ borderLeft: `6px solid ${color}` }}>
                 <Typography variant="subtitle2" fontSize="0.85rem" fontWeight="bold">{item.title}</Typography>

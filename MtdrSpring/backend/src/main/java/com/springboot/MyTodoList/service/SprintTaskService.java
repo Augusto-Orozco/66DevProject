@@ -18,16 +18,8 @@ public class SprintTaskService {
     @Autowired
     private SprintTaskRepository sprintTaskRepository;
 
-    public SprintTask saveSprintTask(SprintTask sprintTask) {
-        return sprintTaskRepository.save(sprintTask);
-    }
-
     public List<SprintTask> getAllSprintTasks() {
         return sprintTaskRepository.findAll();
-    }
-
-    public Optional<SprintTask> getSprintTaskById(SprintTaskId id) {
-        return sprintTaskRepository.findById(id);
     }
 
     public List<SprintTask> getSprintTasksBySprintId(Long sprintId) {
@@ -36,13 +28,16 @@ public class SprintTaskService {
 
     @Transactional
     public void assignTaskToSprint(Task task, Sprint sprint) {
-        // Remove existing assignment if any
         sprintTaskRepository.deleteById_TaskId(task.getTaskId());
         
         if (sprint != null) {
             SprintTask sprintTask = new SprintTask(sprint, task, "N");
             sprintTaskRepository.save(sprintTask);
         }
+    }
+
+    public SprintTask saveSprintTask(SprintTask sprintTask) {
+        return sprintTaskRepository.save(sprintTask);
     }
 
     public void deleteSprintTask(SprintTaskId id) {
