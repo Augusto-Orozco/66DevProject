@@ -17,7 +17,6 @@ import { CSS } from '@dnd-kit/utilities'
 import Footer from '../components/Footer'
 import '../Assets/styles.css'
 
-const API_BASE_URL = 'http://localhost:8080'
 
 /* --- TARJETA DRAGGABLE --- */
 function TaskCard({ task }) {
@@ -148,7 +147,7 @@ function Gestion() {
         setLoading(true)
         
         // 1. Obtener tareas sin sprint
-        const unassignedRes = await fetch(`${API_BASE_URL}/tasks/unassigned`)
+        const unassignedRes = await fetch(`/tasks/unassigned`)
         const unassignedTasks = await unassignedRes.json()
 
         const newColumns = {
@@ -165,12 +164,12 @@ function Gestion() {
         }
 
         // 2. Obtener todos los sprints
-        const sprintsRes = await fetch(`${API_BASE_URL}/sprints`)
+        const sprintsRes = await fetch(`/sprints`)
         const sprints = await sprintsRes.json()
 
         // 3. Para cada sprint, obtener sus tareas
         for (const sprint of sprints) {
-          const tasksRes = await fetch(`${API_BASE_URL}/sprintTasks/${sprint.sprintId}`)
+          const tasksRes = await fetch(`/sprintTasks/${sprint.sprintId}`)
           const sprintTasks = await tasksRes.json()
           
           newColumns[`sprint-${sprint.sprintId}`] = {
@@ -234,11 +233,11 @@ function Gestion() {
     try {
       if (to === 'backlog') {
         // Quitar de sprint
-        await fetch(`${API_BASE_URL}/tasks/${taskId}/unassign`, { method: 'PUT' })
+        await fetch(`/tasks/${taskId}/unassign`, { method: 'PUT' })
       } else if (to.startsWith('sprint-')) {
         // Asignar a sprint
         const sprintId = to.replace('sprint-', '')
-        await fetch(`${API_BASE_URL}/tasks/${taskId}/assign/${sprintId}`, { method: 'PUT' })
+        await fetch(`/tasks/${taskId}/assign/${sprintId}`, { method: 'PUT' })
       }
     } catch (error) {
       console.error('Error updating task assignment:', error)
