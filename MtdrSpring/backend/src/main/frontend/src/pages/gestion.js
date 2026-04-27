@@ -1,5 +1,16 @@
 import { useState, useEffect } from 'react'
-import { Box, Typography, CircularProgress } from '@mui/material'
+import { 
+  Box, 
+  Typography, 
+  CircularProgress, 
+  Button, 
+  Fab, 
+  Dialog, 
+  DialogTitle, 
+  DialogContent, 
+  DialogContentText, 
+  DialogActions 
+} from '@mui/material' // <-- NUEVAS IMPORTACIONES AÑADIDAS
 import { DndContext, closestCenter, useDroppable} from '@dnd-kit/core'
 import {SortableContext, verticalListSortingStrategy, useSortable} from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -68,6 +79,7 @@ function Column({ id, title, tasks }) {
       className="base-card"
       sx={{
         width: 320,
+        minWidth: 320, // <-- Asegura que todos tengan la misma dimensión y no se encojan
         minHeight: 500,
         backgroundColor: isOver ? '#f5f5f5' : 'white',
         transition: 'background-color 0.2s ease',
@@ -125,6 +137,9 @@ function Column({ id, title, tasks }) {
 function Gestion() {
   const [columns, setColumns] = useState({})
   const [loading, setLoading] = useState(true)
+  
+  // --- NUEVO: ESTADO PARA EL MODAL DE CONFIRMACIÓN ---
+  const [openDialog, setOpenDialog] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -229,6 +244,53 @@ function Gestion() {
     }
   }
 
+  // Crear sprint
+  const handleCreateSprint = async () => {
+    try {
+      // Calcular el siguiente número de sprint 
+      const sprintCount = Object.keys(columns).filter(key => key.startsWith('sprint-')).length;
+      const nextSprintNumber = sprintCount + 1;
+
+      // Formatear fechas para LocalDateTime 
+      const formatDateForJava = (date) => date.toISOString().split('.')[0]; 
+      
+      const now = new Date();
+      const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+      const projectId = 1; //Esta harcodeado el id del proyecto
+
+      const res = await fetch(`${API_BASE_URL}/sprints`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project: { projectId: projectId },
+          startDate: formatDateForJava(now),
+          endDate: formatDateForJava(nextWeek)
+        })
+      });
+
+      if (!res.ok) {
+        const errorData = await res.text();
+        throw new Error(`Error del servidor: ${errorData}`);
+      }
+
+      const data = await res.json();
+      setColumns(prev => ({
+        ...prev,
+        [`sprint-${data.sprintId}`]: {
+          title: `Sprint ${nextSprintNumber}`, 
+          tasks: []
+        }
+      }));
+
+    } catch (error) {
+      console.error('Error al crear el nuevo sprint:', error);
+      alert("No se pudo crear el sprint. Revisa que el Project ID 1 exista en la base de datos.");
+    } finally {
+      setOpenDialog(false);
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
@@ -242,7 +304,8 @@ function Gestion() {
       sx={{
         minHeight: '100vh',
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        position: 'relative' 
       }}
     >
       
@@ -254,7 +317,8 @@ function Gestion() {
           padding: 3,
           overflowX: 'auto',
           flexGrow: 1,
-          alignItems: 'flex-start'
+          alignItems: 'flex-start',
+          pb: 10 
         }}
       >
         <DndContext
@@ -271,6 +335,53 @@ function Gestion() {
           ))}
         </DndContext>
       </Box>
+
+      {/* Boton para crear sirnt */}
+      <Fab 
+        color="primary" 
+        variant="extended"
+        aria-label="add sprint" 
+        onClick={() => setOpenDialog(true)}
+        sx={{ 
+          position: 'fixed', 
+          bottom: 40, 
+          right: 40, 
+          fontWeight: 'bold',
+          boxShadow: '0 4px 12px rgba(95, 4, 4, 0.2)',
+          backgroundColor: '#cc0707',
+       
+        }}
+      >
+        + Crear Sprint
+      </Fab>
+
+      {/* --- NUEVO: MODAL DE CONFIRMACIÓN --- */}
+      <Dialog
+        open={openDialog}
+        onClose={() => setOpenDialog(false)}
+      >
+        <DialogTitle sx={{ fontWeight: 'bold' }}>Crear nuevo Sprint</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            ¿Estás seguro de que deseas agregar un nuevo Sprint al tablero? Se agregará automáticamente como una columna vacía al final de la derecha.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button 
+            onClick={() => setOpenDialog(false)} 
+            color="inherit"
+          >
+            Cancelar
+          </Button>
+          <Button backgroundColor="red"
+            onClick={handleCreateSprint} 
+            variant="contained" 
+            color="primary"
+          >
+            Aceptar
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* FOOTER */}
       <Footer />
