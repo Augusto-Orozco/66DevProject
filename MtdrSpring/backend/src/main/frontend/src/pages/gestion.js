@@ -9,11 +9,16 @@ import {
   DialogTitle, 
   DialogContent, 
   DialogContentText, 
-  DialogActions 
+  DialogActions,
+  Menu,
+  MenuItem
 } from '@mui/material' // <-- NUEVAS IMPORTACIONES AÑADIDAS
 import { DndContext, closestCenter, useDroppable} from '@dnd-kit/core'
 import {SortableContext, verticalListSortingStrategy, useSortable} from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import RefreshIcon from '@mui/icons-material/Refresh'
+import ViewWeekIcon from '@mui/icons-material/ViewWeek'
+import IconButton from '@mui/material/IconButton'
 import Footer from '../components/Footer'
 import '../Assets/styles.css'
 
@@ -44,9 +49,6 @@ function TaskCard({ task }) {
       <Typography fontSize="0.85rem" fontWeight="bold">
         {task.title}
       </Typography>
-      <Typography fontSize="0.75rem" sx={{ mt: 0.5, color: 'text.secondary' }}>
-        {task.userStoryName}
-      </Typography>
       <Typography fontSize="0.75rem">
         {task.description}
       </Typography>
@@ -55,7 +57,7 @@ function TaskCard({ task }) {
 }
 
 /* --- COLUMNA DROPPABLE --- */
-function Column({ id, title, tasks }) {
+function Column({ id, title, tasks, visibleColumnCount }) {
   const { setNodeRef, isOver } = useDroppable({
     id: id
   })
@@ -78,16 +80,17 @@ function Column({ id, title, tasks }) {
       ref={setNodeRef}
       className="base-card"
       sx={{
-        width: 320,
-        minWidth: 320, // <-- Asegura que todos tengan la misma dimensión y no se encojan
-        minHeight: 500,
+        flex: `0 0 calc((100% - ${(visibleColumnCount - 1) * 16}px) / ${visibleColumnCount})`,
+        minWidth: 280,
+        maxWidth: 'none',
         backgroundColor: isOver ? '#f5f5f5' : 'white',
         transition: 'background-color 0.2s ease',
         display: 'flex',
         flexDirection: 'column',
         p: 2,
         borderRadius: '12px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+        boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+        alignItems: 'stretch'
       }}
     >
       <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold', borderBottom: '2px solid #f0f0f0', pb: 1, color: '#333' }}>
@@ -105,11 +108,11 @@ function Column({ id, title, tasks }) {
                 variant="subtitle2" 
                 sx={{ 
                   fontWeight: 'bold', 
-                  color: '#666', 
+                  color: '#000000', 
                   mb: 1, 
                   pl: 1,
                   borderLeft: '4px solid #1976d2',
-                  backgroundColor: '#f8f9fa',
+                  background: 'linear-gradient(90deg, rgba(132, 164, 196, 0.12) 0%, rgba(135, 171, 198, 0.01) 100%)',
                   py: 0.5
                 }}
               >
@@ -137,9 +140,13 @@ function Column({ id, title, tasks }) {
 function Gestion() {
   const [columns, setColumns] = useState({})
   const [loading, setLoading] = useState(true)
+  const [selectedSprintId, setSelectedSprintId] = useState(null)
+  const [availableSprints, setAvailableSprints] = useState([])
   
   // --- NUEVO: ESTADO PARA EL MODAL DE CONFIRMACIÓN ---
   const [openDialog, setOpenDialog] = useState(false)
+
+  const [openMenu, setOpenMenu] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -166,9 +173,15 @@ function Gestion() {
         // 2. Obtener todos los sprints
         const sprintsRes = await fetch(`/sprints`)
         const sprints = await sprintsRes.json()
+        const orderedSprints = [...sprints].sort((a, b) => a.sprintId - b.sprintId)
+        
+        setAvailableSprints(orderedSprints.map((s, index) => ({
+          id: s.sprintId,
+          number: index + 1
+        })))
 
         // 3. Para cada sprint, obtener sus tareas
-        for (const sprint of sprints) {
+        for (const sprint of orderedSprints) {
           const tasksRes = await fetch(`/sprintTasks/${sprint.sprintId}`)
           const sprintTasks = await tasksRes.json()
           
@@ -202,6 +215,32 @@ function Gestion() {
       columns[key].tasks.some(item => item.id === id)
     )
   }
+
+  const getVisibleColumns = () => {
+    const columnKeys = Object.keys(columns);
+    const backlogKey = 'backlog';
+    
+    if (selectedSprintId === null) {
+      // Mostrar backlog + los primeros 4 sprints
+      const sprintKeys = columnKeys
+        .filter(k => k.startsWith('sprint-'))
+        .sort((a, b) => {
+          const idA = parseInt(a.split('-')[1]);
+          const idB = parseInt(b.split('-')[1]);
+          return idA - idB;
+        })
+        
+      
+      return [backlogKey, ...sprintKeys].filter(k => columns[k]);
+    } else {
+      // Mostrar backlog + sprint específico
+      const selectedKey = `sprint-${selectedSprintId}`;
+      return [backlogKey, selectedKey].filter(k => columns[k]);
+    }
+  };
+
+  const visibleColumnsToRender = getVisibleColumns();
+  const visibleColumnCount = visibleColumnsToRender.length;
 
   /* --- DRAG LOGIC --- */
   const handleDragEnd = async (event) => {
@@ -259,7 +298,7 @@ function Gestion() {
 
       const projectId = 1; //Esta harcodeado el id del proyecto
 
-      const res = await fetch(`${API_BASE_URL}/sprints`, {
+      const res = await fetch(`/sprints`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -275,6 +314,8 @@ function Gestion() {
       }
 
       const data = await res.json();
+      
+      // Actualizar columnas
       setColumns(prev => ({
         ...prev,
         [`sprint-${data.sprintId}`]: {
@@ -282,6 +323,12 @@ function Gestion() {
           tasks: []
         }
       }));
+
+      // Actualizar lista de sprints disponibles para el menú
+      setAvailableSprints(prev => [
+        ...prev, 
+        { id: data.sprintId, number: nextSprintNumber }
+      ]);
 
     } catch (error) {
       console.error('Error al crear el nuevo sprint:', error);
@@ -308,7 +355,95 @@ function Gestion() {
         position: 'relative' 
       }}
     >
+
+    <Box className={`floating-menu ${openMenu ? 'open' : ''}`}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+        
+        {/* Reset Button (Above) */}
+        {openMenu && (
+          <Button
+            variant="contained"
+            onClick={() => {
+              setSelectedSprintId(null)
+              setOpenMenu(false)
+            }}
+            sx={{
+              width: '2.5rem',
+              height: '2.5rem',
+              minWidth: 0,
+              padding: 0,
+              borderRadius: '50%',
+              backgroundColor: '#555',
+              '&:hover': { backgroundColor: '#333' },
+              mb: 1
+            }}
+          >
+            <RefreshIcon sx={{ fontSize: '1.2rem' }} />
+          </Button>
+        )}
+
+        {/* Botón principal */}
+        <Button
+          className="main-btn"
+          variant="contained"
+          onClick={() => setOpenMenu(prev => !prev)}
+          sx={{
+            width: '2.5rem',
+            height: '2.5rem',
+            minWidth: 0,
+            padding: 0,
+            borderRadius: '50%',
+            zIndex: 1000
+          }}
+        >
+          <ViewWeekIcon sx={{ fontSize: '1.2rem' }} />
+        </Button>
+
+        {/* Lista scrolleable (Below) */}
+        {openMenu && (
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 1,
+              maxHeight: '200px',
+              overflowY: 'auto',
+              mt: 1,
+              padding: '4px',
+              '&::-webkit-scrollbar': { width: '4px' },
+              '&::-webkit-scrollbar-thumb': { backgroundColor: '#ccc', borderRadius: '4px' }
+            }}
+          >
+            {availableSprints.map((sprint) => (
+              <IconButton
+                key={sprint.id}
+                variant="outlined"
+                onClick={() => {
+                  setSelectedSprintId(sprint.id)
+                  setOpenMenu(false)
+                }}
+                sx={{
+                  width: '2.2rem',
+                  height: '2.2rem',
+                  minWidth: 0,
+                  padding: 0,
+                  borderRadius: '50%',
+                  backgroundColor: 'white',
+                  border: '1px solid #ccc',
+                  color: '#333',
+                  fontSize: '0.8rem'
+                }}
+              >
+                {sprint.number}
+              </IconButton>
+            ))}
+          </Box>
+        )}
+        
+      </Box>
+    </Box>
       
+
       {/* CONTENIDO PRINCIPAL */}
       <Box
         sx={{
@@ -316,8 +451,10 @@ function Gestion() {
           gap: 2,
           padding: 3,
           overflowX: 'auto',
+          width: '100%',
           flexGrow: 1,
-          alignItems: 'flex-start',
+          alignItems: 'stretch',
+          justifyContent: 'flex-start',
           pb: 10 
         }}
       >
@@ -325,14 +462,18 @@ function Gestion() {
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
         >
-          {Object.entries(columns).map(([id, columnData]) => (
-            <Column
-              key={id}
-              id={id}
-              title={columnData.title}
-              tasks={columnData.tasks}
-            />
-          ))}
+          {visibleColumnsToRender.map((id) => {
+            const columnData = columns[id];
+            return (
+              <Column
+                key={id}
+                id={id}
+                title={columnData.title}
+                tasks={columnData.tasks}
+                visibleColumnCount={visibleColumnCount}
+              />
+            );
+          })}
         </DndContext>
       </Box>
 

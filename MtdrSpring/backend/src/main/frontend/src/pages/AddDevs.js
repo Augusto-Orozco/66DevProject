@@ -101,8 +101,8 @@ function AddDevs() {
               className="devs-task-card"
               sx={{
                 mb: 1,
-                p: 4,              // más espacio interno
-                minHeight: 60,     // altura mínima
+                p: 4,
+                minHeight: 60,
                 display: 'flex',
                 alignItems: 'center'
               }}

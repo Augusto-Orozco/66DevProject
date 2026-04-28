@@ -197,8 +197,8 @@
   padding: 24px !important;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  justify-content: flex-start;
+  align-items: flex-start;
   min-height: 150px;
   transition: all 0.3s ease !important;
   width: 100%;
@@ -343,6 +343,33 @@
   color: var(--oracle-red);
 }
 
+.floating-menu {
+  position: fixed;
+  right: 20px;
+  top: 100px;
+  z-index: 999;
+}
+
+/* Contenedor vertical de botones */
+.floating-menu .MuiBox-root {
+  transition: all 0.3s ease;
+}
+
+/* Botones ocultos por defecto (opcional, ya manejado por JS) */
+.floating-menu button {
+  transition: all 0.3s ease;
+}
+
+/* Botón principal siempre visible */
+.main-btn {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+  background-color: var(--oracle-red) !important;
+  color: white !important;
+}
+
+.main-btn:hover {
+  background-color: var(--oracle-red-hover) !important;
+}
 
 /* --- FOOTER --- */
 .footer-container {
