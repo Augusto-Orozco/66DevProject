@@ -42,9 +42,9 @@ function Dashboard() {
 
   const chartData = Object.keys(statusCount).map(key => {
     let color = '#9e9e9e'
-    if (key === 'COMPLETADO') color = '#4caf50'
-    else if (key === 'EN PROGRESO') color = '#fbc02d'
-    else if (key === 'Finish') color = '#f44336'
+    if (key === 'Completado') color = '#4caf50'
+    else if (key === 'En Progreso') color = '#fbc02d'
+    else if (key === 'Atrasado') color = '#f44336'
     return { name: key, value: statusCount[key], fill: color }
   })
 
@@ -134,15 +134,15 @@ function Dashboard() {
           {!loading && items.map((item) => {
             let pCol = '#292929', pBg = '#f5f5f5'
             const priorityName = item.priority?.priorityName;
-            if (priorityName === 'High' || priorityName === 'ALTA') { pCol = '#ff002f'; pBg = '#ffd0e0' }
-            else if (priorityName === 'Medium' || priorityName === 'MEDIA') { pCol = '#693ff6'; pBg = '#f4edff' }
-            else if (priorityName === 'Low' || priorityName === 'BAJA') { pCol = '#2698a2'; pBg = '#bdf2fc' }
+            if (priorityName === 'High' || priorityName === 'Alta') { pCol = '#ff002f'; pBg = '#ffd0e0' }
+            else if (priorityName === 'Medium' || priorityName === 'Media') { pCol = '#693ff6'; pBg = '#f4edff' }
+            else if (priorityName === 'Low' || priorityName === 'Baja') { pCol = '#2698a2'; pBg = '#bdf2fc' }
 
             let sCol = '#000000', sBg = '#a9a9a9', border = '#858585'
             const statusStr = item.status?.status;
-            if (statusStr === 'COMPLETADO') { sCol = '#123013'; sBg = '#bbffc1'; border = '#4caf50' }
-            else if (statusStr === 'EN PROGRESO') { sCol = '#483009'; sBg = '#fff9b9'; border = '#fbc02d' }
-            else if (statusStr === 'Finish') { sCol = '#541111'; sBg = '#fdb4bf'; border = '#ff2020' }
+            if (statusStr === 'Completado') { sCol = '#123013'; sBg = '#bbffc1'; border = '#4caf50' }
+            else if (statusStr === 'En Progreso') { sCol = '#483009'; sBg = '#fff9b9'; border = '#fbc02d' }
+            else if (statusStr === 'Atrasado') { sCol = '#541111'; sBg = '#fdb4bf'; border = '#ff2020' }
 
             return (
               <Box key={item.taskId} className="task-row" style={{ borderLeft: `6px solid ${border}` }}>
