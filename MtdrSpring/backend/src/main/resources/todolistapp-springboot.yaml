@@ -49,9 +49,9 @@ spec:
           imagePullPolicy: Always
           env:
             - name: db_user
-              value: "ADMIN"
+              value: "admin"
             - name: db_url
-              value: "jdbc:oracle:thin:@%TODO_PDB_NAME%_tp?TNS_ADMIN=/mtdrworkshop/creds"
+              value: "jdbc:oracle:thin:@reacttodo5c3kz_tp?TNS_ADMIN=/mtdrworkshop/creds"
             - name: todo.table.name
               value: "todoitem"
             - name: driver_class_name
@@ -59,19 +59,11 @@ spec:
             - name: OCI_REGION
               value: "%OCI_REGION%"
             - name: dbpassword
-              valueFrom:
-                secretKeyRef:
-                  name: dbuser
-                  key: dbpassword
-                  optional: true
+              value: "None00010001"
             - name: ui_username
-              value: "%UI_USERNAME%"
+              value: "admin"
             - name: ui_password
-              valueFrom:
-                secretKeyRef:
-                  name: frontendadmin
-                  key: password
-                  optional: true
+              value: "None0001"
           volumeMounts:
             - name: creds
               mountPath: /mtdrworkshop/creds
