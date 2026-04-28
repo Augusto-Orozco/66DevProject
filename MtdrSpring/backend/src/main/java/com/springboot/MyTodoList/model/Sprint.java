@@ -16,6 +16,9 @@ public class Sprint {
     @JoinColumn(name = "PROJECT_ID", nullable = false)
     private Project project;
 
+    @Column(name = "SPRINT_NUM", nullable = false)
+    private Integer sprintNum;
+
     @Column(name = "START_DATE", nullable = false)
     private LocalDateTime startDate;
 
@@ -24,8 +27,9 @@ public class Sprint {
 
     public Sprint() {}
 
-    public Sprint(Project project, LocalDateTime startDate, LocalDateTime endDate) {
+    public Sprint(Project project, Integer sprintNum, LocalDateTime startDate, LocalDateTime endDate) {
         this.project = project;
+        this.sprintNum = sprintNum;
         this.startDate = startDate;
         this.endDate = endDate;
     }
@@ -44,6 +48,14 @@ public class Sprint {
 
     public void setProject(Project project) {
         this.project = project;
+    }
+
+    public Integer getSprintNum() {
+        return sprintNum;
+    }
+
+    public void setSprintNum(Integer sprintNum) {
+        this.sprintNum = sprintNum;
     }
 
     public LocalDateTime getStartDate() {
@@ -66,6 +78,7 @@ public class Sprint {
     public String toString() {
         return "Sprint{" +
                 "sprintId=" + sprintId +
+                ", sprintNum=" + sprintNum +
                 ", startDate=" + startDate +
                 ", endDate=" + endDate +
                 '}';

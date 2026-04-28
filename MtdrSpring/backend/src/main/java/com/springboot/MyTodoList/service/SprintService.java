@@ -15,6 +15,12 @@ public class SprintService {
     private SprintRepository sprintRepository;
 
     public Sprint saveSprint(Sprint sprint) {
+        if (sprint.getSprintNum() == null) {
+            int nextNum = sprintRepository.findFirstByProjectOrderBySprintNumDesc(sprint.getProject())
+                    .map(lastSprint -> lastSprint.getSprintNum() + 1)
+                    .orElse(1);
+            sprint.setSprintNum(nextNum);
+        }
         return sprintRepository.save(sprint);
     }
 
