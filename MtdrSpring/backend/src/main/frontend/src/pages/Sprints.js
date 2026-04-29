@@ -173,11 +173,11 @@ function Sprints() {
         // 2. Obtener todos los sprints
         const sprintsRes = await fetch(`/sprints`)
         const sprints = await sprintsRes.json()
-        const orderedSprints = [...sprints].sort((a, b) => a.sprintId - b.sprintId)
+        const orderedSprints = [...sprints].sort((a, b) => a.sprintNum - b.sprintNum)
         
-        setAvailableSprints(orderedSprints.map((s, index) => ({
+        setAvailableSprints(orderedSprints.map((s) => ({
           id: s.sprintId,
-          number: index + 1
+          number: s.sprintNum
         })))
 
         // 3. Para cada sprint, obtener sus tareas
@@ -186,7 +186,7 @@ function Sprints() {
           const sprintTasks = await tasksRes.json()
           
           newColumns[`sprint-${sprint.sprintId}`] = {
-            title: `Sprint ${sprint.sprintId}`,
+            title: `Sprint ${sprint.sprintNum}`,
             tasks: sprintTasks.map(st => ({
               id: st.task.taskId.toString(),
               title: st.task.title,
@@ -221,13 +221,16 @@ function Sprints() {
     const backlogKey = 'backlog';
     
     if (selectedSprintId === null) {
-      // Mostrar backlog + los primeros 4 sprints
+      // Mostrar backlog + sprints ordenados por su número (que está en el título)
       const sprintKeys = columnKeys
         .filter(k => k.startsWith('sprint-'))
         .sort((a, b) => {
+          // Intentamos obtener el número del sprint desde availableSprints para un sorteo más fiable
           const idA = parseInt(a.split('-')[1]);
           const idB = parseInt(b.split('-')[1]);
-          return idA - idB;
+          const sprintA = availableSprints.find(s => s.id === idA);
+          const sprintB = availableSprints.find(s => s.id === idB);
+          return (sprintA?.number || 0) - (sprintB?.number || 0);
         })
         
       
@@ -286,10 +289,6 @@ function Sprints() {
   // Crear sprint
   const handleCreateSprint = async () => {
     try {
-      // Calcular el siguiente número de sprint 
-      const sprintCount = Object.keys(columns).filter(key => key.startsWith('sprint-')).length;
-      const nextSprintNumber = sprintCount + 1;
-
       // Formatear fechas para LocalDateTime 
       const formatDateForJava = (date) => date.toISOString().split('.')[0]; 
       
@@ -319,7 +318,7 @@ function Sprints() {
       setColumns(prev => ({
         ...prev,
         [`sprint-${data.sprintId}`]: {
-          title: `Sprint ${nextSprintNumber}`, 
+          title: `Sprint ${data.sprintNum}`, 
           tasks: []
         }
       }));
@@ -327,7 +326,7 @@ function Sprints() {
       // Actualizar lista de sprints disponibles para el menú
       setAvailableSprints(prev => [
         ...prev, 
-        { id: data.sprintId, number: nextSprintNumber }
+        { id: data.sprintId, number: data.sprintNum }
       ]);
 
     } catch (error) {

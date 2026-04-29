@@ -2,17 +2,22 @@ package com.springboot.MyTodoList.util;
 
 import com.springboot.MyTodoList.model.Task;
 import com.springboot.MyTodoList.model.TaskStatus;
+import com.springboot.MyTodoList.model.TaskUser;
+import com.springboot.MyTodoList.model.User;
 import com.springboot.MyTodoList.model.UserStory;
 import com.springboot.MyTodoList.service.DeepSeekService;
 import com.springboot.MyTodoList.service.TaskService;
 import com.springboot.MyTodoList.service.TaskStatusService;
 import com.springboot.MyTodoList.service.TaskPriorityService;
+import com.springboot.MyTodoList.service.TaskUserService;
+import com.springboot.MyTodoList.service.UserService;
 import com.springboot.MyTodoList.service.UserStoryService;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,14 +40,19 @@ public class BotActions{
     DeepSeekService deepSeekService;
     TaskStatusService taskStatusService;
     TaskPriorityService taskPriorityService;
+    UserService userService;
+    TaskUserService taskUserService;
 
-    public BotActions(TelegramClient tc, TaskService ts, UserStoryService uss, DeepSeekService ds, TaskStatusService tss, TaskPriorityService tps){
+    public BotActions(TelegramClient tc, TaskService ts, UserStoryService uss, DeepSeekService ds, 
+                      TaskStatusService tss, TaskPriorityService tps, UserService usvc, TaskUserService tusvc){
         telegramClient = tc;
         taskService = ts;
         userStoryService = uss;
         deepSeekService = ds;
         taskStatusService = tss;
         taskPriorityService = tps;
+        userService = usvc;
+        taskUserService = tusvc;
         exit  = false;
     }
 
@@ -83,6 +93,7 @@ public class BotActions{
         BotHelper.sendMessageToTelegram(chatId, BotMessages.HELLO_MYTODO_BOT.getMessage(), telegramClient,  ReplyKeyboardMarkup
             .builder()
             .keyboardRow(new KeyboardRow(BotLabels.LIST_ALL_ITEMS.getLabel(), BotLabels.ADD_NEW_ITEM.getLabel()))
+            .keyboardRow(new KeyboardRow(BotLabels.ADVICE.getLabel()))
             .keyboardRow(new KeyboardRow(/*BotLabels.SHOW_MAIN_SCREEN.getLabel(),*/ BotLabels.HIDE_MAIN_SCREEN.getLabel()))
             .build()
         );
@@ -283,6 +294,48 @@ public class BotActions{
 
         BotHelper.sendMessageToTelegram(chatId, "LLM: "+out, telegramClient, null);
 
+    }
+
+    public void fnAdvice() {
+        if (!(requestText.equals(BotLabels.ADVICE.getLabel())) || exit)
+            return;
+
+        Optional<User> userOpt = userService.getUserByTelegramId(chatId);
+        
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            List<TaskUser> userTasks = taskUserService.getTasksByUserId(user.getUserId());
+            
+            if (userTasks.isEmpty()) {
+                BotHelper.sendMessageToTelegram(chatId, "No tienes tareas asignadas actualmente. ¡Es un buen momento para planificar algo nuevo!", telegramClient);
+            } else {
+                StringBuilder promptBuilder = new StringBuilder();
+                promptBuilder.append("Hola, soy ").append(user.getFirtsName()).append(". ");
+                promptBuilder.append("Estas son mis tareas actuales:\n");
+                
+                for (TaskUser tu : userTasks) {
+                    Task t = tu.getTask();
+                    promptBuilder.append("- ").append(t.getTitle())
+                                 .append(" (Estado: ").append(t.getStatus() != null ? t.getStatus().getStatus() : "Pendiente")
+                                 .append(", Prioridad: ").append(t.getPriority() != null ? t.getPriority().getPriorityName() : "Media")
+                                 .append("): ").append(t.getDescription()).append("\n");
+                }
+                
+                promptBuilder.append("\nBasado en mi progreso y estas tareas, ¿qué consejo me das para ser más productivo hoy? Sé breve y motivador.");
+
+                try {
+                    String advice = deepSeekService.generateText(promptBuilder.toString());
+                    BotHelper.sendMessageToTelegram(chatId, "💡 *Consejo de IA:*\n\n" + advice, telegramClient);
+                } catch (Exception e) {
+                    logger.error("Error al obtener consejo de IA: " + e.getMessage());
+                    BotHelper.sendMessageToTelegram(chatId, "Lo siento, no pude obtener un consejo en este momento. ¡Sigue adelante con tus tareas!", telegramClient);
+                }
+            }
+        } else {
+            BotHelper.sendMessageToTelegram(chatId, "No pude identificarte en el sistema. Por favor, asegúrate de estar registrado.", telegramClient);
+        }
+        
+        exit = true;
     }
 
 

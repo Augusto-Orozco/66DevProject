@@ -21,6 +21,7 @@ public class BotHelper {
 					.builder()
 					.chatId(chatId)
 					.text(text)
+					.parseMode("Markdown")
 					.replyMarkup(new ReplyKeyboardRemove(true))
 					.build()
 				;
@@ -42,6 +43,7 @@ public class BotHelper {
 					.builder()
 					.chatId(chatId)
 					.text(text)
+					.parseMode("Markdown")
 					.replyMarkup(rk)
 					.build()
 				;
