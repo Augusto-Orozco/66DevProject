@@ -51,7 +51,7 @@ spec:
             - name: db_user
               value: "admin"
             - name: db_url
-              value: "jdbc:oracle:thin:@reacttodo5c3kz_tp?TNS_ADMIN=/mtdrworkshop/creds"
+              value: "jdbc:oracle:thin:@%TODO_PDB_NAME%_tp?TNS_ADMIN=/mtdrworkshop/creds"
             - name: todo.table.name
               value: "todoitem"
             - name: driver_class_name
@@ -59,11 +59,19 @@ spec:
             - name: OCI_REGION
               value: "%OCI_REGION%"
             - name: dbpassword
-              value: "None00010001"
+              valueFrom:
+                secretKeyRef:
+                  name: dbuser
+                  key: dbpassword
+                  optional: true
             - name: ui_username
-              value: "admin"
+              value: "%UI_USERNAME%"
             - name: ui_password
-              value: "None0001"
+              valueFrom:
+                secretKeyRef:
+                  name: frontendadmin
+                  key: password
+                  optional: true
           volumeMounts:
             - name: creds
               mountPath: /mtdrworkshop/creds
