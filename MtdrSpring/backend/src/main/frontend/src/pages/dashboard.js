@@ -186,15 +186,7 @@ function Dashboard() {
         </Box>
         <ResponsiveContainer width="100%" height={250}>
             <BarChart data={devComparisonData}>
-            <CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="name" tick={false} /><YAxis />
-            <Tooltip 
-              labelFormatter={(value) => {
-                if (hoursFilter === 'all') return value; // Muestra nombre del dev en modo grupal
-                return ''; // Quita el nombre/título del encabezado en modo individual
-              }}
-              formatter={(value, name) => [value, name]}
-            />
-            <Legend />
+            <CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="name" tick={false} /><YAxis /><Tooltip /><Legend />
             <Bar dataKey="estimado" fill="#42a5f5" name="Horas Estimadas" /><Bar dataKey="real" fill="#ef5350" name="Horas Reales" />
           </BarChart>
         </ResponsiveContainer>
