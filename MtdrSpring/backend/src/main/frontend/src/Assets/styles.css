@@ -90,7 +90,7 @@
   border-radius: 50px;
   background: rgba(0, 0, 0, 0.06);
   transform: scaleX(0);
-  transform-origin: right;
+  transform-origin: center;
 
   /*transition: transform 0.1s ease-out;*/
   /* transition-delay: 0.1s; */
@@ -138,9 +138,35 @@
   transition: all 0.5s ease-out !important;
 }
 
-.icon-btn:hover,
-.icon-btn.active {
+.icon-btn:not(.no-grow):hover,
+.icon-btn:not(.no-grow).active {
   padding: 0 16px !important; 
+}
+
+/* CLASE PARA EVITAR EL CRECIMIENTO */
+.nav-button.no-grow {
+  padding: 0 16px !important;
+  min-width: 140px !important;
+  color: var(--dark-text) !important; /* Texto siempre oscuro */
+}
+
+.nav-button.no-grow .icon,
+.nav-button.no-grow .MuiButton-endIcon {
+  color: var(--dark-text) !important; /* Iconos siempre oscuros */
+}
+
+.nav-button.no-grow::before {
+  transform: scaleX(1);
+}
+
+/* Forzar estado oscuro incluso en scrolled */
+.nav-button.no-grow.scrolled {
+  color: var(--dark-text) !important;
+}
+
+.nav-button.no-grow.scrolled .icon,
+.nav-button.no-grow.scrolled .MuiButton-endIcon {
+  color: var(--dark-text) !important;
 }
 
 /* ICONO */
@@ -152,8 +178,8 @@
   z-index: 2;
 }
 
-.icon-btn:hover .icon,
-.icon-btn.active .icon {
+.icon-btn:not(.no-grow):hover .icon,
+.icon-btn:not(.no-grow).active .icon {
   transform: translateX(0); 
 }
 
@@ -174,9 +200,16 @@
 }
 
 /* TEXTO APARECE EN HOVER O ACTIVE */
-.icon-btn:hover .label,
-.icon-btn.active .label {
+.icon-btn:not(.no-grow):hover .label,
+.icon-btn:not(.no-grow).active .label {
   max-width: 120px; 
+  opacity: 1;
+  margin-left: 8px;
+}
+
+/* TEXTO SIEMPRE VISIBLE PARA NO-GROW */
+.nav-button.no-grow .label {
+  max-width: 150px;
   opacity: 1;
   margin-left: 8px;
 }

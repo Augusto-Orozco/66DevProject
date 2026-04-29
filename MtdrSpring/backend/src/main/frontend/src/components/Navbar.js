@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AppBar, Toolbar, Button, Box } from '@mui/material';
+import { AppBar, Toolbar, Button, Box, Menu, MenuItem } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 /* ICONOS MUI */
@@ -9,6 +9,8 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import LogoutIcon from '@mui/icons-material/Logout';
 import AppRegistrationIcon from '@mui/icons-material/AppRegistration';
 import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 
 import '../Assets/styles.css';
 
@@ -16,6 +18,13 @@ function Navbar(props) {
   const navigate = useNavigate();
   const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
+
+  // Estado para el selector de proyectos
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [selectedProject, setSelectedProject] = useState('Proyecto Alpha');
+  const open = Boolean(anchorEl);
+
+  const projects = ['Proyecto Alpha', 'Proyecto Beta', 'Proyecto Gamma'];
 
   useEffect(() => {
     const handleScroll = () => {
@@ -32,6 +41,17 @@ function Navbar(props) {
     props.setUser(null);
     props.setIsAuth(false);
     navigate('/');
+  };
+
+  const handleClickProject = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleCloseProject = (project) => {
+    if (project && typeof project === 'string') {
+      setSelectedProject(project);
+    }
+    setAnchorEl(null);
   };
 
   // Función para verificar si la ruta es la activa
@@ -52,20 +72,20 @@ function Navbar(props) {
       >
         <Toolbar sx={{ justifyContent: 'space-between' }}>
 
-          {/* LOGO */}
-          <Box className={`navbar-logo-container ${scrolled ? 'scrolled' : ''}`}>
-            <img
-              src="https://upload.wikimedia.org/wikipedia/commons/5/50/Oracle_logo.svg"
-              alt="Oracle Logo"
-              style={{ height: '14px' }}
-            />
+          {/* SECCIÓN IZQUIERDA: LOGO */}
+          <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+            <Box className={`navbar-logo-container ${scrolled ? 'scrolled' : ''}`}>
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/5/50/Oracle_logo.svg"
+                alt="Oracle Logo"
+                style={{ height: '14px' }}
+              />
+            </Box>
           </Box>
 
-          <Box sx={{ flexGrow: 1 }} />
-
-          {/* BOTONES */}
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-
+          {/* SECCIÓN CENTRAL: BOTONES DE NAVEGACIÓN */}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            
             {/* HELP */}
             <Button
               className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''}`}
@@ -95,19 +115,31 @@ function Navbar(props) {
               </Button>
             )}
 
-            {/* GESTION DE TAREAS */}
+            {/* CREAR TAREA */}
             {props.user?.roleName === 'Product Owner' && (
               <Button
-                className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/gestion') ? 'active' : ''}`}
-                onClick={() => navigate('/gestion')}
+                className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/TaskCreator') ? 'active' : ''}`}
+                onClick={() => navigate('/TaskCreator')}
               >
                 <span className="icon">
                   <AppRegistrationIcon fontSize="small" />
                 </span>
-                <span className="label">Gestion</span>
+                <span className="label">Gestión</span>
               </Button>
             )}
 
+            {/* GESTION DE TAREAS */}
+            {props.user?.roleName === 'Product Owner' && (
+              <Button
+                className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/Sprints') ? 'active' : ''}`}
+                onClick={() => navigate('/Sprints')}
+              >
+                <span className="icon">
+                  <AppRegistrationIcon fontSize="small" />
+                </span>
+                <span className="label">Sprints</span>
+              </Button>
+            )}
 
             {/* DEVELOPERS */}
             {props.user?.roleName === 'Developer' && (
@@ -134,9 +166,46 @@ function Navbar(props) {
                 <span className="label">Registrar</span>
               </Button>
             )}
+          </Box>
 
+          {/* SECCIÓN DERECHA: PROYECTOS Y LOGOUT */}
+          <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, justifyContent: 'flex-end' }}>
 
-            {/* LOGOUT */}
+            {/* SELECTOR DE PROYECTOS (ESTÁTICO, SIN CRECIMIENTO) */}
+            <Button
+              className={`nav-button icon-btn no-grow ${scrolled ? 'scrolled' : ''}`}
+              onClick={handleClickProject}
+              endIcon={<ArrowDropDownIcon />}
+            >
+              <span className="icon">
+                <AccountTreeIcon fontSize="small" />
+              </span>
+              <span className="label">{selectedProject}</span>
+            </Button>
+            <Menu
+              anchorEl={anchorEl}
+              open={open}
+              onClose={() => handleCloseProject()}
+              PaperProps={{
+                style: {
+                  borderRadius: '12px',
+                  marginTop: '8px',
+                  minWidth: '180px',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                },
+              }}
+            >
+              {projects.map((project) => (
+                <MenuItem 
+                  key={project} 
+                  onClick={() => handleCloseProject(project)}
+                  selected={project === selectedProject}
+                >
+                  {project}
+                </MenuItem>
+              ))}
+            </Menu>
+
             <Button
               onClick={handleLogout}
               className={`nav-button nav-button-logout icon-btn ${scrolled ? 'scrolled' : ''}`}
@@ -146,7 +215,6 @@ function Navbar(props) {
               </span>
               <span className="label">Logout</span>
             </Button>
-
           </Box>
 
         </Toolbar>

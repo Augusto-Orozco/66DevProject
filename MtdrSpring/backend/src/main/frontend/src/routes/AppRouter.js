@@ -4,8 +4,9 @@ import Login from '../pages/login'
 import Dashboard from '../pages/dashboard'
 import DashDevs from '../pages/DashDevs'
 import Navbar from '../components/Navbar'
-import Gestion from '../pages/gestion'
+import Sprints from '../pages/Sprints'
 import AddDevs from '../pages/AddDevs'
+import TaskCreator from '../pages/TaskCreator'
 
 function AppRouter({ isAuth, setIsAuth, user, setUser }) {
   return (
@@ -55,10 +56,19 @@ function AppRouter({ isAuth, setIsAuth, user, setUser }) {
           />
 
           <Route 
-            path="/gestion" 
+            path="/TaskCreator" 
             element={
               isAuth && user?.roleName === 'Product Owner'
-                ? <Gestion />
+                ? <TaskCreator />
+                : <Navigate to={isAuth ? "/DashDevs" : "/"} />
+            }
+          />
+
+          <Route 
+            path="/Sprints" 
+            element={
+              isAuth && user?.roleName === 'Product Owner'
+                ? <Sprints />
                 : <Navigate to={isAuth ? "/DashDevs" : "/"} />
             }
           />
