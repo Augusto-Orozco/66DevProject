@@ -137,7 +137,7 @@ function Column({ id, title, tasks, visibleColumnCount }) {
 }
 
 /* --- MAIN --- */
-function Gestion() {
+function Sprints() {
   const [columns, setColumns] = useState({})
   const [loading, setLoading] = useState(true)
   const [selectedSprintId, setSelectedSprintId] = useState(null)
@@ -530,4 +530,4 @@ function Gestion() {
   )
 }
 
-export default Gestion
+export default Sprints
