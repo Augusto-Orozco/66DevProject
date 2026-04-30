@@ -13,7 +13,8 @@ public enum BotLabels {
 	UNDO("Pendiente"),
 	DELETE("Borrar este label"),
 	MY_TODO_LIST("MY TODO LIST"),
-	DASH(" ");
+	DASH(" "),
+	ADVICE("Dame un consejo");
 
 	private String label;
 
