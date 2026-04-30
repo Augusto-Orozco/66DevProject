@@ -8,11 +8,19 @@ import Sprints from '../pages/Sprints'
 import AddDevs from '../pages/AddDevs'
 import TaskCreator from '../pages/TaskCreator'
 
-function AppRouter({ isAuth, setIsAuth, user, setUser }) {
+function AppRouter({ isAuth, setIsAuth, user, setUser, selectedProjectId, setSelectedProjectId }) {
   return (
     <BrowserRouter>
 
-      {isAuth && <Navbar setIsAuth={setIsAuth} setUser={setUser} user={user} />}
+      {isAuth && (
+        <Navbar 
+          setIsAuth={setIsAuth} 
+          setUser={setUser} 
+          user={user} 
+          selectedProjectId={selectedProjectId}
+          setSelectedProjectId={setSelectedProjectId}
+        />
+      )}
 
       <Box>
         {/* Esto empuja TODO el contenido debajo del navbar */}
@@ -32,7 +40,7 @@ function AppRouter({ isAuth, setIsAuth, user, setUser }) {
             path="/dashboard" 
             element={
               isAuth && user?.roleName === 'Product Owner'
-                ? <Dashboard />
+                ? <Dashboard selectedProjectId={selectedProjectId} />
                 : <Navigate to={isAuth ? "/DashDevs" : "/"} />
             }
           />
@@ -59,7 +67,7 @@ function AppRouter({ isAuth, setIsAuth, user, setUser }) {
             path="/TaskCreator" 
             element={
               isAuth && user?.roleName === 'Product Owner'
-                ? <TaskCreator />
+                ? <TaskCreator selectedProjectId={selectedProjectId} />
                 : <Navigate to={isAuth ? "/DashDevs" : "/"} />
             }
           />
@@ -68,7 +76,7 @@ function AppRouter({ isAuth, setIsAuth, user, setUser }) {
             path="/Sprints" 
             element={
               isAuth && user?.roleName === 'Product Owner'
-                ? <Sprints />
+                ? <Sprints selectedProjectId={selectedProjectId} />
                 : <Navigate to={isAuth ? "/DashDevs" : "/"} />
             }
           />

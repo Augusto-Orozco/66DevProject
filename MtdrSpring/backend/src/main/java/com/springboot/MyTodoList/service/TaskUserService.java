@@ -23,6 +23,10 @@ public class TaskUserService {
         return taskUserRepository.findAll();
     }
 
+    public List<TaskUser> getTaskUsersByProjectId(Long projectId) {
+        return taskUserRepository.findByProjectId(projectId);
+    }
+
     public List<TaskUser> getTasksByUserId(Long userId) {
         return taskUserRepository.findByIdUserId(userId);
     }

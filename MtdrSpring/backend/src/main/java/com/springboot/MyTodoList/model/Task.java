@@ -16,6 +16,10 @@ public class Task {
     @JoinColumn(name = "USER_STORIES_ID", nullable = false)
     private UserStory userStory;
 
+    @ManyToOne
+    @JoinColumn(name = "PROJECT_ID", nullable = false)
+    private Project project;
+
     @Column(name = "TITLE", nullable = false, length = 100)
     private String title;
 
@@ -53,8 +57,9 @@ public class Task {
 
     public Task() {}
 
-    public Task(UserStory userStory, String title, String description, TaskStatus status, Integer storyPoints, TaskPriority priority, Integer objetiveTime) {
+    public Task(UserStory userStory, Project project, String title, String description, TaskStatus status, Integer storyPoints, TaskPriority priority, Integer objetiveTime) {
         this.userStory = userStory;
+        this.project = project;
         this.title = title;
         this.description = description;
         this.status = status;
@@ -78,6 +83,14 @@ public class Task {
 
     public void setUserStory(UserStory userStory) {
         this.userStory = userStory;
+    }
+
+    public Project getProject() {
+        return project;
+    }
+
+    public void setProject(Project project) {
+        this.project = project;
     }
 
     public String getTitle() {

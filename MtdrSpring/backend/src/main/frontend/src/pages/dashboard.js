@@ -7,7 +7,7 @@ import { PieChart, Pie, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAx
 import Footer from '../components/Footer'
 import '../Assets/styles.css'
 
-function Dashboard() {
+function Dashboard({ selectedProjectId }) {
   const [items, setItems] = useState([])
   const [users, setUsers] = useState([])
   const [assignments, setAssignments] = useState([])
@@ -17,34 +17,50 @@ function Dashboard() {
   const [error, setError] = useState(null)
 
   const fetchData = () => {
+    if (!selectedProjectId) return;
+    
     setLoading(true)
+    setError(null)
+    
+    // Limpieza inmediata para evitar ver datos del proyecto anterior
+    setItems([])
+    setUsers([])
+    setAssignments([])
+
     Promise.all([
-      fetch('/tasks').then(res => res.json()),
-      fetch('/users').then(res => res.json()),
-      fetch('/tasks/assignments').then(res => res.json())
+      fetch(`/tasks/project/${selectedProjectId}`).then(res => res.json()),
+      fetch(`/team/project/${selectedProjectId}`).then(res => res.json()),
+      fetch(`/tasks/assignments/project/${selectedProjectId}`).then(res => res.json())
     ])
-    .then(([tasksData, usersData, assignmentsData]) => {
-      setItems(tasksData)
-      setUsers(usersData)
-      setAssignments(assignmentsData)
+    .then(([tasksData, teamData, assignmentsData]) => {
+      setItems(Array.isArray(tasksData) ? tasksData : [])
+      setUsers(Array.isArray(teamData) ? teamData : [])
+      setAssignments(Array.isArray(assignmentsData) ? assignmentsData : [])
       setLoading(false)
     })
-    .catch(error => {
-      setError(error.message)
+    .catch(err => {
+      console.error("Error cargando dashboard:", err)
+      setError("No se pudieron cargar los datos del proyecto")
+      setItems([])
+      setUsers([])
+      setAssignments([])
       setLoading(false)
     })
   }
 
   useEffect(() => {
+    setStatusFilter('all')
+    setHoursFilter('all')
     fetchData()
-  }, [])
+  }, [selectedProjectId])
 
-  // --- Lógica para Gráfica de Estatus ---
-  const tasksForStatus = statusFilter === 'all' 
+  // --- Gráfica de Estatus ---
+  const tasksForStatus = (statusFilter === 'all') 
     ? items 
     : assignments
-        .filter(a => a.user.userId === statusFilter)
+        .filter(a => a.user && String(a.user.userId) === String(statusFilter))
         .map(a => a.task)
+        .filter(t => t != null)
 
   const statusCount = tasksForStatus.reduce((acc, item) => {
     const status = item.status?.status || 'SIN ESTATUS'
@@ -60,40 +76,48 @@ function Dashboard() {
     return { name: key, value: statusCount[key], fill: color }
   })
 
-  // --- Lógica para Gráfica de Horas ---
+  // --- Gráfica de Horas ---
   let devComparisonData = []
+  const validUserIds = new Set(users.map(u => String(u.userId)))
+
   if (hoursFilter === 'all') {
-    const devStats = assignments.reduce((acc, a) => {
-      const userName = `${a.user.firtsName} ${a.user.lastName}`
-      if (!acc[userName]) {
-        acc[userName] = { name: userName, estimado: 0, real: 0 }
-      }
-      acc[userName].estimado += a.task.objetiveTime || 0
-      acc[userName].real += a.task.realTime || 0
-      return acc
-    }, {})
+    const devStats = assignments
+      .filter(a => a.user && a.task && validUserIds.has(String(a.user.userId)))
+      .reduce((acc, a) => {
+        const userName = `${a.user.firtsName} ${a.user.lastName}`
+        if (!acc[userName]) {
+          acc[userName] = { name: userName, estimado: 0, real: 0 }
+        }
+        // Acceso robusto a las horas
+        const est = Number(a.task.objetiveTime) || 0
+        const rea = Number(a.task.realTime) || 0
+        
+        acc[userName].estimado += est
+        acc[userName].real += rea
+        return acc
+      }, {})
     devComparisonData = Object.values(devStats)
   } else {
-    const selectedDev = users.find(u => u.userId === hoursFilter)
+    const selectedDev = users.find(u => String(u.userId) === String(hoursFilter))
     const devName = selectedDev ? `${selectedDev.firtsName} ${selectedDev.lastName}` : ''
     devComparisonData = assignments
-      .filter(a => a.user.userId === hoursFilter)
+      .filter(a => a.user && a.task && String(a.user.userId) === String(hoursFilter))
       .map(a => ({
-        name: a.task.title, // El tooltip usa 'name' como título. 
+        name: a.task.title || 'Sin Título', 
         userName: devName,
-        estimado: a.task.objetiveTime || 0,
-        real: a.task.realTime || 0
+        estimado: Number(a.task.objetiveTime) || 0,
+        real: Number(a.task.realTime) || 0
       }))
   }
 
   // --- Listado y Sprint Progress (Usan el total por ahora) ---
   const completionRateData = [
-    { name: 'Completadas', value: items.filter(t => t.status?.status === 'Completado').length, fill: '#4caf50' },
-    { name: 'Pendientes', value: items.filter(t => t.status?.status !== 'Completado').length, fill: '#fbc02d' }
+    { name: 'Completadas', value: (items || []).filter(t => t?.status?.status === 'Completado').length, fill: '#4caf50' },
+    { name: 'Pendientes', value: (items || []).filter(t => t?.status?.status !== 'Completado').length, fill: '#fbc02d' }
   ]
   
-  const totalTasks = items.length
-  const completedTasks = items.filter(t => t.status?.status === 'Completado').length
+  const totalTasks = (items || []).length
+  const completedTasks = (items || []).filter(t => t?.status?.status === 'Completado').length
   const progressPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
 
   const sprintProgressData = [
