@@ -115,18 +115,18 @@ function Navbar(props) {
               </Button>
             )}
 
-            {/*{/* CREAR TAREA */}
-            {/*{props.user?.roleName === 'Product Owner' && ( */}
-            {/*  <Button */}
-            {/*    className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/TaskCreator') ? 'active' : ''}`}*/}
-            {/*    onClick={() => navigate('/TaskCreator')}*/}
-            {/*  >*/}
-            {/*    <span className="icon">*/}
-            {/*      <AppRegistrationIcon fontSize="small" />*/}
-            {/*    </span>*/}
-            {/*    <span className="label">Gestión</span>*/}
-            {/*  </Button>*/}
-            {/*)}*/}
+            {/* CREAR TAREA */}
+            {props.user?.roleName === 'Product Owner' && (
+              <Button
+                className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/TaskCreator') ? 'active' : ''}`}
+                onClick={() => navigate('/TaskCreator')}
+              >
+                <span className="icon">
+                  <AppRegistrationIcon fontSize="small" />
+                </span>
+                <span className="label">Gestión</span>
+              </Button>
+            )}
 
             {/* GESTION DE TAREAS */}
             {props.user?.roleName === 'Product Owner' && (

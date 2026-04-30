@@ -68,11 +68,6 @@ public class TaskController {
     public List<Task> getUnassignedTasks() {
         return taskService.getUnassignedTasks();
     }
-
-    @GetMapping("/tasks/assignments")
-    public List<TaskUser> getAllTaskAssignments() {
-        return taskUserService.getAllTaskUsers();
-    }
     
     @GetMapping("/userStory/{userStoryId}")
     public List<Task> getTasksByUserStoryId(@PathVariable String userStoryId) {

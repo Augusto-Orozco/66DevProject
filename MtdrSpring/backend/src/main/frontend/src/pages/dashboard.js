@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Box, Typography, CircularProgress, Button, IconButton, FormControl, InputLabel, Select, MenuItem } from '@mui/material'
+import { Box, Typography, CircularProgress, Button, IconButton } from '@mui/material'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import CachedIcon from '@mui/icons-material/Cached';
 import { PieChart, Pie, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid} from 'recharts'
@@ -9,50 +9,38 @@ import '../Assets/styles.css'
 
 function Dashboard() {
   const [items, setItems] = useState([])
-  const [users, setUsers] = useState([])
-  const [assignments, setAssignments] = useState([])
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [hoursFilter, setHoursFilter] = useState('all')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  const fetchData = () => {
+  const fetchTasks = () => {
     setLoading(true)
-    Promise.all([
-      fetch('/tasks').then(res => res.json()),
-      fetch('/users').then(res => res.json()),
-      fetch('/tasks/assignments').then(res => res.json())
-    ])
-    .then(([tasksData, usersData, assignmentsData]) => {
-      setItems(tasksData)
-      setUsers(usersData)
-      setAssignments(assignmentsData)
-      setLoading(false)
-    })
-    .catch(error => {
-      setError(error.message)
-      setLoading(false)
-    })
+    fetch('/tasks')
+      .then(res => {
+        if (!res.ok) throw new Error('Error en la respuesta del servidor')
+        return res.json()
+      })
+      .then(data => {
+        setItems(data)
+        setLoading(false)
+      })
+      .catch(error => {
+        setError(error.message)
+        setLoading(false)
+      })
   }
 
   useEffect(() => {
-    fetchData()
+    fetchTasks()
   }, [])
 
-  // --- Lógica para Gráfica de Estatus ---
-  const tasksForStatus = statusFilter === 'all' 
-    ? items 
-    : assignments
-        .filter(a => a.user.userId === statusFilter)
-        .map(a => a.task)
-
-  const statusCount = tasksForStatus.reduce((acc, item) => {
+  // Agrupar tareas por status
+  const statusCount = items.reduce((acc, item) => {
     const status = item.status?.status || 'SIN ESTATUS'
     acc[status] = (acc[status] || 0) + 1
     return acc
   }, {})
 
-  const statusChartData = Object.keys(statusCount).map(key => {
+  const chartData = Object.keys(statusCount).map(key => {
     let color = '#9e9e9e'
     if (key === 'Completado') color = '#4caf50'
     else if (key === 'En Progreso') color = '#fbc02d'
@@ -60,44 +48,12 @@ function Dashboard() {
     return { name: key, value: statusCount[key], fill: color }
   })
 
-  // --- Lógica para Gráfica de Horas ---
-  let devComparisonData = []
-  if (hoursFilter === 'all') {
-    const devStats = assignments.reduce((acc, a) => {
-      const userName = `${a.user.firtsName} ${a.user.lastName}`
-      if (!acc[userName]) {
-        acc[userName] = { name: userName, estimado: 0, real: 0 }
-      }
-      acc[userName].estimado += a.task.objetiveTime || 0
-      acc[userName].real += a.task.realTime || 0
-      return acc
-    }, {})
-    devComparisonData = Object.values(devStats)
-  } else {
-    const selectedDev = users.find(u => u.userId === hoursFilter)
-    const devName = selectedDev ? `${selectedDev.firtsName} ${selectedDev.lastName}` : ''
-    devComparisonData = assignments
-      .filter(a => a.user.userId === hoursFilter)
-      .map(a => ({
-        name: a.task.title, // El tooltip usa 'name' como título. 
-        userName: devName,
-        estimado: a.task.objetiveTime || 0,
-        real: a.task.realTime || 0
-      }))
-  }
-
-  // --- Listado y Sprint Progress (Usan el total por ahora) ---
   const completionRateData = [
-    { name: 'Completadas', value: items.filter(t => t.status?.status === 'Completado').length, fill: '#4caf50' },
-    { name: 'Pendientes', value: items.filter(t => t.status?.status !== 'Completado').length, fill: '#fbc02d' }
+    { name: 'Completadas', value: 18, fill: '#4caf50' },
+    { name: 'Pendientes', value: 7, fill: '#fbc02d' }
   ]
-  
-  const totalTasks = items.length
-  const completedTasks = items.filter(t => t.status?.status === 'Completado').length
-  const progressPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
-
   const sprintProgressData = [
-    { name: 'Sprint', completado: progressPercent, restante: 100 - progressPercent }
+    { name: 'Sprint', completado: 70, restante: 30 }
   ]
 
   return (
@@ -111,30 +67,13 @@ function Dashboard() {
       </Box>
 
       <Box className="base-card">
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, width: '100%' }}>
-          <Typography variant="h6">Estado de Tareas</Typography>
-          <FormControl size="small" sx={{ minWidth: 120 }}>
-            <Select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              displayEmpty
-              sx={{ fontSize: '0.75rem' }}
-            >
-              <MenuItem value="all" sx={{ fontSize: '0.75rem' }}>Todos</MenuItem>
-              {users.map(user => (
-                <MenuItem key={user.userId} value={user.userId} sx={{ fontSize: '0.75rem' }}>
-                  {user.firtsName}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
+        <Typography variant="h6" sx={{ mb: 1 }}>Estado de Tareas</Typography>
         {loading ? <CircularProgress /> : (
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
-              <Pie data={statusChartData} dataKey="value" nameKey="name" outerRadius={80} innerRadius={40} />
-              <Legend wrapperStyle={{ fontSize: '10px' }} />
-              <Tooltip contentStyle={{ fontSize: '10px' }} />
+              <Pie data={chartData} dataKey="value" nameKey="name" outerRadius={80} innerRadius={40} />
+              <Legend wrapperStyle={{ fontSize: '12px' }} />
+              <Tooltip contentStyle={{ fontSize: '12px' }} />
             </PieChart>
           </ResponsiveContainer>
         )}
@@ -152,10 +91,10 @@ function Dashboard() {
 
       <Box className="base-card">
         <Typography variant="h6">Progreso del Sprint</Typography>
-        <Typography variant="h4" fontWeight="bold" sx={{ mb: 1 }}>{progressPercent}%</Typography>
+        <Typography variant="h4" fontWeight="bold" sx={{ mb: 1 }}>70%</Typography>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={sprintProgressData} layout="vertical">
-            <XAxis type="number" domain={[0, 100]} hide /><YAxis type="category" dataKey="name" hide /><Tooltip />
+            <XAxis type="number" hide /><YAxis type="category" dataKey="name" hide /><Tooltip />
             <Bar dataKey="completado" stackId="a" fill="#4caf50" />
             <Bar dataKey="restante" stackId="a" fill="#e0e0e0" />
           </BarChart>
@@ -164,29 +103,10 @@ function Dashboard() {
 
       {/* --- SEGUNDA FILA --- */}
       <Box className="base-card" sx={{ gridColumn: 'span 2' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, width: '100%' }}>
-          <Typography variant="h6">
-            {hoursFilter === 'all' ? 'Comparativa Horas por Desarrollador' : `Horas - ${users.find(u => u.userId === hoursFilter)?.firtsName || ''}`}
-          </Typography>
-          <FormControl size="small" sx={{ minWidth: 150 }}>
-            <Select
-              value={hoursFilter}
-              onChange={(e) => setHoursFilter(e.target.value)}
-              displayEmpty
-              sx={{ fontSize: '0.75rem' }}
-            >
-              <MenuItem value="all" sx={{ fontSize: '0.75rem' }}>Todos los Devs</MenuItem>
-              {users.map(user => (
-                <MenuItem key={user.userId} value={user.userId} sx={{ fontSize: '0.75rem' }}>
-                  {user.firtsName} {user.lastName}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
+        <Typography variant="h6" sx={{ mb: 2 }}>Desviación Estimado vs Real (Horas)</Typography>
         <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={devComparisonData}>
-            <CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="name" tick={false} /><YAxis /><Tooltip /><Legend />
+          <BarChart data={[{ tarea: 'Login', estimado: 2, real: 3 }, { tarea: 'API Tasks', estimado: 3, real: 2 }, { tarea: 'Dashboard', estimado: 4, real: 5 }, { tarea: 'Fix Bugs', estimado: 2, real: 4 }]}>
+            <CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="tarea" /><YAxis /><Tooltip /><Legend />
             <Bar dataKey="estimado" fill="#42a5f5" name="Horas Estimadas" /><Bar dataKey="real" fill="#ef5350" name="Horas Reales" />
           </BarChart>
         </ResponsiveContainer>
@@ -198,7 +118,8 @@ function Dashboard() {
       <Box className="base-card" sx={{ gridColumn: 'span 4', alignItems: 'flex-start', justifyContent: 'flex-start', p: 3 }}>
         <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h6" fontWeight="bold">Listado de Tareas</Typography>
-          <IconButton size="small" onClick={fetchData} disabled={loading}><CachedIcon /></IconButton>
+          {/* <Button size="small" variant="outlined" startIcon={<CachedIcon/>} onClick={fetchTasks} disabled={loading}></Button> */}
+          <IconButton size="small" onClick={fetchTasks} disabled={loading}><CachedIcon /></IconButton>
         </Box>
 
         {!loading && items.length > 0 && (
