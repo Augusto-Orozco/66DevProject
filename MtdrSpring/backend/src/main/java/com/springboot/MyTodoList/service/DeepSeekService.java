@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.springboot.MyTodoList.config.DeepSeekConfig;
 import java.io.IOException;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
@@ -18,23 +19,26 @@ import org.springframework.stereotype.Service;
 public class DeepSeekService{
     private static final Logger logger = LoggerFactory.getLogger(DeepSeekService.class);
     private final CloseableHttpClient httpClient;
-    private final HttpPost httpPost;
+    private final DeepSeekConfig config;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public DeepSeekService(CloseableHttpClient httpClient, HttpPost httpPost) {
+    public DeepSeekService(CloseableHttpClient httpClient, DeepSeekConfig config) {
         this.httpClient = httpClient;
-        this.httpPost = httpPost;
+        this.config = config;
     }
-
     public String generateText(String prompt) throws IOException, org.apache.hc.core5.http.ParseException {
-        // Gemini API Format
+        // Crear una nueva petición para cada llamada para evitar problemas de concurrencia
+        HttpPost httpPost = new HttpPost(config.getApiUrl());
+        httpPost.addHeader("Content-Type", "application/json");
+        httpPost.addHeader("X-goog-api-key", config.getApiKey());
+
         ObjectNode rootNode = objectMapper.createObjectNode();
+
         ArrayNode contents = rootNode.putArray("contents");
         ObjectNode content = contents.addObject();
         ArrayNode parts = content.putArray("parts");
         ObjectNode part = parts.addObject();
         
-        // Combining system instructions and user prompt for Gemini Flash
         String systemInstructions = "Eres un asistente de gestión de proyectos experto. " +
             "Tu habilidad especial es generar reportes para Telegram usando Markdown. " +
             "REGLAS DE FORMATO CRÍTICAS:\n" +
@@ -50,12 +54,11 @@ public class DeepSeekService{
         String requestBody = objectMapper.writeValueAsString(rootNode);
 
         try {
-            httpPost.setEntity(new StringEntity(requestBody));
+            httpPost.setEntity(new StringEntity(requestBody, org.apache.hc.core5.http.ContentType.APPLICATION_JSON));
             try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
                 String responseBody = EntityUtils.toString(response.getEntity());
                 JsonNode responseJson = objectMapper.readTree(responseBody);
                 
-                // Gemini response structure: candidates[0].content.parts[0].text
                 if (responseJson.has("candidates") && responseJson.get("candidates").isArray() && responseJson.get("candidates").size() > 0) {
                     JsonNode candidate = responseJson.get("candidates").get(0);
                     if (candidate.has("content") && candidate.get("content").has("parts")) {
@@ -63,8 +66,14 @@ public class DeepSeekService{
                     }
                 }
                 
-                logger.error("Error en respuesta de Gemini: " + responseBody);
-                return "⚠️ Error de la API de Gemini: " + responseBody;
+                if (responseJson.has("error")) {
+                    String errorMsg = responseJson.get("error").get("message").asText();
+                    logger.error("Error oficial de Gemini: " + errorMsg);
+                    return "⚠️ Error de Gemini: " + errorMsg;
+                }
+                
+                logger.error("Error en respuesta de Gemini (Cuerpo): " + responseBody);
+                return "⚠️ Error de la API de Gemini (403/Forbidden). Verifica que tu API Key sea válida y no tenga restricciones de IP.";
             }
         } catch (Exception e) {
             logger.error("Error al comunicarse con Gemini: " + e.getMessage());

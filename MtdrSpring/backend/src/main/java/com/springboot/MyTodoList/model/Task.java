@@ -1,5 +1,6 @@
 package com.springboot.MyTodoList.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -13,39 +14,39 @@ public class Task {
     private Long taskId;
 
     @ManyToOne
-    @JoinColumn(name = "USER_STORIES_ID", nullable = false)
+    @JoinColumn(name = "USER_STORIES_ID")
     private UserStory userStory;
 
     @Column(name = "TITLE", nullable = false, length = 100)
     private String title;
 
-    @Column(name = "DESCRIPTION", nullable = false, length = 500)
+    @Column(name = "DESCRIPTION", length = 500)
     private String description;
 
     @ManyToOne
     @JoinColumn(name = "STATUS")
     private TaskStatus status;
 
-    @Column(name = "STORY_POINTS", nullable = false, columnDefinition = "NUMBER")
+    @Column(name = "STORY_POINTS")
     private Integer storyPoints;
 
     @ManyToOne
     @JoinColumn(name = "PRIORITY")
     private TaskPriority priority;
 
-    @Column(name = "OBJETIVE_TIME", nullable = false, columnDefinition = "NUMBER")
+    @Column(name = "OBJETIVE_TIME")
     private Integer objetiveTime; // Matching typo: OBJETIVE
 
-    @Column(name = "REAL_TIME", columnDefinition = "NUMBER")
+    @Column(name = "REAL_TIME")
     private Integer realTime;
 
-    @Column(name = "CREATED_AT", nullable = false, insertable = false, updatable = false)
+    @Column(name = "CREATED_AT", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "FINISHED_AT")
     private LocalDateTime finishedAt;
 
-    @Column(name = "DELETED", nullable = false, columnDefinition = "CHAR(1)")
+    @Column(name = "DELETED", length = 1)
     private String deleted; // 'Y' or 'N'
 
     @Column(name = "DELETED_BY")

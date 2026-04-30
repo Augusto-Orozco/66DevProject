@@ -590,12 +590,13 @@ public class BotActions{
         try {
             String aiResponse = deepSeekService.generateText(prompt);
             BotHelper.sendMessageToTelegram(chatId, aiResponse, telegramClient);
-            exit = false;
-            fnStart();
         } catch (Exception e) {
-            logger.error("Error al consultar Gemini: " + e.getLocalizedMessage());
+            logger.error("Error al consultar Gemini: {}", e.getMessage());
             BotHelper.sendMessageToTelegram(chatId, "Lo siento, hubo un error al consultar a la IA. Inténtalo más tarde.", telegramClient);
         }
+        
+        // Volvemos al menú principal
+        exit = false;
         fnStart();
         exit = true;
     }
@@ -609,7 +610,6 @@ public class BotActions{
     }
 
     public void fnLLM(){
-        logger.info("Calling LLM");
         if (!(requestText.contains(BotCommands.LLM_REQ.getCommand())) || exit)
             return;
         
@@ -618,7 +618,7 @@ public class BotActions{
         try{
             out = deepSeekService.generateText(prompt);
         }catch(Exception exc){
-            logger.error("Error al consultar Gemini: " + exc.getLocalizedMessage());
+            logger.error("Error al consultar Gemini: {}", exc.getMessage());
         }
 
         //BotHelper.sendMessageToTelegram(chatId, "LLM: "+out, telegramClient, null);

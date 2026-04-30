@@ -19,17 +19,18 @@ function Dashboard() {
   const fetchData = () => {
     setLoading(true)
     Promise.all([
-      fetch('/tasks').then(res => res.json()),
-      fetch('/users').then(res => res.json()),
-      fetch('/tasks/assignments').then(res => res.json())
+      fetch('/tasks').then(res => res.ok ? res.json() : []),
+      fetch('/users').then(res => res.ok ? res.json() : []),
+      fetch('/tasks/assignments').then(res => res.ok ? res.json() : [])
     ])
     .then(([tasksData, usersData, assignmentsData]) => {
-      setItems(tasksData)
-      setUsers(usersData)
-      setAssignments(assignmentsData)
+      setItems(Array.isArray(tasksData) ? tasksData : [])
+      setUsers(Array.isArray(usersData) ? usersData : [])
+      setAssignments(Array.isArray(assignmentsData) ? assignmentsData : [])
       setLoading(false)
     })
     .catch(error => {
+      console.error("Error fetching data:", error)
       setError(error.message)
       setLoading(false)
     })
@@ -42,15 +43,15 @@ function Dashboard() {
   // --- Lógica para Gráfica de Estatus ---
   const tasksForStatus = statusFilter === 'all' 
     ? items 
-    : assignments
+    : (Array.isArray(assignments) ? assignments : [])
         .filter(a => a.user.userId === statusFilter)
         .map(a => a.task)
 
-  const statusCount = tasksForStatus.reduce((acc, item) => {
+  const statusCount = Array.isArray(tasksForStatus) ? tasksForStatus.reduce((acc, item) => {
     const status = item.status?.status || 'SIN ESTATUS'
     acc[status] = (acc[status] || 0) + 1
     return acc
-  }, {})
+  }, {}) : {}
 
   const statusChartData = Object.keys(statusCount).map(key => {
     let color = '#9e9e9e'
@@ -63,7 +64,8 @@ function Dashboard() {
   // --- Lógica para Gráfica de Horas ---
   let devComparisonData = []
   if (hoursFilter === 'all') {
-    const devStats = assignments.reduce((acc, a) => {
+    const devStats = (Array.isArray(assignments) ? assignments : []).reduce((acc, a) => {
+      if (!a.user || !a.task) return acc
       const userName = `${a.user.firtsName} ${a.user.lastName}`
       if (!acc[userName]) {
         acc[userName] = { name: userName, estimado: 0, real: 0 }
@@ -76,24 +78,24 @@ function Dashboard() {
   } else {
     const selectedDev = users.find(u => u.userId === hoursFilter)
     const devName = selectedDev ? `${selectedDev.firtsName} ${selectedDev.lastName}` : ''
-    devComparisonData = assignments
-      .filter(a => a.user.userId === hoursFilter)
+    devComparisonData = (Array.isArray(assignments) ? assignments : [])
+      .filter(a => a.user && a.user.userId === hoursFilter)
       .map(a => ({
-        name: a.task.title, // El tooltip usa 'name' como título. 
+        name: a.task ? a.task.title : 'Sin Título', // El tooltip usa 'name' como título. 
         userName: devName,
-        estimado: a.task.objetiveTime || 0,
-        real: a.task.realTime || 0
+        estimado: a.task ? (a.task.objetiveTime || 0) : 0,
+        real: a.task ? (a.task.realTime || 0) : 0
       }))
   }
 
   // --- Listado y Sprint Progress (Usan el total por ahora) ---
   const completionRateData = [
-    { name: 'Completadas', value: items.filter(t => t.status?.status === 'Completado').length, fill: '#4caf50' },
-    { name: 'Pendientes', value: items.filter(t => t.status?.status !== 'Completado').length, fill: '#fbc02d' }
+    { name: 'Completadas', value: (Array.isArray(items) ? items : []).filter(t => t.status?.status === 'Completado').length, fill: '#4caf50' },
+    { name: 'Pendientes', value: (Array.isArray(items) ? items : []).filter(t => t.status?.status !== 'Completado').length, fill: '#fbc02d' }
   ]
   
-  const totalTasks = items.length
-  const completedTasks = items.filter(t => t.status?.status === 'Completado').length
+  const totalTasks = Array.isArray(items) ? items.length : 0
+  const completedTasks = Array.isArray(items) ? items.filter(t => t.status?.status === 'Completado').length : 0
   const progressPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
 
   const sprintProgressData = [

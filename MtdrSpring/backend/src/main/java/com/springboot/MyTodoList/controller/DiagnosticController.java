@@ -57,4 +57,12 @@ public class DiagnosticController {
         }
         return info;
     }
+
+    @GetMapping("/diag/tasks-structure")
+    public List<Map<String, Object>> inspectTaskTable() {
+        return jdbcTemplate.queryForList(
+            "SELECT column_name, data_type, data_length, nullable " +
+            "FROM user_tab_columns WHERE table_name = 'TASKS' ORDER BY column_id"
+        );
+    }
 }
