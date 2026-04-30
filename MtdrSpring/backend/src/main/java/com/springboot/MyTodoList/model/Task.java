@@ -55,9 +55,13 @@ public class Task {
     @Column(name = "DELETED_BY")
     private Long deletedBy;
 
+    @ManyToOne
+    @JoinColumn(name = "PROJECT_ID")
+    private Project project;
+
     public Task() {}
 
-    public Task(UserStory userStory, Project project, String title, String description, TaskStatus status, Integer storyPoints, TaskPriority priority, Integer objetiveTime) {
+    public Task(UserStory userStory, String title, String description, TaskStatus status, Integer storyPoints, TaskPriority priority, Integer objetiveTime, Project project) {
         this.userStory = userStory;
         this.project = project;
         this.title = title;
@@ -67,6 +71,15 @@ public class Task {
         this.priority = priority;
         this.objetiveTime = objetiveTime;
         this.deleted = "N";
+        this.project = project;
+    }
+
+    public Project getProject() {
+        return project;
+    }
+
+    public void setProject(Project project) {
+        this.project = project;
     }
 
     public Long getTaskId() {
