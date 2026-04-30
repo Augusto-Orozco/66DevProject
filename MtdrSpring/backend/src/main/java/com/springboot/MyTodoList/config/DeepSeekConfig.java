@@ -22,7 +22,7 @@ public class DeepSeekConfig {
     public HttpPost deepSeekRequest(@Value("${deepseek.api.url}") String apiUrl) {
         HttpPost request = new HttpPost(apiUrl);
         request.addHeader("Content-Type", "application/json");
-        request.addHeader("Authorization", "Bearer " + apiKey);
+        request.addHeader("X-goog-api-key", apiKey);
         return request;
     }
 }

@@ -30,6 +30,10 @@ public class UserService {
         return userRepository.findByCredentialEmail(email);
     }
 
+    public Optional<User> getUserByTelegramId(Long telegramId) {
+        return userRepository.findByTelegramId(telegramId);
+    }
+
     public void deleteUser(Long id) {
         userRepository.deleteById(id);
     }

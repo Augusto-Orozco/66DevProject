@@ -6,6 +6,8 @@ public enum BotCommands {
 	HIDE_COMMAND("/hide"), 
 	TODO_LIST("/todolist"),
 	ADD_ITEM("/additem"),
+	CREATE_TASK("/createtask"),
+	AI_PROGRESS("/aiprogress"),
 	LLM_REQ("/llm");
 
 	private String command;

@@ -6,6 +6,8 @@ public enum BotLabels {
 	HIDE_MAIN_SCREEN("Cerrar conversación"),
 	LIST_ALL_ITEMS("Tareas Pendientes"), 
 	ADD_NEW_ITEM("Iniciar Nueva Tarea"),
+	CREATE_TASK("Crear Tarea"),
+	AI_PROGRESS("Consultar mi Progreso"),
 	DONE("Completada"),
 	IN_PROGRESS("En Progreso"),
 	UNDO("Pendiente"),
