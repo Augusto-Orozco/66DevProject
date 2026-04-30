@@ -1,22 +1,24 @@
 package com.springboot.MyTodoList.model;
 
 import jakarta.persistence.*;
+import java.io.Serializable;
+import java.util.Objects;
 
 @Entity
 @Table(name = "TEAM_PROJECT")
 public class TeamProject {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "TEAM_ID")
-    private Long teamId;
+    @EmbeddedId
+    private TeamProjectId id;
 
     @ManyToOne
-    @JoinColumn(name = "PROJECT_ID", nullable = false)
+    @MapsId("projectId")
+    @JoinColumn(name = "PROJECT_ID")
     private Project project;
 
     @ManyToOne
-    @JoinColumn(name = "USER_ID", nullable = false)
+    @MapsId("userId")
+    @JoinColumn(name = "USER_ID")
     private User user;
 
     public TeamProject() {}
@@ -24,14 +26,15 @@ public class TeamProject {
     public TeamProject(Project project, User user) {
         this.project = project;
         this.user = user;
+        this.id = new TeamProjectId(project.getProjectId(), user.getUserId());
     }
 
-    public Long getTeamId() {
-        return teamId;
+    public TeamProjectId getId() {
+        return id;
     }
 
-    public void setTeamId(Long teamId) {
-        this.teamId = teamId;
+    public void setId(TeamProjectId id) {
+        this.id = id;
     }
 
     public Project getProject() {
@@ -50,13 +53,56 @@ public class TeamProject {
         this.user = user;
     }
 
-
     @Override
     public String toString() {
         return "TeamProject{" +
-                "teamId=" + teamId +
-                ", project=" + project +
-                ", user=" + user +
+                "project=" + (project != null ? project.getName() : "null") +
+                ", user=" + (user != null ? user.getFirtsName() : "null") +
                 '}';
+    }
+
+    @Embeddable
+    public static class TeamProjectId implements Serializable {
+        @Column(name = "PROJECT_ID")
+        private Long projectId;
+
+        @Column(name = "USER_ID")
+        private Long userId;
+
+        public TeamProjectId() {}
+
+        public TeamProjectId(Long projectId, Long userId) {
+            this.projectId = projectId;
+            this.userId = userId;
+        }
+
+        public Long getProjectId() {
+            return projectId;
+        }
+
+        public void setProjectId(Long projectId) {
+            this.projectId = projectId;
+        }
+
+        public Long getUserId() {
+            return userId;
+        }
+
+        public void setUserId(Long userId) {
+            this.userId = userId;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            TeamProjectId that = (TeamProjectId) o;
+            return Objects.equals(projectId, that.projectId) && Objects.equals(userId, that.userId);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(projectId, userId);
+        }
     }
 }
