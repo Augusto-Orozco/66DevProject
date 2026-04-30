@@ -18,9 +18,7 @@ import {SortableContext, verticalListSortingStrategy, useSortable} from '@dnd-ki
 import { CSS } from '@dnd-kit/utilities'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import ViewWeekIcon from '@mui/icons-material/ViewWeek'
-import AddIcon from '@mui/icons-material/Add'
 import IconButton from '@mui/material/IconButton'
-import { TextField, Select as MuiSelect, InputLabel, FormControl } from '@mui/material'
 import Footer from '../components/Footer'
 import '../Assets/styles.css'
 
@@ -59,7 +57,7 @@ function TaskCard({ task }) {
 }
 
 /* --- COLUMNA DROPPABLE --- */
-function Column({ id, title, tasks, visibleColumnCount, onAddTask }) {
+function Column({ id, title, tasks, visibleColumnCount }) {
   const { setNodeRef, isOver } = useDroppable({
     id: id
   })
@@ -95,16 +93,9 @@ function Column({ id, title, tasks, visibleColumnCount, onAddTask }) {
         alignItems: 'stretch'
       }}
     >
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, borderBottom: '2px solid #f0f0f0', pb: 1 }}>
-        <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#333' }}>
-          {title}
-        </Typography>
-        {id === 'backlog' && (
-          <IconButton size="small" onClick={onAddTask} sx={{ color: '#cc0707' }}>
-            <AddIcon />
-          </IconButton>
-        )}
-      </Box>
+      <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold', borderBottom: '2px solid #f0f0f0', pb: 1, color: '#333' }}>
+        {title}
+      </Typography>
 
       <SortableContext
         items={tasks.map(t => t.id)}
@@ -155,20 +146,6 @@ function Sprints({ selectedProjectId }) {
   // --- NUEVO: ESTADO PARA EL MODAL DE CONFIRMACIÓN ---
   const [openDialog, setOpenDialog] = useState(false)
 
-  // --- NUEVO: ESTADO PARA EL MODAL DE CREACIÓN DE TAREAS ---
-  const [openTaskDialog, setOpenTaskDialog] = useState(false)
-  const [priorities, setPriorities] = useState([])
-  const [userStories, setUserStories] = useState([])
-  const [statuses, setStatuses] = useState([])
-  const [newTask, setNewTask] = useState({
-    title: '',
-    description: '',
-    storyPoints: '',
-    objetiveTime: '',
-    priorityId: '',
-    userStoryId: ''
-  })
-
   const [openMenu, setOpenMenu] = useState(false)
 
   useEffect(() => {
@@ -199,9 +176,9 @@ function Sprints({ selectedProjectId }) {
         const sprints = await sprintsRes.json()
         const orderedSprints = Array.isArray(sprints) ? [...sprints].sort((a, b) => a.sprintNum - b.sprintNum) : []
         
-        setAvailableSprints(orderedSprints.map((s, index) => ({
+        setAvailableSprints(orderedSprints.map((s) => ({
           id: s.sprintId,
-          number: index + 1
+          number: s.sprintNum
         })))
 
         // 3. Para cada sprint, obtener sus tareas
@@ -222,17 +199,6 @@ function Sprints({ selectedProjectId }) {
         }
 
         setColumns(newColumns)
-
-        // 4. Obtener prioridades, historias de usuario y estatus
-        const [prioritiesRes, userStoriesRes, statusesRes] = await Promise.all([
-          fetch('/priorities'),
-          fetch('/userStories'),
-          fetch('/statuses')
-        ])
-        setPriorities(await prioritiesRes.json())
-        setUserStories(await userStoriesRes.json())
-        setStatuses(await statusesRes.json())
-
       } catch (error) {
         console.error('Error fetching data:', error)
       } finally {
@@ -256,13 +222,16 @@ function Sprints({ selectedProjectId }) {
     const backlogKey = 'backlog';
     
     if (selectedSprintId === null) {
-      // Mostrar backlog + los primeros 4 sprints
+      // Mostrar backlog + sprints ordenados por su número (que está en el título)
       const sprintKeys = columnKeys
         .filter(k => k.startsWith('sprint-'))
         .sort((a, b) => {
+          // Intentamos obtener el número del sprint desde availableSprints para un sorteo más fiable
           const idA = parseInt(a.split('-')[1]);
           const idB = parseInt(b.split('-')[1]);
-          return idA - idB;
+          const sprintA = availableSprints.find(s => s.id === idA);
+          const sprintB = availableSprints.find(s => s.id === idB);
+          return (sprintA?.number || 0) - (sprintB?.number || 0);
         })
         
       
@@ -322,9 +291,6 @@ function Sprints({ selectedProjectId }) {
   const handleCreateSprint = async () => {
     try {
       if (!selectedProjectId) return;
-      // Calcular el siguiente número de sprint 
-      const sprintCount = Object.keys(columns).filter(key => key.startsWith('sprint-')).length;
-      const nextSprintNumber = sprintCount + 1;
 
       // Formatear fechas para LocalDateTime 
       const formatDateForJava = (date) => date.toISOString().split('.')[0]; 
@@ -353,7 +319,7 @@ function Sprints({ selectedProjectId }) {
       setColumns(prev => ({
         ...prev,
         [`sprint-${data.sprintId}`]: {
-          title: `Sprint ${nextSprintNumber}`, 
+          title: `Sprint ${data.sprintNum}`, 
           tasks: []
         }
       }));
@@ -361,7 +327,7 @@ function Sprints({ selectedProjectId }) {
       // Actualizar lista de sprints disponibles para el menú
       setAvailableSprints(prev => [
         ...prev, 
-        { id: data.sprintId, number: nextSprintNumber }
+        { id: data.sprintId, number: data.sprintNum }
       ]);
 
     } catch (error) {
@@ -369,61 +335,6 @@ function Sprints({ selectedProjectId }) {
       alert("No se pudo crear el sprint. Revisa la conexión con el servidor.");
     } finally {
       setOpenDialog(false);
-    }
-  };
-
-  const handleCreateTask = async () => {
-    try {
-      const pendingStatus = statuses.find(s => s.status === 'Pendiente' || s.status === 'pending') || statuses[0];
-      
-      const taskToSave = {
-        title: newTask.title,
-        description: newTask.description,
-        storyPoints: parseInt(newTask.storyPoints),
-        objetiveTime: parseInt(newTask.objetiveTime),
-        priority: { priorityId: newTask.priorityId },
-        userStory: { userStoriesId: newTask.userStoryId },
-        status: { statusId: pendingStatus.statusId },
-        deleted: 'N'
-      };
-
-      const res = await fetch('/tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(taskToSave)
-      });
-
-      if (!res.ok) throw new Error('Error al crear la tarea');
-
-      const data = await res.json();
-
-      setColumns(prev => ({
-        ...prev,
-        backlog: {
-          ...prev.backlog,
-          tasks: [...prev.backlog.tasks, {
-            id: data.taskId.toString(),
-            title: data.title,
-            description: data.description,
-            userStoryId: data.userStory?.userStoriesId,
-            userStoryName: data.userStory?.name
-          }]
-        }
-      }));
-
-      setOpenTaskDialog(false);
-      setNewTask({
-        title: '',
-        description: '',
-        storyPoints: '',
-        objetiveTime: '',
-        priorityId: '',
-        userStoryId: ''
-      });
-
-    } catch (error) {
-      console.error('Error creating task:', error);
-      alert('Error al crear la tarea');
     }
   };
 
@@ -560,7 +471,6 @@ function Sprints({ selectedProjectId }) {
                 title={columnData.title}
                 tasks={columnData.tasks}
                 visibleColumnCount={visibleColumnCount}
-                onAddTask={() => setOpenTaskDialog(true)}
               />
             );
           })}
@@ -610,91 +520,6 @@ function Sprints({ selectedProjectId }) {
             color="primary"
           >
             Aceptar
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* --- NUEVO: MODAL DE CREACIÓN DE TAREA --- */}
-      <Dialog
-        open={openTaskDialog}
-        onClose={() => setOpenTaskDialog(false)}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle sx={{ fontWeight: 'bold' }}>Crear Nueva Tarea</DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-            <TextField
-              label="Nombre de la tarea"
-              fullWidth
-              value={newTask.title}
-              onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-            />
-            <TextField
-              label="Descripción"
-              fullWidth
-              multiline
-              rows={3}
-              value={newTask.description}
-              onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-            />
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <TextField
-                label="Story Points"
-                type="number"
-                fullWidth
-                value={newTask.storyPoints}
-                onChange={(e) => setNewTask({ ...newTask, storyPoints: e.target.value })}
-              />
-              <TextField
-                label="Tiempo Estimado (horas)"
-                type="number"
-                fullWidth
-                value={newTask.objetiveTime}
-                onChange={(e) => setNewTask({ ...newTask, objetiveTime: e.target.value })}
-              />
-            </Box>
-            <FormControl fullWidth>
-              <InputLabel>Prioridad</InputLabel>
-              <MuiSelect
-                label="Prioridad"
-                value={newTask.priorityId}
-                onChange={(e) => setNewTask({ ...newTask, priorityId: e.target.value })}
-              >
-                {priorities.map((p) => (
-                  <MenuItem key={p.priorityId} value={p.priorityId}>
-                    {p.priorityName}
-                  </MenuItem>
-                ))}
-              </MuiSelect>
-            </FormControl>
-            <FormControl fullWidth>
-              <InputLabel>Historia de Usuario</InputLabel>
-              <MuiSelect
-                label="Historia de Usuario"
-                value={newTask.userStoryId}
-                onChange={(e) => setNewTask({ ...newTask, userStoryId: e.target.value })}
-              >
-                {userStories.map((us) => (
-                  <MenuItem key={us.userStoriesId} value={us.userStoriesId}>
-                    {us.name}
-                  </MenuItem>
-                ))}
-              </MuiSelect>
-            </FormControl>
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setOpenTaskDialog(false)} color="inherit">
-            Cancelar
-          </Button>
-          <Button 
-            onClick={handleCreateTask} 
-            variant="contained" 
-            sx={{ backgroundColor: '#cc0707', '&:hover': { backgroundColor: '#a30606' } }}
-            disabled={!newTask.title || !newTask.priorityId || !newTask.userStoryId}
-          >
-            Crear Tarea
           </Button>
         </DialogActions>
       </Dialog>
