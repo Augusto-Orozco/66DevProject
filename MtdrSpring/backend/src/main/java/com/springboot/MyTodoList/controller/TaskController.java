@@ -6,11 +6,17 @@ import com.springboot.MyTodoList.model.Sprint;
 import com.springboot.MyTodoList.model.TaskUser;
 import com.springboot.MyTodoList.model.User;
 import com.springboot.MyTodoList.model.Project;
+import com.springboot.MyTodoList.model.TaskPriority;
+import com.springboot.MyTodoList.model.TaskStatus;
+import com.springboot.MyTodoList.model.UserStory;
 import com.springboot.MyTodoList.service.TaskService;
 import com.springboot.MyTodoList.service.SprintTaskService;
 import com.springboot.MyTodoList.service.SprintService;
 import com.springboot.MyTodoList.service.TaskUserService;
 import com.springboot.MyTodoList.service.ProjectService;
+import com.springboot.MyTodoList.service.TaskPriorityService;
+import com.springboot.MyTodoList.service.TaskStatusService;
+import com.springboot.MyTodoList.service.UserStoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -37,6 +43,15 @@ public class TaskController {
 
     @Autowired
     private ProjectService projectService;
+
+    @Autowired
+    private TaskPriorityService taskPriorityService;
+
+    @Autowired
+    private TaskStatusService taskStatusService;
+
+    @Autowired
+    private UserStoryService userStoryService;
 
     @GetMapping("/tasks")
     public List<Task> getAllTasks() {
@@ -163,5 +178,20 @@ public class TaskController {
     public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
         taskService.deleteTask(id);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/priorities")
+    public List<TaskPriority> getAllPriorities() {
+        return taskPriorityService.getAllTaskPriorities();
+    }
+
+    @GetMapping("/statuses")
+    public List<TaskStatus> getAllStatuses() {
+        return taskStatusService.getAllTaskStatuses();
+    }
+
+    @GetMapping("/userStories")
+    public List<UserStory> getAllUserStories() {
+        return userStoryService.getAllUserStories();
     }
 }
