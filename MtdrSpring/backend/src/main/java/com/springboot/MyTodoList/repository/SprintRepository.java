@@ -10,4 +10,5 @@ import java.util.Optional;
 @Repository
 public interface SprintRepository extends JpaRepository<Sprint, Long> {
     Optional<Sprint> findFirstByProjectOrderBySprintNumDesc(Project project);
+    java.util.List<Sprint> findByProject_ProjectId(Long projectId);
 }

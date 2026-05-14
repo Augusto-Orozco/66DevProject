@@ -28,6 +28,10 @@ public class SprintService {
         return sprintRepository.findAll();
     }
 
+    public List<Sprint> getSprintsByProjectId(Long projectId) {
+        return sprintRepository.findByProject_ProjectId(projectId);
+    }
+
     public Optional<Sprint> getSprintById(Long id) {
         return sprintRepository.findById(id);
     }

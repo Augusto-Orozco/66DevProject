@@ -137,7 +137,7 @@ function Column({ id, title, tasks, visibleColumnCount }) {
 }
 
 /* --- MAIN --- */
-function Sprints() {
+function Sprints({ selectedProjectId }) {
   const [columns, setColumns] = useState({})
   const [loading, setLoading] = useState(true)
   const [selectedSprintId, setSelectedSprintId] = useState(null)
@@ -150,30 +150,31 @@ function Sprints() {
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!selectedProjectId) return;
       try {
         setLoading(true)
         
-        // 1. Obtener tareas sin sprint
-        const unassignedRes = await fetch(`/tasks/unassigned`)
+        // 1. Obtener tareas sin sprint del proyecto seleccionado
+        const unassignedRes = await fetch(`/tasks/unassigned/project/${selectedProjectId}`)
         const unassignedTasks = await unassignedRes.json()
 
         const newColumns = {
           'backlog': {
             title: 'Backlog',
-            tasks: unassignedTasks.map(t => ({
+            tasks: Array.isArray(unassignedTasks) ? unassignedTasks.map(t => ({
               id: t.taskId.toString(),
               title: t.title,
               description: t.description,
               userStoryId: t.userStory?.userStoriesId || 'Sin ID de historia',
               userStoryName: t.userStory?.name || 'Sin historia de usuario'
-            }))
+            })) : []
           }
         }
 
-        // 2. Obtener todos los sprints
-        const sprintsRes = await fetch(`/sprints`)
+        // 2. Obtener todos los sprints del proyecto seleccionado
+        const sprintsRes = await fetch(`/sprints/project/${selectedProjectId}`)
         const sprints = await sprintsRes.json()
-        const orderedSprints = [...sprints].sort((a, b) => a.sprintNum - b.sprintNum)
+        const orderedSprints = Array.isArray(sprints) ? [...sprints].sort((a, b) => a.sprintNum - b.sprintNum) : []
         
         setAvailableSprints(orderedSprints.map((s) => ({
           id: s.sprintId,
@@ -187,13 +188,13 @@ function Sprints() {
           
           newColumns[`sprint-${sprint.sprintId}`] = {
             title: `Sprint ${sprint.sprintNum}`,
-            tasks: sprintTasks.map(st => ({
+            tasks: Array.isArray(sprintTasks) ? sprintTasks.map(st => ({
               id: st.task.taskId.toString(),
               title: st.task.title,
               description: st.task.description,
               userStoryId: st.task.userStory?.userStoriesId || 'Sin ID de historia',
               userStoryName: st.task.userStory?.name || 'Sin historia de usuario'
-            }))
+            })) : []
           }
         }
 
@@ -206,7 +207,7 @@ function Sprints() {
     }
 
     fetchData()
-  }, [])
+  }, [selectedProjectId])
 
   /* Encuentra en qué columna está una tarea */
   const findContainer = (id) => {
@@ -289,19 +290,19 @@ function Sprints() {
   // Crear sprint
   const handleCreateSprint = async () => {
     try {
+      if (!selectedProjectId) return;
+
       // Formatear fechas para LocalDateTime 
       const formatDateForJava = (date) => date.toISOString().split('.')[0]; 
       
       const now = new Date();
       const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-      const projectId = 1; //Esta harcodeado el id del proyecto
-
       const res = await fetch(`/sprints`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          project: { projectId: projectId },
+          project: { projectId: selectedProjectId },
           startDate: formatDateForJava(now),
           endDate: formatDateForJava(nextWeek)
         })
@@ -331,7 +332,7 @@ function Sprints() {
 
     } catch (error) {
       console.error('Error al crear el nuevo sprint:', error);
-      alert("No se pudo crear el sprint. Revisa que el Project ID 1 exista en la base de datos.");
+      alert("No se pudo crear el sprint. Revisa la conexión con el servidor.");
     } finally {
       setOpenDialog(false);
     }

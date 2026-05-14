@@ -18,6 +18,8 @@ function App() {
     const savedUser = localStorage.getItem('user')
     return savedUser ? JSON.parse(savedUser) : null
   })
+  const [selectedProjectId, setSelectedProjectId] = useState(null)
+
   return (
     <ThemeProvider theme={theme}>
     <AppRouter
@@ -25,6 +27,8 @@ function App() {
       setIsAuth={setIsAuth}
       user={user}
       setUser={setUser}
+      selectedProjectId={selectedProjectId}
+      setSelectedProjectId={setSelectedProjectId}
     />
     </ThemeProvider>
   )

@@ -12,7 +12,7 @@ ENV ui_password="None0001"
 
 ENV db_user="admin" 
 ENV dbpassword="None00010001"
-ENV db_url="jdbc:oracle:thin:@reacttodo5c3kz_tp?TNS_ADMIN=/mtdrworkshop/creds"
+ENV db_url="jdbc:oracle:thin:@reacttodom2has_tp?TNS_ADMIN=/mtdrworkshop/creds"
 ENV driver_class_name="oracle.jdbc.OracleDriver"
 
 ENTRYPOINT ["java","-jar","MyTodoList.jar"]

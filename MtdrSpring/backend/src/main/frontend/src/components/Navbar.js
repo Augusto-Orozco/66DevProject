@@ -21,10 +21,22 @@ function Navbar(props) {
 
   // Estado para el selector de proyectos
   const [anchorEl, setAnchorEl] = useState(null);
-  const [selectedProject, setSelectedProject] = useState('Proyecto Alpha');
+  const [projects, setProjects] = useState([]);
   const open = Boolean(anchorEl);
 
-  const projects = ['Proyecto Alpha', 'Proyecto Beta', 'Proyecto Gamma'];
+  useEffect(() => {
+    fetch('/projects')
+      .then(res => res.json())
+      .then(data => {
+        setProjects(data);
+        if (data.length > 0 && !props.selectedProjectId) {
+          props.setSelectedProjectId(data[0].projectId);
+        }
+      })
+      .catch(err => console.error("Error fetching projects:", err));
+  }, []);
+
+  const selectedProjectName = projects.find(p => p.projectId === props.selectedProjectId)?.name || 'Seleccionar Proyecto';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -48,8 +60,8 @@ function Navbar(props) {
   };
 
   const handleCloseProject = (project) => {
-    if (project && typeof project === 'string') {
-      setSelectedProject(project);
+    if (project) {
+      props.setSelectedProjectId(project.projectId);
     }
     setAnchorEl(null);
   };
@@ -87,7 +99,7 @@ function Navbar(props) {
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             
             {/* HELP */}
-            <Button
+            {/*<Button
               className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''}`}
               onClick={() =>
                 window.open(
@@ -100,7 +112,7 @@ function Navbar(props) {
                 <HelpOutlineIcon fontSize="small" />
               </span>
               <span className="label">???</span>
-            </Button>
+            </Button>*/}
 
             {/* DASHBOARD */}
             {props.user?.roleName === 'Product Owner' && (
@@ -155,7 +167,7 @@ function Navbar(props) {
             )}
 
             {/* ADD DEVELOPERS */}
-            {props.user?.roleName === 'Product Owner' && (
+            {/*{props.user?.roleName === 'Product Owner' && (
               <Button
                 className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/AddDevs') ? 'active' : ''}`}
                 onClick={() => navigate('/AddDevs')}
@@ -165,7 +177,7 @@ function Navbar(props) {
                 </span>
                 <span className="label">Registrar</span>
               </Button>
-            )}
+            )}*/}
           </Box>
 
           {/* SECCIÓN DERECHA: PROYECTOS Y LOGOUT */}
@@ -180,7 +192,7 @@ function Navbar(props) {
               <span className="icon">
                 <AccountTreeIcon fontSize="small" />
               </span>
-              <span className="label">{selectedProject}</span>
+              <span className="label">{selectedProjectName}</span>
             </Button>
             <Menu
               anchorEl={anchorEl}
@@ -197,11 +209,11 @@ function Navbar(props) {
             >
               {projects.map((project) => (
                 <MenuItem 
-                  key={project} 
+                  key={project.projectId} 
                   onClick={() => handleCloseProject(project)}
-                  selected={project === selectedProject}
+                  selected={project.projectId === props.selectedProjectId}
                 >
-                  {project}
+                  {project.name}
                 </MenuItem>
               ))}
             </Menu>

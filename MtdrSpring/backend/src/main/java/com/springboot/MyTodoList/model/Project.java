@@ -21,6 +21,14 @@ public class Project {
     @Column(name = "CREATED_AT", nullable = false, insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @ManyToMany
+    @JoinTable(
+        name = "TEAM_PROJECT",
+        joinColumns = @JoinColumn(name = "PROJECT_ID"),
+        inverseJoinColumns = @JoinColumn(name = "USER_ID")
+    )
+    private java.util.List<User> teamMembers;
+
     public Project() {}
 
     public Project(String name, String description) {
@@ -58,6 +66,14 @@ public class Project {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public java.util.List<User> getTeamMembers() {
+        return teamMembers;
+    }
+
+    public void setTeamMembers(java.util.List<User> teamMembers) {
+        this.teamMembers = teamMembers;
     }
 
     @Override
