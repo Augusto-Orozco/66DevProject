@@ -5,6 +5,8 @@ import {
   CircularProgress, 
   Button, 
   Fab, 
+  Drawer,
+  Divider,
   Dialog, 
   DialogTitle, 
   DialogContent, 
@@ -13,6 +15,7 @@ import {
   Menu,
   MenuItem
 } from '@mui/material' // <-- NUEVAS IMPORTACIONES AÑADIDAS
+import CloseIcon from '@mui/icons-material/Close'
 import { DndContext, closestCenter, useDroppable} from '@dnd-kit/core'
 import {SortableContext, verticalListSortingStrategy, useSortable} from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -100,9 +103,27 @@ function Column({ id, title, tasks, visibleColumnCount, onAddTask }) {
           {title}
         </Typography>
         {id === 'backlog' && (
-          <IconButton size="small" onClick={onAddTask} sx={{ color: '#cc0707' }}>
-            <AddIcon />
-          </IconButton>
+          <Button
+            className="nav-button icon-btn"
+            onClick={onAddTask}
+            sx={{ 
+              color: '#cc0707 !important', 
+              minWidth: '32px !important',
+              height: '32px !important',
+              margin: '0 !important',
+              padding: '0 !important',
+              '&:hover': {
+                backgroundColor: 'rgba(204, 7, 7, 0.04) !important'
+              }
+            }}
+          >
+            <span className="icon">
+              <AddIcon fontSize="small" />
+            </span>
+            <span className="label" style={{ fontSize: '0.7rem', fontWeight: 'bold' }}>
+              Agregar Tarea
+            </span>
+          </Button>
         )}
       </Box>
 
@@ -615,30 +636,57 @@ function Sprints({ selectedProjectId }) {
         </DialogActions>
       </Dialog>
 
-      {/* --- NUEVO: MODAL DE CREACIÓN DE TAREA --- */}
-      <Dialog
+      {/* --- SIDE DRAWER DE CREACIÓN DE TAREA --- */}
+      <Drawer
+        anchor="right"
         open={openTaskDialog}
         onClose={() => setOpenTaskDialog(false)}
-        fullWidth
-        maxWidth="sm"
+        PaperProps={{
+          sx: {
+            width: { xs: '100%', sm: 500 },
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '-4px 0 15px rgba(0,0,0,0.1)',
+          }
+        }}
       >
-        <DialogTitle sx={{ fontWeight: 'bold' }}>Crear Nueva Tarea</DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+        {/* Header del Drawer */}
+        <Box sx={{ 
+          p: 2, 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          backgroundColor: 'white',
+          borderBottom: '2px solid #f0f0f0'
+        }}>
+          <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#333' }}>
+            Nueva Tarea
+          </Typography>
+          <IconButton onClick={() => setOpenTaskDialog(false)} size="small">
+            <CloseIcon />
+          </IconButton>
+        </Box>
+
+        {/* Contenido del Drawer */}
+        <Box sx={{ flexGrow: 1, p: 3, overflowY: 'auto' }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            
             <TextField
               label="Nombre de la tarea"
               fullWidth
               value={newTask.title}
               onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
             />
+
             <TextField
               label="Descripción"
               fullWidth
               multiline
-              rows={3}
+              rows={4}
               value={newTask.description}
               onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
             />
+
             <Box sx={{ display: 'flex', gap: 2 }}>
               <TextField
                 label="Story Points"
@@ -655,6 +703,7 @@ function Sprints({ selectedProjectId }) {
                 onChange={(e) => setNewTask({ ...newTask, objetiveTime: e.target.value })}
               />
             </Box>
+
             <FormControl fullWidth>
               <InputLabel>Prioridad</InputLabel>
               <MuiSelect
@@ -669,6 +718,7 @@ function Sprints({ selectedProjectId }) {
                 ))}
               </MuiSelect>
             </FormControl>
+
             <FormControl fullWidth>
               <InputLabel>Historia de Usuario</InputLabel>
               <MuiSelect
@@ -683,22 +733,39 @@ function Sprints({ selectedProjectId }) {
                 ))}
               </MuiSelect>
             </FormControl>
+
           </Box>
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setOpenTaskDialog(false)} color="inherit">
+        </Box>
+
+        {/* Footer del Drawer */}
+        <Box sx={{ 
+          p: 2, 
+          borderTop: '1px solid #f0f0f0', 
+          display: 'flex', 
+          justifyContent: 'flex-end',
+          gap: 2,
+          backgroundColor: 'white'
+        }}>
+          <Button 
+            onClick={() => setOpenTaskDialog(false)} 
+            color="inherit"
+          >
             Cancelar
           </Button>
           <Button 
             onClick={handleCreateTask} 
             variant="contained" 
-            sx={{ backgroundColor: '#cc0707', '&:hover': { backgroundColor: '#a30606' } }}
+            sx={{ 
+              backgroundColor: '#cc0707', 
+              '&:hover': { backgroundColor: '#a30606' },
+              fontWeight: 'bold'
+            }}
             disabled={!newTask.title || !newTask.priorityId || !newTask.userStoryId}
           >
             Crear Tarea
           </Button>
-        </DialogActions>
-      </Dialog>
+        </Box>
+      </Drawer>
 
       {/* FOOTER */}
       <Footer />
