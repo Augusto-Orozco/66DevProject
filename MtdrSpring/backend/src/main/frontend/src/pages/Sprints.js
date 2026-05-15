@@ -23,6 +23,7 @@ import RefreshIcon from '@mui/icons-material/Refresh'
 import ViewWeekIcon from '@mui/icons-material/ViewWeek'
 import AddIcon from '@mui/icons-material/Add'
 import IconButton from '@mui/material/IconButton'
+import AssignmentAddIcon from '@mui/icons-material/AssignmentAdd';
 import { TextField, Select as MuiSelect, InputLabel, FormControl } from '@mui/material'
 import Footer from '../components/Footer'
 import '../Assets/styles.css'
@@ -126,7 +127,7 @@ function Column({ id, title, tasks, visibleColumnCount, onAddTask, isSticky }) {
             }}
           >
             <span className="icon">
-              <AddIcon fontSize="small" />
+              <AssignmentAddIcon fontSize="small" />
             </span>
             <span className="label" style={{ fontSize: '0.7rem', fontWeight: 'bold' }}>
               Crear Tarea

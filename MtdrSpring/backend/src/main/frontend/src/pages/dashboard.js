@@ -235,9 +235,9 @@ function Dashboard({ selectedProjectId }) {
           {!loading && items.map((item) => {
             let pCol = '#292929', pBg = '#f5f5f5'
             const priorityName = item.priority?.priorityName;
-            if (priorityName === 'High' || priorityName === 'Alta') { pCol = '#38000a'; pBg = 'rgb(255, 197, 216)' }
-            else if (priorityName === 'Medium' || priorityName === 'Media') { pCol = '#693ff6'; pBg = '#f4edff' }
-            else if (priorityName === 'Low' || priorityName === 'Baja') { pCol = '#2698a2'; pBg = '#bdf2fc' }
+            if (priorityName === 'High' || priorityName === 'Alta') { pCol = '#541111'; pBg = '#fdb4bf' }
+            else if (priorityName === 'Medium' || priorityName === 'Media') { pCol = '#483009'; pBg = '#fff9b9' }
+            else if (priorityName === 'Low' || priorityName === 'Baja') { pCol = '#123013'; pBg = '#94e59b' }
 
             let sCol = '#000000', sBg = '#a9a9a9', border = '#858585'
             const statusStr = item.status?.status;
