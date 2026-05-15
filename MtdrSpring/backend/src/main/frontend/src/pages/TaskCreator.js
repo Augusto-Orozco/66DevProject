@@ -30,9 +30,9 @@ function TaskCreator({ selectedProjectId }) {
       try {
         const [usersRes, storiesRes, prioritiesRes, statusesRes] = await Promise.all([
           fetch(`/team/project/${selectedProjectId}`).then(res => res.json()),
-          fetch(`/userStories`).then(res => res.json()).catch(() => []), // Assuming this endpoint exists
-          fetch(`/priorities`).then(res => res.json()).catch(() => []), // Assuming this endpoint exists
-          fetch(`/statuses`).then(res => res.json()).catch(() => [])   // Assuming this endpoint exists
+          fetch(`/userStories`).then(res => res.json()).catch(() => []),
+          fetch(`/priorities`).then(res => res.json()).catch(() => []),
+          fetch(`/statuses`).then(res => res.json()).catch(() => [])
         ])
 
         setUsers(Array.isArray(usersRes) ? usersRes.map(tp => tp.user) : [])
@@ -63,7 +63,6 @@ function TaskCreator({ selectedProjectId }) {
     setMessage({ type: '', text: '' })
 
     try {
-      // 1. Crear la Tarea
       const taskRes = await fetch('/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -83,10 +82,7 @@ function TaskCreator({ selectedProjectId }) {
       if (!taskRes.ok) throw new Error('Error al crear la tarea')
       const newTask = await taskRes.json()
 
-      // 2. Asignar usuarios si los hay
       if (formData.assignedUserIds.length > 0) {
-        // Por simplicidad, asumimos un endpoint o proceso para asignar
-        // Aquí deberías llamar a tu endpoint de asignación de usuarios a tareas
         for (const userId of formData.assignedUserIds) {
           await fetch('/taskUsers', {
             method: 'POST',

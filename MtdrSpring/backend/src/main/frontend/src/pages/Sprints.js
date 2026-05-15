@@ -406,6 +406,7 @@ function Sprints({ selectedProjectId }) {
   const handleCreateTask = async () => {
     try {
       const pendingStatus = statuses.find(s => s.status === 'Pendiente' || s.status === 'pending') || statuses[0];
+      const selectedUserStory = userStories.find(us => us.userStoriesId === newTask.userStoryId);
       
       const taskToSave = {
         title: newTask.title,
@@ -437,8 +438,8 @@ function Sprints({ selectedProjectId }) {
             id: data.taskId.toString(),
             title: data.title,
             description: data.description,
-            userStoryId: data.userStory?.userStoriesId,
-            userStoryName: data.userStory?.name
+            userStoryId: data.userStory?.userStoriesId || newTask.userStoryId,
+            userStoryName: data.userStory?.name || selectedUserStory?.name || 'No Story'
           }]
         }
       }));
