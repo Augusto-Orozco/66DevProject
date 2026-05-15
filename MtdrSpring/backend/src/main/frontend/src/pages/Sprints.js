@@ -655,7 +655,7 @@ function Sprints({ selectedProjectId }) {
         onClose={() => setOpenTaskDialog(false)}
         PaperProps={{
           sx: {
-            width: { xs: '100%', sm: 500 },
+            width: { xs: '100%', sm: '50vw' },
             display: 'flex',
             flexDirection: 'column',
             boxShadow: '-2px 0 15px rgba(93, 93, 93, 0.24)',
