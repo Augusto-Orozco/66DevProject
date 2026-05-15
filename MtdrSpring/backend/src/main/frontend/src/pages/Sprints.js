@@ -658,7 +658,7 @@ function Sprints({ selectedProjectId }) {
             width: { xs: '100%', sm: 500 },
             display: 'flex',
             flexDirection: 'column',
-            boxShadow: '-4px 0 15px rgba(0,0,0,0.1)',
+            boxShadow: '-2px 0 15px rgba(93, 93, 93, 0.24)',
           }
         }}
       >
