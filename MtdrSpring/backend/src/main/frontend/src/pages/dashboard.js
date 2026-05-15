@@ -235,13 +235,13 @@ function Dashboard({ selectedProjectId }) {
           {!loading && items.map((item) => {
             let pCol = '#292929', pBg = '#f5f5f5'
             const priorityName = item.priority?.priorityName;
-            if (priorityName === 'High' || priorityName === 'Alta') { pCol = '#ff002f'; pBg = '#ffd0e0' }
+            if (priorityName === 'High' || priorityName === 'Alta') { pCol = '#38000a'; pBg = 'rgb(255, 197, 216)' }
             else if (priorityName === 'Medium' || priorityName === 'Media') { pCol = '#693ff6'; pBg = '#f4edff' }
             else if (priorityName === 'Low' || priorityName === 'Baja') { pCol = '#2698a2'; pBg = '#bdf2fc' }
 
             let sCol = '#000000', sBg = '#a9a9a9', border = '#858585'
             const statusStr = item.status?.status;
-            if (statusStr === 'Completado') { sCol = '#123013'; sBg = '#bbffc1'; border = '#4caf50' }
+            if (statusStr === 'Completado') { sCol = '#123013'; sBg = '#94e59b'; border = '#4caf50' }
             else if (statusStr === 'En Progreso') { sCol = '#483009'; sBg = '#fff9b9'; border = '#fbc02d' }
             else if (statusStr === 'Atrasado') { sCol = '#541111'; sBg = '#fdb4bf'; border = '#ff2020' }
 

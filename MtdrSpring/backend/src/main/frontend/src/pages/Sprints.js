@@ -62,7 +62,7 @@ function TaskCard({ task }) {
 }
 
 /* --- COLUMNA DROPPABLE --- */
-function Column({ id, title, tasks, visibleColumnCount, onAddTask }) {
+function Column({ id, title, tasks, visibleColumnCount, onAddTask, isSticky }) {
   const { setNodeRef, isOver } = useDroppable({
     id: id
   })
@@ -94,8 +94,14 @@ function Column({ id, title, tasks, visibleColumnCount, onAddTask }) {
         flexDirection: 'column',
         p: 2,
         borderRadius: '12px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-        alignItems: 'stretch'
+        boxShadow: isSticky 
+          ? '8px 0 15px -5px rgba(0,0,0,0.1)' 
+          : '0 4px 12px rgba(0,0,0,0.05)',
+        alignItems: 'stretch',
+        position: isSticky ? 'sticky' : 'relative',
+        left: 0, 
+        zIndex: isSticky ? 10 : 1,
+        mr: 2
       }}
     >
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, borderBottom: '2px solid #f0f0f0', pb: 1 }}>
@@ -109,11 +115,13 @@ function Column({ id, title, tasks, visibleColumnCount, onAddTask }) {
             sx={{ 
               color: '#cc0707 !important', 
               minWidth: '32px !important',
+              width: 'auto !important',
               height: '32px !important',
               margin: '0 !important',
               padding: '0 !important',
               '&:hover': {
-                backgroundColor: 'rgba(204, 7, 7, 0.04) !important'
+                backgroundColor: 'rgba(204, 7, 7, 0.04) !important',
+                padding: '0 12px !important'
               }
             }}
           >
@@ -121,7 +129,7 @@ function Column({ id, title, tasks, visibleColumnCount, onAddTask }) {
               <AddIcon fontSize="small" />
             </span>
             <span className="label" style={{ fontSize: '0.7rem', fontWeight: 'bold' }}>
-              Agregar Tarea
+              Crear Tarea
             </span>
           </Button>
         )}
@@ -299,7 +307,8 @@ function Sprints({ selectedProjectId }) {
   };
 
   const visibleColumnsToRender = getVisibleColumns();
-  const visibleColumnCount = visibleColumnsToRender.length;
+  // Forzamos a 4 para que el ancho de las columnas sea siempre el de "Backlog + 3 Sprints"
+  const visibleColumnCount = 4;
 
   /* --- DRAG LOGIC --- */
   const handleDragEnd = async (event) => {
@@ -559,10 +568,12 @@ function Sprints({ selectedProjectId }) {
       <Box
         sx={{
           display: 'flex',
-          gap: 2,
-          padding: 3,
+          py: 3,
+          pr: 3,
+          pl: 0,
+          ml: 3,
           overflowX: 'auto',
-          width: '100%',
+          width: 'calc(100% - 24px)',
           flexGrow: 1,
           alignItems: 'stretch',
           justifyContent: 'flex-start',
@@ -583,6 +594,7 @@ function Sprints({ selectedProjectId }) {
                 tasks={columnData.tasks}
                 visibleColumnCount={visibleColumnCount}
                 onAddTask={() => setOpenTaskDialog(true)}
+                isSticky={id === 'backlog'}
               />
             );
           })}
