@@ -9,6 +9,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
+import org.springframework.jdbc.core.CallableStatementCallback;
+import java.sql.Types;
+import java.sql.Clob;
+
 @RestController
 public class DiagnosticController {
 
@@ -51,6 +55,33 @@ public class DiagnosticController {
             info.put("status", "Connected");
             info.put("current_user", dbUser);
             info.put("database_version", dbVersion);
+        } catch (Exception e) {
+            info.put("status", "Error");
+            info.put("message", e.getMessage());
+        }
+        return info;
+    }
+
+    @GetMapping("/diag/test-sp-dashboard")
+    public Map<String, Object> testDashboardSP() {
+        Map<String, Object> info = new HashMap<>();
+        try {
+            Long testProjectId = 1L;
+            
+            String result = jdbcTemplate.execute(
+                "{call GET_PROJECT_DASHBOARD_SUMMARY(?, ?)}",
+                (CallableStatementCallback<String>) cs -> {
+                    cs.setLong(1, testProjectId);
+                    cs.registerOutParameter(2, Types.CLOB);
+                    cs.execute();
+                    Clob clob = cs.getClob(2);
+                    return (clob != null) ? clob.getSubString(1, (int) clob.length()) : null;
+                }
+            );
+
+            info.put("status", "Success");
+            info.put("project_id", testProjectId);
+            info.put("result", result);
         } catch (Exception e) {
             info.put("status", "Error");
             info.put("message", e.getMessage());

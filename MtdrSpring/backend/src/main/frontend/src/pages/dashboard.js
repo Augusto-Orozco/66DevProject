@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Box, Typography, CircularProgress, Button, IconButton, FormControl, InputLabel, Select, MenuItem } from '@mui/material'
-import RefreshIcon from '@mui/icons-material/Refresh'
+import { Box, Typography, CircularProgress, IconButton, FormControl, Select, MenuItem } from '@mui/material'
 import CachedIcon from '@mui/icons-material/Cached';
 import { PieChart, Pie, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid} from 'recharts'
 
@@ -8,42 +7,36 @@ import Footer from '../components/Footer'
 import '../Assets/styles.css'
 
 function Dashboard({ selectedProjectId }) {
-  const [items, setItems] = useState([])
-  const [users, setUsers] = useState([])
-  const [assignments, setAssignments] = useState([])
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [hoursFilter, setHoursFilter] = useState('all')
+  const [summary, setSummary] = useState(null)
+  const [items, setItems] = useState([]) // Mantenemos la lista para el listado inferior
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  
+  // Filtros locales
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [hoursFilter, setHoursFilter] = useState('all')
 
   const fetchData = () => {
     if (!selectedProjectId) return;
     
     setLoading(true)
     setError(null)
-    
-    // Limpieza inmediata para evitar ver datos del proyecto anterior
-    setItems([])
-    setUsers([])
-    setAssignments([])
 
+    // Consolidamos las peticiones: 
+    // 1. El SP para las gráficas (procesamiento en la nube)
+    // 2. El listado de tareas (para la tabla inferior)
     Promise.all([
-      fetch(`/tasks/project/${selectedProjectId}`).then(res => res.json()),
-      fetch(`/team/project/${selectedProjectId}`).then(res => res.json()),
-      fetch(`/tasks/assignments/project/${selectedProjectId}`).then(res => res.json())
+      fetch(`/projects/${selectedProjectId}/dashboard-summary`).then(res => res.json()),
+      fetch(`/tasks/project/${selectedProjectId}`).then(res => res.json())
     ])
-    .then(([tasksData, teamData, assignmentsData]) => {
+    .then(([summaryData, tasksData]) => {
+      setSummary(summaryData)
       setItems(Array.isArray(tasksData) ? tasksData : [])
-      setUsers(Array.isArray(teamData) ? teamData : [])
-      setAssignments(Array.isArray(assignmentsData) ? assignmentsData : [])
       setLoading(false)
     })
     .catch(err => {
       console.error("Error cargando dashboard:", err)
-      setError("No se pudieron cargar los datos del proyecto")
-      setItems([])
-      setUsers([])
-      setAssignments([])
+      setError("No se pudieron cargar los datos")
       setLoading(false)
     })
   }
@@ -54,71 +47,35 @@ function Dashboard({ selectedProjectId }) {
     fetchData()
   }, [selectedProjectId])
 
-  // --- Gráfica de Estatus ---
-  const tasksForStatus = (statusFilter === 'all') 
-    ? items 
-    : assignments
-        .filter(a => a.user && String(a.user.userId) === String(statusFilter))
-        .map(a => a.task)
-        .filter(t => t != null)
-
-  const statusCount = tasksForStatus.reduce((acc, item) => {
-    const status = item.status?.status || 'SIN ESTATUS'
-    acc[status] = (acc[status] || 0) + 1
-    return acc
-  }, {})
-
-  const statusChartData = Object.keys(statusCount).map(key => {
+  // --- Lógica de Gráficas (Usando el Summary del SP) ---
+  
+  // 1. Gráfica de Estatus
+  const statusChartData = (summary?.statusStats || []).map(stat => {
     let color = '#9e9e9e'
-    if (key === 'Completado') color = '#4caf50'
-    else if (key === 'En Progreso') color = '#fbc02d'
-    else if (key === 'Atrasado') color = '#f44336'
-    return { name: key, value: statusCount[key], fill: color }
+    if (stat.name === 'Completado') color = '#4caf50'
+    else if (stat.name === 'En Progreso') color = '#fbc02d'
+    else if (stat.name === 'Atrasado') color = '#f44336'
+    return { ...stat, fill: color }
   })
 
-  // --- Gráfica de Horas ---
-  let devComparisonData = []
-  const validUserIds = new Set(users.map(u => String(u.userId)))
+  // 2. Gráfica de Horas (Filtrable)
+  const devComparisonData = (summary?.devStats || [])
+    .filter(dev => hoursFilter === 'all' || dev.name === hoursFilter)
+    .map(dev => ({
+      name: dev.name,
+      estimado: dev.estimado,
+      real: dev.real
+    }))
 
-  if (hoursFilter === 'all') {
-    const devStats = assignments
-      .filter(a => a.user && a.task && validUserIds.has(String(a.user.userId)))
-      .reduce((acc, a) => {
-        const userName = `${a.user.firtsName} ${a.user.lastName}`
-        if (!acc[userName]) {
-          acc[userName] = { name: userName, estimado: 0, real: 0 }
-        }
-        // Acceso robusto a las horas
-        const est = Number(a.task.objetiveTime) || 0
-        const rea = Number(a.task.realTime) || 0
-        
-        acc[userName].estimado += est
-        acc[userName].real += rea
-        return acc
-      }, {})
-    devComparisonData = Object.values(devStats)
-  } else {
-    const selectedDev = users.find(u => String(u.userId) === String(hoursFilter))
-    const devName = selectedDev ? `${selectedDev.firtsName} ${selectedDev.lastName}` : ''
-    devComparisonData = assignments
-      .filter(a => a.user && a.task && String(a.user.userId) === String(hoursFilter))
-      .map(a => ({
-        name: a.task.title || 'Sin Título', 
-        userName: devName,
-        estimado: Number(a.task.objetiveTime) || 0,
-        real: Number(a.task.realTime) || 0
-      }))
-  }
+  // 3. Tasa de Finalización y Progreso
+  const total = summary?.progress?.total || 0
+  const completed = summary?.progress?.completed || 0
+  const progressPercent = total > 0 ? Math.round((completed / total) * 100) : 0
 
-  // --- Listado y Sprint Progress (Usan el total por ahora) ---
   const completionRateData = [
-    { name: 'Completadas', value: (items || []).filter(t => t?.status?.status === 'Completado').length, fill: '#4caf50' },
-    { name: 'Pendientes', value: (items || []).filter(t => t?.status?.status !== 'Completado').length, fill: '#fbc02d' }
+    { name: 'Completadas', value: completed, fill: '#4caf50' },
+    { name: 'Pendientes', value: total - completed, fill: '#fbc02d' }
   ]
-  
-  const totalTasks = (items || []).length
-  const completedTasks = (items || []).filter(t => t?.status?.status === 'Completado').length
-  const progressPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
 
   const sprintProgressData = [
     { name: 'Sprint', completado: progressPercent, restante: 100 - progressPercent }
@@ -131,7 +88,7 @@ function Dashboard({ selectedProjectId }) {
       {/* --- Metricas --- */}
       <Box className="base-card">
         <strong>Total Tareas</strong>
-        {loading ? <CircularProgress size={20} sx={{ mt: 1 }} /> : <h2>{items.length}</h2>}
+        {loading ? <CircularProgress size={20} sx={{ mt: 1 }} /> : <h2>{total}</h2>}
       </Box>
 
       <Box className="base-card">
@@ -144,10 +101,10 @@ function Dashboard({ selectedProjectId }) {
               displayEmpty
               sx={{ fontSize: '0.75rem' }}
             >
-              <MenuItem value="all" sx={{ fontSize: '0.75rem' }}>Todos</MenuItem>
-              {users.map(user => (
-                <MenuItem key={user.userId} value={user.userId} sx={{ fontSize: '0.75rem' }}>
-                  {user.firtsName}
+              <MenuItem value="all" sx={{ fontSize: '0.75rem' }}>Global</MenuItem>
+              {(summary?.devStats || []).map(dev => (
+                <MenuItem key={dev.name} value={dev.name} sx={{ fontSize: '0.75rem' }}>
+                  {dev.name.split(' ')[0]}
                 </MenuItem>
               ))}
             </Select>
@@ -190,7 +147,7 @@ function Dashboard({ selectedProjectId }) {
       <Box className="base-card" sx={{ gridColumn: 'span 3' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, width: '100%' }}>
           <Typography variant="h6">
-            {hoursFilter === 'all' ? 'Comparativa Horas por Desarrollador' : `Horas - ${users.find(u => u.userId === hoursFilter)?.firtsName || ''}`}
+            {hoursFilter === 'all' ? 'Comparativa Horas por Desarrollador' : `Horas - ${hoursFilter}`}
           </Typography>
           <FormControl size="small" sx={{ minWidth: 150 }}>
             <Select
@@ -200,9 +157,9 @@ function Dashboard({ selectedProjectId }) {
               sx={{ fontSize: '0.75rem' }}
             >
               <MenuItem value="all" sx={{ fontSize: '0.75rem' }}>Todos los Devs</MenuItem>
-              {users.map(user => (
-                <MenuItem key={user.userId} value={user.userId} sx={{ fontSize: '0.75rem' }}>
-                  {user.firtsName} {user.lastName}
+              {(summary?.devStats || []).map(dev => (
+                <MenuItem key={dev.name} value={dev.name} sx={{ fontSize: '0.75rem' }}>
+                  {dev.name}
                 </MenuItem>
               ))}
             </Select>
@@ -210,7 +167,7 @@ function Dashboard({ selectedProjectId }) {
         </Box>
         <ResponsiveContainer width="100%" height={250}>
             <BarChart data={devComparisonData}>
-            <CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="name" tick={false} /><YAxis /><Tooltip /><Legend />
+            <CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="name" tick={{fontSize: 10}} /><YAxis /><Tooltip /><Legend />
             <Bar dataKey="estimado" fill="#42a5f5" name="Horas Estimadas" /><Bar dataKey="real" fill="#ef5350" name="Horas Reales" />
           </BarChart>
         </ResponsiveContainer>

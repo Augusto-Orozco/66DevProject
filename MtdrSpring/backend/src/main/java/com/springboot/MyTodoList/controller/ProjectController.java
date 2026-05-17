@@ -23,4 +23,9 @@ public class ProjectController {
     public Project createProject(@RequestBody Project project) {
         return projectService.saveProject(project);
     }
+
+    @GetMapping(value = "/projects/{projectId}/dashboard-summary", produces = "application/json")
+    public String getDashboardSummary(@PathVariable Long projectId) {
+        return projectService.getProjectDashboardSummary(projectId);
+    }
 }
