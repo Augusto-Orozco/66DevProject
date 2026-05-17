@@ -88,4 +88,31 @@ public class DiagnosticController {
         }
         return info;
     }
+
+    @GetMapping("/diag/test-sp-sprints")
+    public Map<String, Object> testSprintsSP() {
+        Map<String, Object> info = new HashMap<>();
+        try {
+            Long testProjectId = 1L;
+            
+            String result = jdbcTemplate.execute(
+                "{call GET_PROJECT_SPRINTS_HIERARCHY(?, ?)}",
+                (CallableStatementCallback<String>) cs -> {
+                    cs.setLong(1, testProjectId);
+                    cs.registerOutParameter(2, Types.CLOB);
+                    cs.execute();
+                    Clob clob = cs.getClob(2);
+                    return (clob != null) ? clob.getSubString(1, (int) clob.length()) : null;
+                }
+            );
+
+            info.put("status", "Success");
+            info.put("project_id", testProjectId);
+            info.put("result", result);
+        } catch (Exception e) {
+            info.put("status", "Error");
+            info.put("message", e.getMessage());
+        }
+        return info;
+    }
 }

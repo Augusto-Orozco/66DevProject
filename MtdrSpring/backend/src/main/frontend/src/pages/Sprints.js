@@ -207,9 +207,13 @@ function Sprints({ selectedProjectId }) {
       try {
         setLoading(true)
         
-        // 1. Obtener tareas sin sprint del proyecto seleccionado
+        // Obtener tareas sin sprint del proyecto seleccionado
         const unassignedRes = await fetch(`/tasks/unassigned/project/${selectedProjectId}`)
         const unassignedTasks = await unassignedRes.json()
+
+        // Obtener jerarquía completa de sprints y tareas
+        const hierarchyRes = await fetch(`/sprints/project/${selectedProjectId}/hierarchy`)
+        const sprintsHierarchy = await hierarchyRes.json()
 
         const newColumns = {
           'backlog': {
@@ -224,36 +228,30 @@ function Sprints({ selectedProjectId }) {
           }
         }
 
-        // 2. Obtener todos los sprints del proyecto seleccionado
-        const sprintsRes = await fetch(`/sprints/project/${selectedProjectId}`)
-        const sprints = await sprintsRes.json()
-        const orderedSprints = Array.isArray(sprints) ? [...sprints].sort((a, b) => a.sprintNum - b.sprintNum) : []
+        const orderedSprints = Array.isArray(sprintsHierarchy) ? sprintsHierarchy : []
         
         setAvailableSprints(orderedSprints.map((s) => ({
           id: s.sprintId,
           number: s.sprintNum
         })))
 
-        // 3. Para cada sprint, obtener sus tareas
-        for (const sprint of orderedSprints) {
-          const tasksRes = await fetch(`/sprintTasks/${sprint.sprintId}`)
-          const sprintTasks = await tasksRes.json()
-          
+        // Llenar columnas de sprints con los datos del SP
+        orderedSprints.forEach(sprint => {
           newColumns[`sprint-${sprint.sprintId}`] = {
             title: `Sprint ${sprint.sprintNum}`,
-            tasks: Array.isArray(sprintTasks) ? sprintTasks.map(st => ({
-              id: st.task.taskId.toString(),
-              title: st.task.title,
-              description: st.task.description,
-              userStoryId: st.task.userStory?.userStoriesId || 'Sin ID de historia',
-              userStoryName: st.task.userStory?.name || 'Sin historia de usuario'
+            tasks: Array.isArray(sprint.tasks) ? sprint.tasks.map(t => ({
+              id: t.taskId.toString(),
+              title: t.title,
+              description: t.description,
+              userStoryId: t.userStory?.id || 'Sin ID',
+              userStoryName: t.userStory?.name || 'Sin historia'
             })) : []
           }
-        }
+        })
 
         setColumns(newColumns)
 
-        // 4. Obtener prioridades, historias de usuario y estatus
+        // Obtener prioridades, historias de usuario y estatus
         const [prioritiesRes, userStoriesRes, statusesRes] = await Promise.all([
           fetch('/priorities'),
           fetch('/userStories'),
@@ -286,7 +284,7 @@ function Sprints({ selectedProjectId }) {
     const backlogKey = 'backlog';
     
     if (selectedSprintId === null) {
-      // Mostrar backlog + sprints ordenados por su número (que está en el título)
+      // Mostrar backlog + sprints ordenados por su número
       const sprintKeys = columnKeys
         .filter(k => k.startsWith('sprint-'))
         .sort((a, b) => {

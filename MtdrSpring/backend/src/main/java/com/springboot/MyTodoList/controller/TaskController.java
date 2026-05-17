@@ -140,6 +140,11 @@ public class TaskController {
         return sprintService.getSprintsByProjectId(projectId);
     }
 
+    @GetMapping(value = "/sprints/project/{projectId}/hierarchy", produces = "application/json")
+    public String getSprintsHierarchy(@PathVariable Long projectId) {
+        return sprintService.getProjectSprintsHierarchy(projectId);
+    }
+
     @GetMapping("/team/project/{projectId}")
     public List<User> getTeamByProjectId(@PathVariable Long projectId) {
         return projectService.getProjectById(projectId)
