@@ -14,7 +14,7 @@ import {
   DialogActions,
   Menu,
   MenuItem
-} from '@mui/material' // <-- NUEVAS IMPORTACIONES AÑADIDAS
+} from '@mui/material' 
 import CloseIcon from '@mui/icons-material/Close'
 import { DndContext, closestCenter, useDroppable} from '@dnd-kit/core'
 import {SortableContext, verticalListSortingStrategy, useSortable} from '@dnd-kit/sortable'
@@ -181,11 +181,12 @@ function Sprints({ selectedProjectId }) {
   const [loading, setLoading] = useState(true)
   const [selectedSprintId, setSelectedSprintId] = useState(null)
   const [availableSprints, setAvailableSprints] = useState([])
+  const [users, setUsers] = useState([])
   
-  // --- NUEVO: ESTADO PARA EL MODAL DE CONFIRMACIÓN ---
+  // --- ESTADO PARA EL MODAL DE CONFIRMACIÓN ---
   const [openDialog, setOpenDialog] = useState(false)
 
-  // --- NUEVO: ESTADO PARA EL MODAL DE CREACIÓN DE TAREAS ---
+  // --- ESTADO PARA EL MODAL DE CREACIÓN DE TAREAS ---
   const [openTaskDialog, setOpenTaskDialog] = useState(false)
   const [priorities, setPriorities] = useState([])
   const [userStories, setUserStories] = useState([])
@@ -196,7 +197,9 @@ function Sprints({ selectedProjectId }) {
     storyPoints: '',
     objetiveTime: '',
     priorityId: '',
-    userStoryId: ''
+    userStoryId: '',
+    sprintId: '',
+    assignedUserId: ''
   })
 
   const [openMenu, setOpenMenu] = useState(false)
@@ -207,13 +210,18 @@ function Sprints({ selectedProjectId }) {
       try {
         setLoading(true)
         
-        // Obtener tareas sin sprint del proyecto seleccionado
+        // 1. Obtener tareas sin sprint del proyecto seleccionado
         const unassignedRes = await fetch(`/tasks/unassigned/project/${selectedProjectId}`)
         const unassignedTasks = await unassignedRes.json()
 
-        // Obtener jerarquía completa de sprints y tareas
+        // 2. Obtener jerarquía completa de sprints y tareas
         const hierarchyRes = await fetch(`/sprints/project/${selectedProjectId}/hierarchy`)
         const sprintsHierarchy = await hierarchyRes.json()
+
+        // 3. Obtener miembros del equipo
+        const usersRes = await fetch(`/team/project/${selectedProjectId}`)
+        const teamMembers = await usersRes.json()
+        setUsers(Array.isArray(teamMembers) ? teamMembers : [])
 
         const newColumns = {
           'backlog': {
@@ -251,7 +259,7 @@ function Sprints({ selectedProjectId }) {
 
         setColumns(newColumns)
 
-        // Obtener prioridades, historias de usuario y estatus
+        // 4. Obtener prioridades, historias de usuario y estatus
         const [prioritiesRes, userStoriesRes, statusesRes] = await Promise.all([
           fetch('/priorities'),
           fetch('/userStories'),
@@ -284,11 +292,10 @@ function Sprints({ selectedProjectId }) {
     const backlogKey = 'backlog';
     
     if (selectedSprintId === null) {
-      // Mostrar backlog + sprints ordenados por su número
+      // Mostrar backlog + sprints ordenados por su número (que está en el título)
       const sprintKeys = columnKeys
         .filter(k => k.startsWith('sprint-'))
         .sort((a, b) => {
-          // Intentamos obtener el número del sprint desde availableSprints para un sorteo más fiable
           const idA = parseInt(a.split('-')[1]);
           const idB = parseInt(b.split('-')[1]);
           const sprintA = availableSprints.find(s => s.id === idA);
@@ -306,7 +313,6 @@ function Sprints({ selectedProjectId }) {
   };
 
   const visibleColumnsToRender = getVisibleColumns();
-  // Forzamos a 4 para que el ancho de las columnas sea siempre el de "Backlog + 3 Sprints"
   const visibleColumnCount = 4;
 
   /* --- DRAG LOGIC --- */
@@ -338,10 +344,8 @@ function Sprints({ selectedProjectId }) {
     
     try {
       if (to === 'backlog') {
-        // Quitar de sprint
         await fetch(`/tasks/${taskId}/unassign`, { method: 'PUT' })
       } else if (to.startsWith('sprint-')) {
-        // Asignar a sprint
         const sprintId = to.replace('sprint-', '')
         await fetch(`/tasks/${taskId}/assign/${sprintId}`, { method: 'PUT' })
       }
@@ -355,7 +359,6 @@ function Sprints({ selectedProjectId }) {
     try {
       if (!selectedProjectId) return;
 
-      // Formatear fechas para LocalDateTime 
       const formatDateForJava = (date) => date.toISOString().split('.')[0]; 
       
       const now = new Date();
@@ -378,7 +381,6 @@ function Sprints({ selectedProjectId }) {
 
       const data = await res.json();
       
-      // Actualizar columnas
       setColumns(prev => ({
         ...prev,
         [`sprint-${data.sprintId}`]: {
@@ -387,7 +389,6 @@ function Sprints({ selectedProjectId }) {
         }
       }));
 
-      // Actualizar lista de sprints disponibles para el menú
       setAvailableSprints(prev => [
         ...prev, 
         { id: data.sprintId, number: data.sprintNum }
@@ -403,40 +404,43 @@ function Sprints({ selectedProjectId }) {
 
   const handleCreateTask = async () => {
     try {
-      const pendingStatus = statuses.find(s => s.status === 'Pendiente' || s.status === 'pending') || statuses[0];
-      
-      const taskToSave = {
+      // Usamos el endpoint ATÓMICO (SP)
+      const payload = {
         title: newTask.title,
         description: newTask.description,
-        storyPoints: parseInt(newTask.storyPoints),
-        objetiveTime: parseInt(newTask.objetiveTime),
-        priority: { priorityId: newTask.priorityId },
-        userStory: { userStoriesId: newTask.userStoryId },
-        status: { statusId: pendingStatus.statusId },
-        project: { projectId: selectedProjectId },
-        deleted: 'N'
+        projectId: selectedProjectId,
+        userStoryId: newTask.userStoryId,
+        priorityId: newTask.priorityId,
+        storyPoints: parseInt(newTask.storyPoints) || 0,
+        objectiveTime: parseInt(newTask.objetiveTime) || 0, 
+        sprintId: newTask.sprintId || null,
+        assignedUserId: newTask.assignedUserId || null
       };
 
-      const res = await fetch('/tasks', {
+      const res = await fetch('/tasks/atomic', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(taskToSave)
+        body: JSON.stringify(payload)
       });
 
-      if (!res.ok) throw new Error('Error al crear la tarea');
+      if (!res.ok) throw new Error('Error al crear la tarea de forma atómica');
 
-      const data = await res.json();
+      const taskId = await res.json();
+
+      // Actualizar la UI localmente
+      const targetCol = payload.sprintId ? `sprint-${payload.sprintId}` : 'backlog';
+      const storyObj = userStories.find(us => us.userStoriesId === payload.userStoryId);
 
       setColumns(prev => ({
         ...prev,
-        backlog: {
-          ...prev.backlog,
-          tasks: [...prev.backlog.tasks, {
-            id: data.taskId.toString(),
-            title: data.title,
-            description: data.description,
-            userStoryId: data.userStory?.userStoriesId,
-            userStoryName: data.userStory?.name
+        [targetCol]: {
+          ...prev[targetCol],
+          tasks: [...prev[targetCol].tasks, {
+            id: taskId.toString(),
+            title: payload.title,
+            description: payload.description,
+            userStoryId: payload.userStoryId,
+            userStoryName: storyObj?.name || 'Sin historia'
           }]
         }
       }));
@@ -448,7 +452,9 @@ function Sprints({ selectedProjectId }) {
         storyPoints: '',
         objetiveTime: '',
         priorityId: '',
-        userStoryId: ''
+        userStoryId: '',
+        sprintId: '',
+        assignedUserId: ''
       });
 
     } catch (error) {
@@ -478,7 +484,6 @@ function Sprints({ selectedProjectId }) {
     <Box className={`floating-menu ${openMenu ? 'open' : ''}`}>
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
         
-        {/* Reset Button (Above) */}
         {openMenu && (
           <Button
             variant="contained"
@@ -501,7 +506,6 @@ function Sprints({ selectedProjectId }) {
           </Button>
         )}
 
-        {/* Botón principal */}
         <Button
           className="main-btn"
           variant="contained"
@@ -518,7 +522,6 @@ function Sprints({ selectedProjectId }) {
           <ViewWeekIcon sx={{ fontSize: '1.2rem' }} />
         </Button>
 
-        {/* Lista scrolleable (Below) */}
         {openMenu && (
           <Box
             sx={{
@@ -619,7 +622,7 @@ function Sprints({ selectedProjectId }) {
         + Crear Sprint
       </Fab>
 
-      {/* --- NUEVO: MODAL DE CONFIRMACIÓN --- */}
+      {/* MODAL DE CONFIRMACIÓN SPRINT */}
       <Dialog
         open={openDialog}
         onClose={() => setOpenDialog(false)}
@@ -631,23 +634,12 @@ function Sprints({ selectedProjectId }) {
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button 
-            onClick={() => setOpenDialog(false)} 
-            color="inherit"
-          >
-            Cancelar
-          </Button>
-          <Button backgroundColor="red"
-            onClick={handleCreateSprint} 
-            variant="contained" 
-            color="primary"
-          >
-            Aceptar
-          </Button>
+          <Button onClick={() => setOpenDialog(false)} color="inherit">Cancelar</Button>
+          <Button onClick={handleCreateSprint} variant="contained" color="primary">Aceptar</Button>
         </DialogActions>
       </Dialog>
 
-      {/* --- SIDE DRAWER DE CREACIÓN DE TAREA --- */}
+      {/* SIDE DRAWER DE CREACIÓN DE TAREA */}
       <Drawer
         anchor="right"
         open={openTaskDialog}
@@ -715,20 +707,38 @@ function Sprints({ selectedProjectId }) {
               />
             </Box>
 
-            <FormControl fullWidth>
-              <InputLabel>Prioridad</InputLabel>
-              <MuiSelect
-                label="Prioridad"
-                value={newTask.priorityId}
-                onChange={(e) => setNewTask({ ...newTask, priorityId: e.target.value })}
-              >
-                {priorities.map((p) => (
-                  <MenuItem key={p.priorityId} value={p.priorityId}>
-                    {p.priorityName}
-                  </MenuItem>
-                ))}
-              </MuiSelect>
-            </FormControl>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <FormControl fullWidth>
+                <InputLabel>Prioridad</InputLabel>
+                <MuiSelect
+                  label="Prioridad"
+                  value={newTask.priorityId}
+                  onChange={(e) => setNewTask({ ...newTask, priorityId: e.target.value })}
+                >
+                  {priorities.map((p) => (
+                    <MenuItem key={p.priorityId} value={p.priorityId}>
+                      {p.priorityName}
+                    </MenuItem>
+                  ))}
+                </MuiSelect>
+              </FormControl>
+
+              <FormControl fullWidth>
+                <InputLabel>Sprint (Opcional)</InputLabel>
+                <MuiSelect
+                  label="Sprint (Opcional)"
+                  value={newTask.sprintId}
+                  onChange={(e) => setNewTask({ ...newTask, sprintId: e.target.value })}
+                >
+                  <MenuItem value=""><em>Backlog</em></MenuItem>
+                  {availableSprints.map((s) => (
+                    <MenuItem key={s.id} value={s.id}>
+                      Sprint {s.number}
+                    </MenuItem>
+                  ))}
+                </MuiSelect>
+              </FormControl>
+            </Box>
 
             <FormControl fullWidth>
               <InputLabel>Historia de Usuario</InputLabel>
@@ -740,6 +750,22 @@ function Sprints({ selectedProjectId }) {
                 {userStories.map((us) => (
                   <MenuItem key={us.userStoriesId} value={us.userStoriesId}>
                     {us.name}
+                  </MenuItem>
+                ))}
+              </MuiSelect>
+            </FormControl>
+
+            <FormControl fullWidth>
+              <InputLabel>Asignar a Desarrollador</InputLabel>
+              <MuiSelect
+                label="Asignar a Desarrollador"
+                value={newTask.assignedUserId}
+                onChange={(e) => setNewTask({ ...newTask, assignedUserId: e.target.value })}
+              >
+                <MenuItem value=""><em>Sin asignar</em></MenuItem>
+                {users.map((u) => (
+                  <MenuItem key={u.userId} value={u.userId}>
+                    {u.firtsName} {u.lastName}
                   </MenuItem>
                 ))}
               </MuiSelect>
@@ -757,20 +783,11 @@ function Sprints({ selectedProjectId }) {
           gap: 2,
           backgroundColor: 'white'
         }}>
-          <Button 
-            onClick={() => setOpenTaskDialog(false)} 
-            color="inherit"
-          >
-            Cancelar
-          </Button>
+          <Button onClick={() => setOpenTaskDialog(false)} color="inherit">Cancelar</Button>
           <Button 
             onClick={handleCreateTask} 
             variant="contained" 
-            sx={{ 
-              backgroundColor: '#cc0707', 
-              '&:hover': { backgroundColor: '#a30606' },
-              fontWeight: 'bold'
-            }}
+            sx={{ backgroundColor: '#cc0707', '&:hover': { backgroundColor: '#a30606' }, fontWeight: 'bold' }}
             disabled={!newTask.title || !newTask.priorityId || !newTask.userStoryId}
           >
             Crear Tarea
@@ -778,7 +795,6 @@ function Sprints({ selectedProjectId }) {
         </Box>
       </Drawer>
 
-      {/* FOOTER */}
       <Footer />
 
     </Box>

@@ -17,6 +17,7 @@ import com.springboot.MyTodoList.service.ProjectService;
 import com.springboot.MyTodoList.service.TaskPriorityService;
 import com.springboot.MyTodoList.service.TaskStatusService;
 import com.springboot.MyTodoList.service.UserStoryService;
+import com.springboot.MyTodoList.util.TaskDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -52,6 +53,17 @@ public class TaskController {
 
     @Autowired
     private UserStoryService userStoryService;
+
+    @PostMapping("/tasks/atomic")
+    public ResponseEntity<Long> createTaskAtomic(@RequestBody TaskDTO taskDto) {
+        try {
+            Long taskId = taskService.createTaskAtomic(taskDto);
+            return ResponseEntity.ok(taskId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
+        }
+    }
 
     @GetMapping("/tasks")
     public List<Task> getAllTasks() {

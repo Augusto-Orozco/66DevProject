@@ -115,4 +115,52 @@ public class DiagnosticController {
         }
         return info;
     }
+
+    @GetMapping("/diag/user-stories-data")
+    public List<Map<String, Object>> listUserStories() {
+        try {
+            return jdbcTemplate.queryForList("SELECT * FROM USER_STORIES");
+        } catch (Exception e) {
+            return List.of(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/diag/test-atomic-task")
+    public Map<String, Object> testAtomicTask() {
+        Map<String, Object> info = new HashMap<>();
+        try {
+            // Intentamos encontrar IDs válidos dinámicamente para que el test no falle por integridad
+            Long validProjectId = jdbcTemplate.queryForObject("SELECT PROJECT_ID FROM PROJECTS FETCH FIRST 1 ROW ONLY", Long.class);
+            String validStoryId = jdbcTemplate.queryForObject("SELECT USER_STORIES_ID FROM USER_STORIES FETCH FIRST 1 ROW ONLY", String.class);
+            Long validPriorityId = jdbcTemplate.queryForObject("SELECT PRIORITY_ID FROM TASK_PRIORITIES FETCH FIRST 1 ROW ONLY", Long.class);
+
+            String sql = "{call CREATE_TASK_ATOMIC(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)}";
+            
+            Long taskId = jdbcTemplate.execute(sql, (org.springframework.jdbc.core.CallableStatementCallback<Long>) cs -> {
+                cs.setString(1, "Tarea de Diagnóstico " + System.currentTimeMillis());
+                cs.setString(2, "Descripción generada automáticamente por el test");
+                cs.setLong(3, validProjectId); 
+                cs.setString(4, validStoryId); 
+                cs.setLong(5, validPriorityId); 
+                cs.setInt(6, 5);   
+                cs.setInt(7, 8);   
+                cs.setNull(8, java.sql.Types.NUMERIC); 
+                cs.setNull(9, java.sql.Types.NUMERIC); 
+                cs.registerOutParameter(10, java.sql.Types.NUMERIC);
+                cs.execute();
+                return cs.getLong(10);
+            });
+
+            info.put("status", "Success");
+            info.put("new_task_id", taskId);
+            info.put("used_project_id", validProjectId);
+            info.put("used_story_id", validStoryId);
+            info.put("message", "La tarea atómica se creó correctamente usando IDs dinámicos.");
+        } catch (Exception e) {
+            info.put("status", "Error");
+            info.put("error_type", e.getClass().getName());
+            info.put("message", e.getMessage());
+        }
+        return info;
+    }
 }

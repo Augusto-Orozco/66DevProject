@@ -509,31 +509,28 @@ public class BotActions{
                     Long uId = Long.valueOf(requestText.split(" - ")[0].trim());
                     context.assignedUserId = uId;
                     
-                    // CREAR TAREA
-                    com.springboot.MyTodoList.model.Task newTask = new com.springboot.MyTodoList.model.Task();
-                    newTask.setTitle(context.title);
-                    newTask.setDescription(context.description);
-                    newTask.setStoryPoints(context.storyPoints);
-                    newTask.setObjetiveTime(context.storyPoints * 2); // Ejemplo
-                    newTask.setDeleted("N");
-                    
-                    userStoryService.getUserStoryById(context.userStoryId).ifPresent(newTask::setUserStory);
-                    taskPriorityService.getTaskPriorityById(context.priorityId).ifPresent(newTask::setPriority);
-                    taskStatusService.getTaskStatusById(1L).ifPresent(newTask::setStatus); // Pendiente
-                    
-                    com.springboot.MyTodoList.model.Task savedTask = taskService.saveTask(newTask);
-                    
-                    // ASIGNAR A SPRINT
-                    sprintService.getSprintById(context.sprintId).ifPresent(sprint -> {
-                        sprintTaskService.assignTaskToSprint(savedTask, sprint);
-                    });
-                    
-                    // ASIGNAR A USUARIO
-                    userService.getUserById(uId).ifPresent(user -> {
-                        taskUserService.saveTaskUser(new com.springboot.MyTodoList.model.TaskUser(savedTask, user));
-                    });
-                    
-                    BotHelper.sendMessageToTelegram(chatId, "✅ ¡Tarea \"" + savedTask.getTitle() + "\" creada y asignada correctamente!", telegramClient);
+                    // 1. OBTENER PROYECTO DEL SPRINT
+                    Long projectId = 1L; 
+                    Optional<com.springboot.MyTodoList.model.Sprint> sprintOpt = sprintService.getSprintById(context.sprintId);
+                    if (sprintOpt.isPresent()) {
+                        projectId = sprintOpt.get().getProject().getProjectId();
+                    }
+
+                    // 2. CREAR TAREA DE FORMA ATÓMICA
+                    com.springboot.MyTodoList.util.TaskDTO taskDto = new com.springboot.MyTodoList.util.TaskDTO();
+                    taskDto.setTitle(context.title);
+                    taskDto.setDescription(context.description);
+                    taskDto.setProjectId(projectId);
+                    taskDto.setUserStoryId(context.userStoryId);
+                    taskDto.setPriorityId(context.priorityId);
+                    taskDto.setStoryPoints(context.storyPoints);
+                    taskDto.setObjectiveTime(context.storyPoints * 2);
+                    taskDto.setSprintId(context.sprintId);
+                    taskDto.setAssignedUserId(uId);
+
+                    Long newTaskId = taskService.createTaskAtomic(taskDto);
+
+                    BotHelper.sendMessageToTelegram(chatId, "✅ ¡Tarea \"" + context.title + "\" creada y asignada correctamente!", telegramClient);
                     creationContexts.remove(chatId);
                     exit = true;
                     fnStart(); // Volver al inicio
