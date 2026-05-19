@@ -5,12 +5,11 @@ import { useNavigate, useLocation } from 'react-router-dom';
 /* ICONOS MUI */
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import CodeIcon from '@mui/icons-material/Code';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import LogoutIcon from '@mui/icons-material/Logout';
 import AppRegistrationIcon from '@mui/icons-material/AppRegistration';
-import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday'; // <-- NUEVO: Icono sutil para los sprints
 
 import '../Assets/styles.css';
 
@@ -20,10 +19,16 @@ function Navbar(props) {
   const [scrolled, setScrolled] = useState(false);
 
   // Estado para el selector de proyectos
-  const [anchorEl, setAnchorEl] = useState(null);
+  const [anchorElProject, setAnchorElProject] = useState(null);
   const [projects, setProjects] = useState([]);
-  const open = Boolean(anchorEl);
+  const openProject = Boolean(anchorElProject);
 
+  // --- NUEVO: Estado para el menú de Sprints ---
+  const [anchorElSprint, setAnchorElSprint] = useState(null);
+  const [sprints, setSprints] = useState([]);
+  const openSprint = Boolean(anchorElSprint);
+
+  // Fetch de proyectos
   useEffect(() => {
     fetch('/projects')
       .then(res => res.json())
@@ -36,7 +41,22 @@ function Navbar(props) {
       .catch(err => console.error("Error fetching projects:", err));
   }, []);
 
+  // Fetch de sprints cada vez que cambia el proyecto seleccionado
+  useEffect(() => {
+    if (props.selectedProjectId) {
+      fetch(`/sprints/project/${props.selectedProjectId}`)
+        .then(res => res.json())
+        .then(data => setSprints(Array.isArray(data) ? data : []))
+        .catch(err => console.error("Error fetching sprints:", err));
+    }
+  }, [props.selectedProjectId]);
+
   const selectedProjectName = projects.find(p => p.projectId === props.selectedProjectId)?.name || 'Seleccionar Proyecto';
+
+  // --- NUEVO: Nombre del sprint seleccionado para el botón ---
+  const selectedSprintName = props.sprintFilter === 'all' || !props.sprintFilter
+    ? 'Todos los Sprints'
+    : sprints.find(s => s.sprintId === props.sprintFilter) ? `Sprint ${props.sprintFilter}` : 'Todos los Sprints';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -55,18 +75,33 @@ function Navbar(props) {
     navigate('/');
   };
 
+  // Controladores Proyecto
   const handleClickProject = (event) => {
-    setAnchorEl(event.currentTarget);
+    setAnchorElProject(event.currentTarget);
   };
 
   const handleCloseProject = (project) => {
     if (project) {
       props.setSelectedProjectId(project.projectId);
+      if (props.setSprintFilter) {
+        props.setSprintFilter('all');
+      }
     }
-    setAnchorEl(null);
+    setAnchorElProject(null);
   };
 
-  // Función para verificar si la ruta es la activa
+  // --- NUEVO: Controladores Sprint ---
+  const handleClickSprint = (event) => {
+    setAnchorElSprint(event.currentTarget);
+  };
+
+  const handleCloseSprint = (sprintId) => {
+    if (sprintId !== undefined && props.setSprintFilter) {
+      props.setSprintFilter(sprintId);
+    }
+    setAnchorElSprint(null);
+  };
+
   const isActive = (path) => location.pathname === path;
 
   return (
@@ -98,22 +133,6 @@ function Navbar(props) {
           {/* SECCIÓN CENTRAL: BOTONES DE NAVEGACIÓN */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             
-            {/* HELP */}
-            {/*<Button
-              className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''}`}
-              onClick={() =>
-                window.open(
-                  'https://youtu.be/Z4tsxrheEJw?si=oZrfUPq_412usZTf',
-                  '_blank'
-                )
-              }
-            >
-              <span className="icon">
-                <HelpOutlineIcon fontSize="small" />
-              </span>
-              <span className="label">???</span>
-            </Button>*/}
-
             {/* DASHBOARD */}
             {props.user?.roleName === 'Product Owner' && (
               <Button
@@ -126,19 +145,6 @@ function Navbar(props) {
                 <span className="label">Dashboard</span>
               </Button>
             )}
-
-            {/*{/* CREAR TAREA */}
-            {/*{props.user?.roleName === 'Product Owner' && ( */}
-            {/*  <Button */}
-            {/*    className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/TaskCreator') ? 'active' : ''}`}*/}
-            {/*    onClick={() => navigate('/TaskCreator')}*/}
-            {/*  >*/}
-            {/*    <span className="icon">*/}
-            {/*      <AppRegistrationIcon fontSize="small" />*/}
-            {/*    </span>*/}
-            {/*    <span className="label">Gestión</span>*/}
-            {/*  </Button>*/}
-            {/*)}*/}
 
             {/* GESTION DE TAREAS */}
             {props.user?.roleName === 'Product Owner' && (
@@ -165,25 +171,60 @@ function Navbar(props) {
                 <span className="label">Developers</span>
               </Button>
             )}
-
-            {/* ADD DEVELOPERS */}
-            {/*{props.user?.roleName === 'Product Owner' && (
-              <Button
-                className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/AddDevs') ? 'active' : ''}`}
-                onClick={() => navigate('/AddDevs')}
-              >
-                <span className="icon">
-                  <AssignmentIndIcon fontSize="small" />
-                </span>
-                <span className="label">Registrar</span>
-              </Button>
-            )}*/}
           </Box>
 
-          {/* SECCIÓN DERECHA: PROYECTOS Y LOGOUT */}
-          <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, justifyContent: 'flex-end' }}>
+          {/* SECCIÓN DERECHA: FILTRO DE SPRINT, PROYECTOS Y LOGOUT */}
+          <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, justifyContent: 'flex-end', gap: 1 }}>
 
-            {/* SELECTOR DE PROYECTOS (ESTÁTICO, SIN CRECIMIENTO) */}
+            {/* --- MODIFICADO: FILTRO DE SPRINT (AHORA CLON DEL SELECTOR DE PROYECTOS) --- */}
+            {isActive('/dashboard') && (
+              <>
+                <Button
+                  className={`nav-button icon-btn no-grow ${scrolled ? 'scrolled' : ''}`}
+                  onClick={handleClickSprint}
+                  endIcon={<ArrowDropDownIcon />}
+                  sx={{ mr: 1 }}
+                >
+                  <span className="icon">
+                    <CalendarTodayIcon fontSize="small" />
+                  </span>
+                  <span className="label">{selectedSprintName}</span>
+                </Button>
+                <Menu
+                  anchorEl={anchorElSprint}
+                  open={openSprint}
+                  onClose={() => handleCloseSprint()}
+                  PaperProps={{
+                    style: {
+                      borderRadius: '12px',
+                      marginTop: '8px',
+                      minWidth: '180px',
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                    },
+                  }}
+                >
+                  <MenuItem 
+                    onClick={() => handleCloseSprint('all')}
+                    selected={props.sprintFilter === 'all' || !props.sprintFilter}
+                    sx={{ fontSize: '0.85rem' }}
+                  >
+                    Todos los Sprints
+                  </MenuItem>
+                  {sprints.map((sprint) => (
+                    <MenuItem 
+                      key={sprint.sprintId} 
+                      onClick={() => handleCloseSprint(sprint.sprintId)}
+                      selected={sprint.sprintId === props.sprintFilter}
+                      sx={{ fontSize: '0.85rem' }}
+                    >
+                      {sprint.sprintName || `Sprint ${sprint.sprintId}`}
+                    </MenuItem>
+                  ))}
+                </Menu>
+              </>
+            )}
+
+            {/* SELECTOR DE PROYECTOS */}
             <Button
               className={`nav-button icon-btn no-grow ${scrolled ? 'scrolled' : ''}`}
               onClick={handleClickProject}
@@ -195,8 +236,8 @@ function Navbar(props) {
               <span className="label">{selectedProjectName}</span>
             </Button>
             <Menu
-              anchorEl={anchorEl}
-              open={open}
+              anchorEl={anchorElProject}
+              open={openProject}
               onClose={() => handleCloseProject()}
               PaperProps={{
                 style: {
@@ -212,6 +253,7 @@ function Navbar(props) {
                   key={project.projectId} 
                   onClick={() => handleCloseProject(project)}
                   selected={project.projectId === props.selectedProjectId}
+                  sx={{ fontSize: '0.85rem' }}
                 >
                   {project.name}
                 </MenuItem>
