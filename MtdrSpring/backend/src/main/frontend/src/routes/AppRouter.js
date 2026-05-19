@@ -1,3 +1,4 @@
+import { useState } from 'react' // <-- 1. Importamos useState
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toolbar, Box } from '@mui/material'
 import Login from '../pages/login'
@@ -9,6 +10,10 @@ import AddDevs from '../pages/AddDevs'
 import TaskCreator from '../pages/TaskCreator'
 
 function AppRouter({ isAuth, setIsAuth, user, setUser, selectedProjectId, setSelectedProjectId }) {
+  
+  // <-- 2. Creamos el estado del filtro de sprints aquí a nivel global de las rutas
+  const [sprintFilter, setSprintFilter] = useState('all')
+
   return (
     <BrowserRouter>
 
@@ -19,6 +24,9 @@ function AppRouter({ isAuth, setIsAuth, user, setUser, selectedProjectId, setSel
           user={user} 
           selectedProjectId={selectedProjectId}
           setSelectedProjectId={setSelectedProjectId}
+          // <-- 3. Le pasamos el estado y la función para actualizarlo al Navbar
+          sprintFilter={sprintFilter}
+          setSprintFilter={setSprintFilter}
         />
       )}
 
@@ -40,7 +48,8 @@ function AppRouter({ isAuth, setIsAuth, user, setUser, selectedProjectId, setSel
             path="/dashboard" 
             element={
               isAuth && user?.roleName === 'Product Owner'
-                ? <Dashboard selectedProjectId={selectedProjectId} />
+                // <-- 4. Le pasamos el valor actual del filtro al Dashboard
+                ? <Dashboard selectedProjectId={selectedProjectId} sprintFilter={sprintFilter} />
                 : <Navigate to={isAuth ? "/DashDevs" : "/"} />
             }
           />
