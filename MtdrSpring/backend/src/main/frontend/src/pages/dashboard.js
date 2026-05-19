@@ -6,7 +6,7 @@ import { PieChart, Pie, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAx
 import Footer from '../components/Footer'
 import '../Assets/styles.css'
 
-// NOTA: Asegúrate de pasar sprintFilter como prop desde tu App.js
+
 function Dashboard({ selectedProjectId, sprintFilter }) {
   const [items, setItems] = useState([]) 
   const [assignments, setAssignments] = useState([])
@@ -18,7 +18,7 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
   // Filtros individuales por gráfica
   const [devFilterTasks, setDevFilterTasks] = useState('all') 
   const [devFilterHours, setDevFilterHours] = useState('all')
-  const [devFilterEfectividad, setDevFilterEfectividad] = useState('all') // <-- Nuevo filtro
+  const [devFilterEfectividad, setDevFilterEfectividad] = useState('all') 
 
   const fetchData = () => {
     if (!selectedProjectId) return;
@@ -158,11 +158,11 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
     : (targetEstimado > 0 ? 100 : 0);
 
   // Colores según las reglas
-  let efectividadColor = '#f44336'; // Rojo por defecto (< 50%)
-  if (efectividadValor > 75) efectividadColor = '#4caf50'; // Verde (> 75%)
-  else if (efectividadValor >= 50) efectividadColor = '#fbc02d'; // Amarillo (50% a 75%)
+  let efectividadColor = '#f44336';
+  if (efectividadValor > 75) efectividadColor = '#4caf50'; 
+  else if (efectividadValor >= 50) efectividadColor = '#fbc02d';
 
-  // Limitamos visualmente a 100 para que la barra no se desborde del diseño
+ 
   const barraEfectividadVisual = efectividadValor > 100 ? 100 : efectividadValor;
 
   const efectividadBarData = [
@@ -227,7 +227,7 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
         </Box>
 
         {/* --- FILA 2: HORAS Y EFECTIVIDAD --- */}
-        {/* Cambiamos el span de 4 a 3 para dejarle espacio a la nueva métrica */}
+  
         <Box className="base-card" sx={{ gridColumn: 'span 3' }}>
           <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h6">Comparativa de Horas (Real vs Estimado)</Typography>

@@ -9,7 +9,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import AppRegistrationIcon from '@mui/icons-material/AppRegistration';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday'; // <-- NUEVO: Icono sutil para los sprints
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 
 import '../Assets/styles.css';
 
@@ -23,7 +23,7 @@ function Navbar(props) {
   const [projects, setProjects] = useState([]);
   const openProject = Boolean(anchorElProject);
 
-  // --- NUEVO: Estado para el menú de Sprints ---
+  // Estado para el menú de Sprints
   const [anchorElSprint, setAnchorElSprint] = useState(null);
   const [sprints, setSprints] = useState([]);
   const openSprint = Boolean(anchorElSprint);
@@ -46,23 +46,31 @@ function Navbar(props) {
     if (props.selectedProjectId) {
       fetch(`/sprints/project/${props.selectedProjectId}`)
         .then(res => res.json())
-        .then(data => setSprints(Array.isArray(data) ? data : []))
+        .then(data => {
+          if (Array.isArray(data)) {
+            // ordenar de manera ascendente
+            const sortedSprints = [...data].sort((a, b) => a.sprintNum - b.sprintNum);
+            setSprints(sortedSprints);
+          } else {
+            setSprints([]);
+          }
+        })
         .catch(err => console.error("Error fetching sprints:", err));
     }
   }, [props.selectedProjectId]);
 
   const selectedProjectName = projects.find(p => p.projectId === props.selectedProjectId)?.name || 'Seleccionar Proyecto';
 
-  // --- NUEVO: Nombre del sprint seleccionado para el botón ---
+  //Sprint id para tener su numero de sprint
+  const currentSprintObj = sprints.find(s => s.sprintId === props.sprintFilter);
   const selectedSprintName = props.sprintFilter === 'all' || !props.sprintFilter
     ? 'Todos los Sprints'
-    : sprints.find(s => s.sprintId === props.sprintFilter) ? `Sprint ${props.sprintFilter}` : 'Todos los Sprints';
+    : currentSprintObj ? `Sprint ${currentSprintObj.sprintNum}` : 'Todos los Sprints';
 
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 30);
     };
-
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -90,13 +98,14 @@ function Navbar(props) {
     setAnchorElProject(null);
   };
 
-  // --- NUEVO: Controladores Sprint ---
+  // Controladores Sprint
   const handleClickSprint = (event) => {
     setAnchorElSprint(event.currentTarget);
   };
 
   const handleCloseSprint = (sprintId) => {
     if (sprintId !== undefined && props.setSprintFilter) {
+    
       props.setSprintFilter(sprintId);
     }
     setAnchorElSprint(null);
@@ -105,17 +114,12 @@ function Navbar(props) {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <Box
-      className="navbar-wrapper"
-      style={{ top: scrolled ? '10px' : '0px' }}
-    >
+    <Box className="navbar-wrapper" style={{ top: scrolled ? '10px' : '0px' }}>
       <AppBar
         position="static"
         elevation={0}
         className={`navbar-appbar ${scrolled ? 'scrolled' : ''}`}
-        sx={{
-          py: scrolled ? 1.2 : 1.4,
-        }}
+        sx={{ py: scrolled ? 1.2 : 1.4 }}
       >
         <Toolbar sx={{ justifyContent: 'space-between' }}>
 
@@ -130,53 +134,43 @@ function Navbar(props) {
             </Box>
           </Box>
 
-          {/* SECCIÓN CENTRAL: BOTONES DE NAVEGACIÓN */}
+          {/* SECCIÓN CENTRAL: NAVEGACIÓN */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            
-            {/* DASHBOARD */}
             {props.user?.roleName === 'Product Owner' && (
               <Button
                 className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/dashboard') ? 'active' : ''}`}
                 onClick={() => navigate('/dashboard')}
               >
-                <span className="icon">
-                  <DashboardIcon fontSize="small" />
-                </span>
+                <span className="icon"><DashboardIcon fontSize="small" /></span>
                 <span className="label">Dashboard</span>
               </Button>
             )}
 
-            {/* GESTION DE TAREAS */}
             {props.user?.roleName === 'Product Owner' && (
               <Button
                 className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/Sprints') ? 'active' : ''}`}
                 onClick={() => navigate('/Sprints')}
               >
-                <span className="icon">
-                  <AppRegistrationIcon fontSize="small" />
-                </span>
+                <span className="icon"><AppRegistrationIcon fontSize="small" /></span>
                 <span className="label">Sprints</span>
               </Button>
             )}
 
-            {/* DEVELOPERS */}
             {props.user?.roleName === 'Developer' && (
               <Button
                 className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/DashDevs') ? 'active' : ''}`}
                 onClick={() => navigate('/DashDevs')}
               >
-                <span className="icon">
-                  <CodeIcon fontSize="small" />
-                </span>
+                <span className="icon"><CodeIcon fontSize="small" /></span>
                 <span className="label">Developers</span>
               </Button>
             )}
           </Box>
 
-          {/* SECCIÓN DERECHA: FILTRO DE SPRINT, PROYECTOS Y LOGOUT */}
+          {/* SECCIÓN DERECHA: FILTROS Y LOGOUT */}
           <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, justifyContent: 'flex-end', gap: 1 }}>
 
-            {/* --- MODIFICADO: FILTRO DE SPRINT (AHORA CLON DEL SELECTOR DE PROYECTOS) --- */}
+            {/* FILTRO DE SPRINT */}
             {isActive('/dashboard') && (
               <>
                 <Button
@@ -185,9 +179,7 @@ function Navbar(props) {
                   endIcon={<ArrowDropDownIcon />}
                   sx={{ mr: 1 }}
                 >
-                  <span className="icon">
-                    <CalendarTodayIcon fontSize="small" />
-                  </span>
+                  <span className="icon"><CalendarTodayIcon fontSize="small" /></span>
                   <span className="label">{selectedSprintName}</span>
                 </Button>
                 <Menu
@@ -213,11 +205,13 @@ function Navbar(props) {
                   {sprints.map((sprint) => (
                     <MenuItem 
                       key={sprint.sprintId} 
+                    
                       onClick={() => handleCloseSprint(sprint.sprintId)}
-                      selected={sprint.sprintId === props.sprintFilter}
+                      selected={sprint.sprintId === props.sprintFilter} 
                       sx={{ fontSize: '0.85rem' }}
                     >
-                      {sprint.sprintName || `Sprint ${sprint.sprintId}`}
+                      {/* Pero al usuario le mostramos el nombre o el número amigable */}
+                      {sprint.sprintName || `Sprint ${sprint.sprintNum}`}
                     </MenuItem>
                   ))}
                 </Menu>
@@ -230,9 +224,7 @@ function Navbar(props) {
               onClick={handleClickProject}
               endIcon={<ArrowDropDownIcon />}
             >
-              <span className="icon">
-                <AccountTreeIcon fontSize="small" />
-              </span>
+              <span className="icon"><AccountTreeIcon fontSize="small" /></span>
               <span className="label">{selectedProjectName}</span>
             </Button>
             <Menu
@@ -264,9 +256,7 @@ function Navbar(props) {
               onClick={handleLogout}
               className={`nav-button nav-button-logout icon-btn ${scrolled ? 'scrolled' : ''}`}
             >
-              <span className="icon">
-                <LogoutIcon fontSize="small" />
-              </span>
+              <span className="icon"><LogoutIcon fontSize="small" /></span>
               <span className="label">Logout</span>
             </Button>
           </Box>
