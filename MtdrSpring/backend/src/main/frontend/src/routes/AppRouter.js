@@ -58,7 +58,12 @@ function AppRouter({ isAuth, setIsAuth, user, setUser, selectedProjectId, setSel
             path="/DashDevs"
             element={
               isAuth && user?.roleName === 'Developer'
-                ? <DashDevs user={user} />
+                ? <DashDevs 
+                    user={user} 
+                    selectedProjectId={selectedProjectId} 
+                    sprintFilter={sprintFilter} 
+                    setSprintFilter={setSprintFilter} 
+                  />
                 : <Navigate to="/dashboard" />
             }
           />
@@ -80,7 +85,6 @@ function AppRouter({ isAuth, setIsAuth, user, setUser, selectedProjectId, setSel
                 : <Navigate to={isAuth ? "/DashDevs" : "/"} />
             }
           />
-
           <Route 
             path="/Sprints" 
             element={
