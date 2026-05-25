@@ -167,56 +167,54 @@ function Navbar(props) {
             )}
           </Box>
 
-          {/* SECCIÓN DERECHA: FILTROS Y LOGOUT */}
-          <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, justifyContent: 'flex-end', gap: 1 }}>
+            {/* SECCIÓN DERECHA: FILTROS Y LOGOUT */}
+            <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, justifyContent: 'flex-end', gap: 1 }}>
 
-            {/* FILTRO DE SPRINT */}
-            {isActive('/dashboard') && (
-              <>
-                <Button
-                  className={`nav-button icon-btn no-grow ${scrolled ? 'scrolled' : ''}`}
-                  onClick={handleClickSprint}
-                  endIcon={<ArrowDropDownIcon />}
-                  sx={{ mr: 1 }}
-                >
-                  <span className="icon"><CalendarTodayIcon fontSize="small" /></span>
-                  <span className="label">{selectedSprintName}</span>
-                </Button>
-                <Menu
-                  anchorEl={anchorElSprint}
-                  open={openSprint}
-                  onClose={() => handleCloseSprint()}
-                  PaperProps={{
-                    style: {
-                      borderRadius: '12px',
-                      marginTop: '8px',
-                      minWidth: '180px',
-                      boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
-                    },
-                  }}
-                >
-                  <MenuItem 
-                    onClick={() => handleCloseSprint('all')}
-                    selected={props.sprintFilter === 'all' || !props.sprintFilter}
-                    sx={{ fontSize: '0.85rem' }}
+              {/* FILTRO DE SPRINT */}
+              {(isActive('/dashboard') || isActive('/DashDevs')) && (
+                <>
+                  <Button
+                    className={`nav-button icon-btn no-grow ${scrolled ? 'scrolled' : ''}`}
+                    onClick={handleClickSprint}
+                    endIcon={<ArrowDropDownIcon />}
+                    sx={{ mr: 1 }}
                   >
-                    Todos los Sprints
-                  </MenuItem>
-                  {sprints.map((sprint) => (
+                    <span className="icon"><CalendarTodayIcon fontSize="small" /></span>
+                    <span className="label">{selectedSprintName}</span>
+                  </Button>
+                  <Menu
+                    anchorEl={anchorElSprint}
+                    open={openSprint}
+                    onClose={() => handleCloseSprint()}
+                    PaperProps={{
+                      style: {
+                        borderRadius: '12px',
+                        marginTop: '8px',
+                        minWidth: '180px',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                      },
+                    }}
+                  >
                     <MenuItem 
-                      key={sprint.sprintId} 
-                    
-                      onClick={() => handleCloseSprint(sprint.sprintId)}
-                      selected={sprint.sprintId === props.sprintFilter} 
+                      onClick={() => handleCloseSprint('all')}
+                      selected={props.sprintFilter === 'all' || !props.sprintFilter}
                       sx={{ fontSize: '0.85rem' }}
                     >
-                      {/* Pero al usuario le mostramos el nombre o el número amigable */}
-                      {sprint.sprintName || `Sprint ${sprint.sprintNum}`}
+                      Todos los Sprints
                     </MenuItem>
-                  ))}
-                </Menu>
-              </>
-            )}
+                    {sprints.map((sprint) => (
+                      <MenuItem 
+                        key={sprint.sprintId} 
+                        onClick={() => handleCloseSprint(sprint.sprintId)}
+                        selected={sprint.sprintId === props.sprintFilter} 
+                        sx={{ fontSize: '0.85rem' }}
+                      >
+                        {sprint.sprintName || `Sprint ${sprint.sprintNum}`}
+                      </MenuItem>
+                    ))}
+                  </Menu>
+                </>
+              )}
 
             {/* SELECTOR DE PROYECTOS */}
             <Button
