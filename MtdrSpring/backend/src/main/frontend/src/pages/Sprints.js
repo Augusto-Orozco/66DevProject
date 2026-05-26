@@ -3,6 +3,7 @@
 
 //Matenme
 
+//actualizacion 26/05/2026, el codigo funciona, solo Dios y Gemini saben lo que le paso a este codigo... lo importante? Funciona.
 
 import { useState, useEffect } from 'react'
 import { 
@@ -229,14 +230,18 @@ function Sprints({ selectedProjectId }) {
     if (!selectedProjectId) return;
     try {
       setLoading(true)
+      console.log('Fetching data for project:', selectedProjectId);
       
-      // 1. Obtener tareas sin sprint (JPA - minúsculas)
+      // 1. Obtener tareas sin sprint
       const unassignedRes = await fetch(`/tasks/unassigned/project/${selectedProjectId}`)
       const unassignedTasks = await unassignedRes.json()
 
-      // 2. Obtener jerarquía completa (SP - posible MAYÚSCULAS)
+      // 2. Obtener jerarquía completa
       const hierarchyRes = await fetch(`/sprints/project/${selectedProjectId}/hierarchy`)
-      const sprintsHierarchy = await hierarchyRes.json()
+      let sprintsHierarchy = await hierarchyRes.json()
+      
+      // Debug para ver qué llega exactamente del SP
+      console.log('Raw Hierarchy Response:', sprintsHierarchy);
 
       // 3. Obtener miembros del equipo
       const usersRes = await fetch(`/team/project/${selectedProjectId}`)
@@ -247,10 +252,10 @@ function Sprints({ selectedProjectId }) {
         'backlog': {
           title: 'Backlog',
           tasks: Array.isArray(unassignedTasks) ? unassignedTasks.map(t => ({
-            id: t.taskId.toString(),
-            title: t.title,
-            description: t.description,
-            userStoryId: t.userStory?.userStoriesId || 'Sin ID',
+            id: (t.taskId || '').toString(),
+            title: t.title || 'Sin título',
+            description: t.description || '',
+            userStoryId: t.userStory?.userStoriesId || 'none',
             userStoryName: t.userStory?.name || 'Sin historia',
             priorityId: t.priority?.priorityId || '',
             storyPoints: t.storyPoints || '',
@@ -259,38 +264,57 @@ function Sprints({ selectedProjectId }) {
         }
       }
 
-      // La jerarquía puede venir directamente como array o dentro de un objeto
-      const sprintsArray = Array.isArray(sprintsHierarchy) 
-        ? sprintsHierarchy 
-        : (sprintsHierarchy && (sprintsHierarchy.sprints || sprintsHierarchy.SPRINTS) || []);
+      // Normalización defensiva de la jerarquía
+      let sprintsArray = [];
+      if (Array.isArray(sprintsHierarchy)) {
+        sprintsArray = sprintsHierarchy;
+      } else if (sprintsHierarchy && typeof sprintsHierarchy === 'object') {
+        sprintsArray = sprintsHierarchy.sprints || sprintsHierarchy.SPRINTS || [];
+      }
 
-      const orderedSprints = [...sprintsArray].sort((a, b) => 
-        ((a.sprintNum || a.SPRINT_NUM) || 0) - ((b.sprintNum || b.SPRINT_NUM) || 0)
-      )
+      // Si por alguna razón llega como String (clob no parseado), intentar parsear
+      if (typeof sprintsHierarchy === 'string') {
+        try {
+          const parsed = JSON.parse(sprintsHierarchy);
+          sprintsArray = parsed.sprints || parsed.SPRINTS || (Array.isArray(parsed) ? parsed : []);
+        } catch (e) {
+          console.error('Failed to parse sprintsHierarchy string:', e);
+        }
+      }
+
+      const orderedSprints = [...sprintsArray].sort((a, b) => {
+        const numA = a.sprintNum || a.SPRINT_NUM || 0;
+        const numB = b.sprintNum || b.SPRINT_NUM || 0;
+        return numA - numB;
+      });
       
-      setAvailableSprints(orderedSprints.map((s) => ({
-        id: s.sprintId || s.SPRINT_ID,
-        number: s.sprintNum || s.SPRINT_NUM
-      })))
+      const mappedAvailableSprints = orderedSprints.map((s) => ({
+        id: (s.sprintId || s.SPRINT_ID || '').toString(),
+        number: s.sprintNum || s.SPRINT_NUM || 0
+      })).filter(s => s.id);
+
+      setAvailableSprints(mappedAvailableSprints);
 
       orderedSprints.forEach(sprint => {
-        const sId = sprint.sprintId || sprint.SPRINT_ID;
-        const sNum = sprint.sprintNum || sprint.SPRINT_NUM;
+        const sId = (sprint.sprintId || sprint.SPRINT_ID || '').toString();
+        const sNum = sprint.sprintNum || sprint.SPRINT_NUM || '?';
         const sTasks = sprint.tasks || sprint.TASKS || [];
         
-        newColumns[`sprint-${sId}`] = {
-          title: `Sprint ${sNum}`,
-          tasks: Array.isArray(sTasks) ? sTasks.map(t => ({
-            id: (t.taskId || t.TASK_ID || t.id || t.ID || '').toString(),
-            title: t.title || t.TITLE || 'Sin título',
-            description: t.description || t.DESCRIPTION || '',
-            userStoryId: t.userStory?.userStoriesId || t.userStory?.USER_STORIES_ID || t.userStory?.id || t.userStory?.ID || 'Sin ID',
-            userStoryName: t.userStory?.name || t.userStory?.NAME || 'Sin historia'
-          })) : []
+        if (sId) {
+          newColumns[`sprint-${sId}`] = {
+            title: `Sprint ${sNum}`,
+            tasks: Array.isArray(sTasks) ? sTasks.map(t => ({
+              id: (t.taskId || t.TASK_ID || t.id || t.ID || '').toString(),
+              title: t.title || t.TITLE || 'Sin título',
+              description: t.description || t.DESCRIPTION || '',
+              userStoryId: t.userStory?.userStoriesId || t.userStory?.USER_STORIES_ID || t.userStory?.id || t.userStory?.ID || 'none',
+              userStoryName: t.userStory?.name || t.userStory?.NAME || 'Sin historia'
+            })).filter(t => t.id) : []
+          };
         }
-      })
+      });
 
-      setColumns(newColumns)
+      setColumns(newColumns);
 
       const [prioritiesRes, userStoriesRes, statusesRes] = await Promise.all([
         fetch('/priorities'),
@@ -302,7 +326,7 @@ function Sprints({ selectedProjectId }) {
       setStatuses(await statusesRes.json())
 
     } catch (error) {
-      console.error('Error fetching data:', error)
+      console.error('Error in fetchData:', error)
     } finally {
       setLoading(false)
     }

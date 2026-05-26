@@ -5,6 +5,11 @@ import com.springboot.MyTodoList.repository.SprintRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.springboot.MyTodoList.model.SprintTask;
+import com.springboot.MyTodoList.repository.SprintTaskRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.CallableStatementCallback;
 import java.sql.Types;
@@ -20,7 +25,12 @@ public class SprintService {
     private SprintRepository sprintRepository;
 
     @Autowired
+    private SprintTaskRepository sprintTaskRepository;
+
+    @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public Sprint saveSprint(Sprint sprint) {
         if (sprint.getSprintNum() == null) {
@@ -49,23 +59,69 @@ public class SprintService {
     }
 
     public String getProjectSprintsHierarchy(Long projectId) {
-        return jdbcTemplate.execute(
-            "{call GET_PROJECT_SPRINTS_HIERARCHY(?, ?)}",
-            (CallableStatementCallback<String>) cs -> {
-                cs.setLong(1, projectId);
-                cs.registerOutParameter(2, Types.CLOB);
-                cs.execute();
+        try {
+            return jdbcTemplate.execute(
+                "{call GET_PROJECT_SPRINTS_HIERARCHY(?, ?)}",
+                (CallableStatementCallback<String>) cs -> {
+                    cs.setLong(1, projectId);
+                    cs.registerOutParameter(2, Types.CLOB);
+                    cs.execute();
+                    
+                    Clob clob = cs.getClob(2);
+                    if (clob != null) {
+                        try {
+                            return clob.getSubString(1, (int) clob.length());
+                        } finally {
+                            try { clob.free(); } catch (SQLException ignored) {}
+                        }
+                    }
+                    return "[]";
+                }
+            );
+        } catch (Exception e) {
+            // Fallback to manual JPA build if SP fails (common in Oracle with data edge cases)
+            return buildHierarchyManual(projectId);
+        }
+    }
+
+    private String buildHierarchyManual(Long projectId) {
+        try {
+            List<Sprint> sprints = sprintRepository.findByProject_ProjectId(projectId);
+            ArrayNode rootArray = objectMapper.createArrayNode();
+            
+            for (Sprint sprint : sprints) {
+                ObjectNode sprintNode = objectMapper.createObjectNode();
+                sprintNode.put("sprintId", sprint.getSprintId());
+                sprintNode.put("sprintNum", sprint.getSprintNum());
+                sprintNode.put("startDate", sprint.getStartDate().toString());
+                sprintNode.put("endDate", sprint.getEndDate().toString());
                 
-                Clob clob = cs.getClob(2);
-                if (clob != null) {
-                    try {
-                        return clob.getSubString(1, (int) clob.length());
-                    } finally {
-                        try { clob.free(); } catch (SQLException ignored) {}
+                ArrayNode tasksArray = objectMapper.createArrayNode();
+                List<SprintTask> sprintTasks = sprintTaskRepository.findById_SprintId(sprint.getSprintId());
+                
+                for (SprintTask st : sprintTasks) {
+                    if (st.getTask() != null) {
+                        ObjectNode taskNode = objectMapper.createObjectNode();
+                        taskNode.put("taskId", st.getTask().getTaskId());
+                        taskNode.put("title", st.getTask().getTitle());
+                        taskNode.put("description", st.getTask().getDescription());
+                        
+                        if (st.getTask().getUserStory() != null) {
+                            ObjectNode storyNode = objectMapper.createObjectNode();
+                            storyNode.put("userStoriesId", st.getTask().getUserStory().getUserStoriesId());
+                            storyNode.put("name", st.getTask().getUserStory().getName());
+                            taskNode.set("userStory", storyNode);
+                        }
+                        tasksArray.add(taskNode);
                     }
                 }
-                return null;
+                sprintNode.set("tasks", tasksArray);
+                rootArray.add(sprintNode);
             }
-        );
+            return objectMapper.writeValueAsString(rootArray);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "[]";
+        }
     }
 }
