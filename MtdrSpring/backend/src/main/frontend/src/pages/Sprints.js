@@ -365,7 +365,8 @@ function Sprints({ selectedProjectId }) {
   };
 
   const visibleColumnsToRender = getVisibleColumns();
-  const visibleColumnCount = 4;
+  const isSprintSelected = selectedSprintId !== null;
+  const visibleColumnCount = isSprintSelected ? 2 : 4;
 
   const handleDragEnd = async (event) => {
     const { active, over } = event
