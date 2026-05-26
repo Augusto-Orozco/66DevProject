@@ -4,7 +4,6 @@
 //Matenme
 
 
-
 import { useState, useEffect } from 'react'
 import { 
   Box, 
@@ -231,12 +230,14 @@ function Sprints({ selectedProjectId }) {
     try {
       setLoading(true)
       
-      // 1. Obtener tareas sin sprint del proyecto seleccionado
+      // 1. Obtener tareas sin sprint (JPA - minúsculas)
       const unassignedRes = await fetch(`/tasks/unassigned/project/${selectedProjectId}`)
       const unassignedTasks = await unassignedRes.json()
-      // 2. Obtener jerarquía completa de sprints y tareas
+
+      // 2. Obtener jerarquía completa (SP - posible MAYÚSCULAS)
       const hierarchyRes = await fetch(`/sprints/project/${selectedProjectId}/hierarchy`)
       const sprintsHierarchy = await hierarchyRes.json()
+
       // 3. Obtener miembros del equipo
       const usersRes = await fetch(`/team/project/${selectedProjectId}`)
       const teamMembers = await usersRes.json()
@@ -249,44 +250,45 @@ function Sprints({ selectedProjectId }) {
             id: t.taskId.toString(),
             title: t.title,
             description: t.description,
-            userStoryId: t.userStory?.userStoriesId || 'Sin ID de historia',
-            userStoryName: t.userStory?.name || 'Sin historia de usuario'
-            //priorityId: t.priority?.priorityId || '',
-            //storyPoints: t.storyPoints || '',
-            //objetiveTime: t.objetiveTime || ''
+            userStoryId: t.userStory?.userStoriesId || 'Sin ID',
+            userStoryName: t.userStory?.name || 'Sin historia',
+            priorityId: t.priority?.priorityId || '',
+            storyPoints: t.storyPoints || '',
+            objetiveTime: t.objetiveTime || ''
           })) : []
         }
       }
 
-      // 2. Obtener sprints
-      // const sprintsRes = await fetch(`/sprints/project/${selectedProjectId}`)
-      // const sprints = await sprintsRes.json()
-      
       // La jerarquía puede venir directamente como array o dentro de un objeto
       const sprintsArray = Array.isArray(sprintsHierarchy) 
         ? sprintsHierarchy 
-        : (sprintsHierarchy && Array.isArray(sprintsHierarchy.sprints) ? sprintsHierarchy.sprints : []);
+        : (sprintsHierarchy && (sprintsHierarchy.sprints || sprintsHierarchy.SPRINTS) || []);
 
-      const orderedSprints = [...sprintsArray].sort((a, b) => (a.sprintNum || 0) - (b.sprintNum || 0))
+      const orderedSprints = [...sprintsArray].sort((a, b) => 
+        ((a.sprintNum || a.SPRINT_NUM) || 0) - ((b.sprintNum || b.SPRINT_NUM) || 0)
+      )
       
       setAvailableSprints(orderedSprints.map((s) => ({
-        id: s.sprintId,
-        number: s.sprintNum
+        id: s.sprintId || s.SPRINT_ID,
+        number: s.sprintNum || s.SPRINT_NUM
       })))
 
       orderedSprints.forEach(sprint => {
-        newColumns[`sprint-${sprint.sprintId}`] = {
-          title: `Sprint ${sprint.sprintNum}`,
-          tasks: Array.isArray(sprint.tasks) ? sprint.tasks.map(t => ({
-            id: (t.taskId || t.id || '').toString(),
-            title: t.title || 'Sin título',
-            description: t.description || '',
-            userStoryId: t.userStory?.userStoriesId || t.userStory?.id || 'Sin ID',
-            userStoryName: t.userStory?.name || 'Sin historia'
+        const sId = sprint.sprintId || sprint.SPRINT_ID;
+        const sNum = sprint.sprintNum || sprint.SPRINT_NUM;
+        const sTasks = sprint.tasks || sprint.TASKS || [];
+        
+        newColumns[`sprint-${sId}`] = {
+          title: `Sprint ${sNum}`,
+          tasks: Array.isArray(sTasks) ? sTasks.map(t => ({
+            id: (t.taskId || t.TASK_ID || t.id || t.ID || '').toString(),
+            title: t.title || t.TITLE || 'Sin título',
+            description: t.description || t.DESCRIPTION || '',
+            userStoryId: t.userStory?.userStoriesId || t.userStory?.USER_STORIES_ID || t.userStory?.id || t.userStory?.ID || 'Sin ID',
+            userStoryName: t.userStory?.name || t.userStory?.NAME || 'Sin historia'
           })) : []
         }
       })
-
 
       setColumns(newColumns)
 
@@ -429,7 +431,9 @@ function Sprints({ selectedProjectId }) {
       storyPoints: '',
       objetiveTime: '',
       priorityId: '',
-      userStoryId: ''
+      userStoryId: '',
+      sprintId: '',
+      assignedUserId: ''
     })
     setOpenTaskDialog(true)
   }
@@ -440,31 +444,37 @@ function Sprints({ selectedProjectId }) {
       taskId: task.id,
       title: task.title,
       description: task.description,
-      storyPoints: task.storyPoints,
-      objetiveTime: task.objetiveTime,
-      priorityId: task.priorityId,
-      userStoryId: task.userStoryId === 'none' ? '' : task.userStoryId
+      storyPoints: task.storyPoints || '',
+      objetiveTime: task.objetiveTime || '',
+      priorityId: task.priorityId || '',
+      userStoryId: (task.userStoryId === 'none' || task.userStoryId === 'Sin ID') ? '' : task.userStoryId,
+      sprintId: '', // Se podría inferir de la columna
+      assignedUserId: ''
     })
     setOpenTaskDialog(true)
   }
 
   const handleSaveTask = async () => {
     try {
-      const pendingStatus = statuses.find(s => s.status === 'Pendiente' || s.status === 'pending') || statuses[0];
-      
+      if (!newTask.title || !newTask.priorityId || !newTask.userStoryId) {
+        alert('Por favor completa los campos obligatorios: Título, Prioridad e Historia de Usuario');
+        return;
+      }
+
       const taskData = {
-        taskId: newTask.taskId, // Si es null, el backend crea. Si tiene valor, actualiza (save).
         title: newTask.title,
         description: newTask.description,
+        projectId: selectedProjectId,
+        userStoryId: newTask.userStoryId,
+        priorityId: newTask.priorityId,
         storyPoints: parseInt(newTask.storyPoints) || 0,
-        objetiveTime: parseInt(newTask.objetiveTime) || 0,
-        priority: { priorityId: newTask.priorityId },
-        userStory: newTask.userStoryId ? { userStoriesId: newTask.userStoryId } : null,
-        status: { statusId: pendingStatus.statusId },
-        project: { projectId: selectedProjectId },
-        deleted: 'N'
+        objectiveTime: parseInt(newTask.objetiveTime) || 0,
+        sprintId: newTask.sprintId || null,
+        assignedUserId: newTask.assignedUserId || null
       };
 
+      // Si estamos editando, usamos el método save normal o extendemos el atómico
+      // Por ahora, el backend solo tiene CREATE_TASK_ATOMIC para este DTO.
       const res = await fetch('/tasks/atomic', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -473,7 +483,7 @@ function Sprints({ selectedProjectId }) {
 
       if (!res.ok) throw new Error('Error al guardar la tarea');
       
-      await fetchData(); // Recargar datos
+      await fetchData(); 
       setOpenTaskDialog(false);
       
     } catch (error) {
