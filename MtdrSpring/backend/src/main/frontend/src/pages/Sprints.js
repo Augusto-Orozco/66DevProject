@@ -1,3 +1,10 @@
+//Si estas leyendo esto, quiero avisarte que ni Dios pudo arreglar este codigo, por razones que desconozco, las tarjetas que contienen
+//las tareas por sprint, no funcionan, pase 7 horas tratando de arreglar esto y no funciono, al menos se ve bonito
+
+//Matenme
+
+
+
 import { useState, useEffect } from 'react'
 import { 
   Box, 
@@ -16,21 +23,21 @@ import {
   MenuItem
 } from '@mui/material' 
 import CloseIcon from '@mui/icons-material/Close'
-import { DndContext, closestCenter, useDroppable} from '@dnd-kit/core'
+import { DndContext, closestCenter, useDroppable, useSensor, useSensors, PointerSensor } from '@dnd-kit/core'
 import {SortableContext, verticalListSortingStrategy, useSortable} from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import ViewWeekIcon from '@mui/icons-material/ViewWeek'
 import AddIcon from '@mui/icons-material/Add'
+import AssignmentAddIcon from '@mui/icons-material/AssignmentAdd'
 import IconButton from '@mui/material/IconButton'
-import AssignmentAddIcon from '@mui/icons-material/AssignmentAdd';
 import { TextField, Select as MuiSelect, InputLabel, FormControl } from '@mui/material'
 import Footer from '../components/Footer'
 import '../Assets/styles.css'
 
 
 /* --- TARJETA DRAGGABLE --- */
-function TaskCard({ task }) {
+function TaskCard({ task, onEditTask }) {
   const {
     attributes,
     listeners,
@@ -44,6 +51,10 @@ function TaskCard({ task }) {
     transition
   }
 
+  // Detenemos la propagación para que el drag no interfiera con el click si es necesario,
+  // pero dnd-kit suele manejarlo. Sin embargo, listeners tienen el onClick del drag.
+  // Usaremos un truco: si se mueve, no es click.
+  
   return (
     <Box
       ref={setNodeRef}
@@ -51,6 +62,8 @@ function TaskCard({ task }) {
       {...attributes}
       {...listeners}
       className="devs-task-card"
+      onClick={() => onEditTask(task)}
+      sx={{ cursor: 'pointer', '&:hover': { boxShadow: '0 4px 8px rgba(0,0,0,0.15)' } }}
     >
       <Typography fontSize="0.85rem" fontWeight="bold">
         {task.title}
@@ -63,7 +76,7 @@ function TaskCard({ task }) {
 }
 
 /* --- COLUMNA DROPPABLE --- */
-function Column({ id, title, tasks, visibleColumnCount, onAddTask, isSticky }) {
+function Column({ id, title, tasks, visibleColumnCount, onAddTask, onEditTask, isSticky }) {
   const { setNodeRef, isOver } = useDroppable({
     id: id
   })
@@ -159,7 +172,7 @@ function Column({ id, title, tasks, visibleColumnCount, onAddTask, isSticky }) {
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                 {storyData.tasks.map(task => (
-                  <TaskCard key={task.id} task={task} />
+                  <TaskCard key={task.id} task={task} onEditTask={onEditTask} />
                 ))}
               </Box>
             </Box>
@@ -203,83 +216,100 @@ function Sprints({ selectedProjectId }) {
   })
 
   const [openMenu, setOpenMenu] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    })
+  )
+
+  const fetchData = async () => {
+    if (!selectedProjectId) return;
+    try {
+      setLoading(true)
+      
+      // 1. Obtener tareas sin sprint del proyecto seleccionado
+      const unassignedRes = await fetch(`/tasks/unassigned/project/${selectedProjectId}`)
+      const unassignedTasks = await unassignedRes.json()
+      // 2. Obtener jerarquía completa de sprints y tareas
+      const hierarchyRes = await fetch(`/sprints/project/${selectedProjectId}/hierarchy`)
+      const sprintsHierarchy = await hierarchyRes.json()
+      // 3. Obtener miembros del equipo
+      const usersRes = await fetch(`/team/project/${selectedProjectId}`)
+      const teamMembers = await usersRes.json()
+      setUsers(Array.isArray(teamMembers) ? teamMembers : [])
+
+      const newColumns = {
+        'backlog': {
+          title: 'Backlog',
+          tasks: Array.isArray(unassignedTasks) ? unassignedTasks.map(t => ({
+            id: t.taskId.toString(),
+            title: t.title,
+            description: t.description,
+            userStoryId: t.userStory?.userStoriesId || 'Sin ID de historia',
+            userStoryName: t.userStory?.name || 'Sin historia de usuario'
+            //priorityId: t.priority?.priorityId || '',
+            //storyPoints: t.storyPoints || '',
+            //objetiveTime: t.objetiveTime || ''
+          })) : []
+        }
+      }
+
+      // 2. Obtener sprints
+      // const sprintsRes = await fetch(`/sprints/project/${selectedProjectId}`)
+      // const sprints = await sprintsRes.json()
+      
+      // La jerarquía puede venir directamente como array o dentro de un objeto
+      const sprintsArray = Array.isArray(sprintsHierarchy) 
+        ? sprintsHierarchy 
+        : (sprintsHierarchy && Array.isArray(sprintsHierarchy.sprints) ? sprintsHierarchy.sprints : []);
+
+      const orderedSprints = [...sprintsArray].sort((a, b) => (a.sprintNum || 0) - (b.sprintNum || 0))
+      
+      setAvailableSprints(orderedSprints.map((s) => ({
+        id: s.sprintId,
+        number: s.sprintNum
+      })))
+
+      orderedSprints.forEach(sprint => {
+        newColumns[`sprint-${sprint.sprintId}`] = {
+          title: `Sprint ${sprint.sprintNum}`,
+          tasks: Array.isArray(sprint.tasks) ? sprint.tasks.map(t => ({
+            id: (t.taskId || t.id || '').toString(),
+            title: t.title || 'Sin título',
+            description: t.description || '',
+            userStoryId: t.userStory?.userStoriesId || t.userStory?.id || 'Sin ID',
+            userStoryName: t.userStory?.name || 'Sin historia'
+          })) : []
+        }
+      })
+
+
+      setColumns(newColumns)
+
+      const [prioritiesRes, userStoriesRes, statusesRes] = await Promise.all([
+        fetch('/priorities'),
+        fetch('/userStories'),
+        fetch('/statuses')
+      ])
+      setPriorities(await prioritiesRes.json())
+      setUserStories(await userStoriesRes.json())
+      setStatuses(await statusesRes.json())
+
+    } catch (error) {
+      console.error('Error fetching data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!selectedProjectId) return;
-      try {
-        setLoading(true)
-        
-        // 1. Obtener tareas sin sprint del proyecto seleccionado
-        const unassignedRes = await fetch(`/tasks/unassigned/project/${selectedProjectId}`)
-        const unassignedTasks = await unassignedRes.json()
-
-        // 2. Obtener jerarquía completa de sprints y tareas
-        const hierarchyRes = await fetch(`/sprints/project/${selectedProjectId}/hierarchy`)
-        const sprintsHierarchy = await hierarchyRes.json()
-
-        // 3. Obtener miembros del equipo
-        const usersRes = await fetch(`/team/project/${selectedProjectId}`)
-        const teamMembers = await usersRes.json()
-        setUsers(Array.isArray(teamMembers) ? teamMembers : [])
-
-        const newColumns = {
-          'backlog': {
-            title: 'Backlog',
-            tasks: Array.isArray(unassignedTasks) ? unassignedTasks.map(t => ({
-              id: t.taskId.toString(),
-              title: t.title,
-              description: t.description,
-              userStoryId: t.userStory?.userStoriesId || 'Sin ID de historia',
-              userStoryName: t.userStory?.name || 'Sin historia de usuario'
-            })) : []
-          }
-        }
-
-        const orderedSprints = Array.isArray(sprintsHierarchy) ? sprintsHierarchy : []
-        
-        setAvailableSprints(orderedSprints.map((s) => ({
-          id: s.sprintId,
-          number: s.sprintNum
-        })))
-
-        // Llenar columnas de sprints con los datos del SP
-        orderedSprints.forEach(sprint => {
-          newColumns[`sprint-${sprint.sprintId}`] = {
-            title: `Sprint ${sprint.sprintNum}`,
-            tasks: Array.isArray(sprint.tasks) ? sprint.tasks.map(t => ({
-              id: t.taskId.toString(),
-              title: t.title,
-              description: t.description,
-              userStoryId: t.userStory?.id || 'Sin ID',
-              userStoryName: t.userStory?.name || 'Sin historia'
-            })) : []
-          }
-        })
-
-        setColumns(newColumns)
-
-        // 4. Obtener prioridades, historias de usuario y estatus
-        const [prioritiesRes, userStoriesRes, statusesRes] = await Promise.all([
-          fetch('/priorities'),
-          fetch('/userStories'),
-          fetch('/statuses')
-        ])
-        setPriorities(await prioritiesRes.json())
-        setUserStories(await userStoriesRes.json())
-        setStatuses(await statusesRes.json())
-
-      } catch (error) {
-        console.error('Error fetching data:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
     fetchData()
   }, [selectedProjectId])
 
-  /* Encuentra en qué columna está una tarea */
   const findContainer = (id) => {
     if (columns[id]) return id
     return Object.keys(columns).find(key =>
@@ -292,7 +322,6 @@ function Sprints({ selectedProjectId }) {
     const backlogKey = 'backlog';
     
     if (selectedSprintId === null) {
-      // Mostrar backlog + sprints ordenados por su número (que está en el título)
       const sprintKeys = columnKeys
         .filter(k => k.startsWith('sprint-'))
         .sort((a, b) => {
@@ -302,11 +331,8 @@ function Sprints({ selectedProjectId }) {
           const sprintB = availableSprints.find(s => s.id === idB);
           return (sprintA?.number || 0) - (sprintB?.number || 0);
         })
-        
-      
       return [backlogKey, ...sprintKeys].filter(k => columns[k]);
     } else {
-      // Mostrar backlog + sprint específico
       const selectedKey = `sprint-${selectedSprintId}`;
       return [backlogKey, selectedKey].filter(k => columns[k]);
     }
@@ -315,7 +341,6 @@ function Sprints({ selectedProjectId }) {
   const visibleColumnsToRender = getVisibleColumns();
   const visibleColumnCount = 4;
 
-  /* --- DRAG LOGIC --- */
   const handleDragEnd = async (event) => {
     const { active, over } = event
     if (!over) return
@@ -326,9 +351,6 @@ function Sprints({ selectedProjectId }) {
     if (!from || !to || from === to) return
 
     const taskId = active.id
-    const task = columns[from].tasks.find(item => item.id === taskId)
-
-    // Actualización del estado
     setColumns(prev => {
       const sourceTasks = [...prev[from].tasks]
       const destTasks = [...prev[to].tasks]
@@ -354,13 +376,10 @@ function Sprints({ selectedProjectId }) {
     }
   }
 
-  // Crear sprint
   const handleCreateSprint = async () => {
     try {
       if (!selectedProjectId) return;
-
       const formatDateForJava = (date) => date.toISOString().split('.')[0]; 
-      
       const now = new Date();
       const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
@@ -378,7 +397,6 @@ function Sprints({ selectedProjectId }) {
         const errorData = await res.text();
         throw new Error(`Error del servidor: ${errorData}`);
       }
-
       const data = await res.json();
       
       setColumns(prev => ({
@@ -402,64 +420,65 @@ function Sprints({ selectedProjectId }) {
     }
   };
 
-  const handleCreateTask = async () => {
+  const handleOpenAddTask = () => {
+    setIsEditing(false)
+    setNewTask({
+      taskId: null,
+      title: '',
+      description: '',
+      storyPoints: '',
+      objetiveTime: '',
+      priorityId: '',
+      userStoryId: ''
+    })
+    setOpenTaskDialog(true)
+  }
+
+  const handleOpenEditTask = (task) => {
+    setIsEditing(true)
+    setNewTask({
+      taskId: task.id,
+      title: task.title,
+      description: task.description,
+      storyPoints: task.storyPoints,
+      objetiveTime: task.objetiveTime,
+      priorityId: task.priorityId,
+      userStoryId: task.userStoryId === 'none' ? '' : task.userStoryId
+    })
+    setOpenTaskDialog(true)
+  }
+
+  const handleSaveTask = async () => {
     try {
-      // Usamos el endpoint ATÓMICO (SP)
-      const payload = {
+      const pendingStatus = statuses.find(s => s.status === 'Pendiente' || s.status === 'pending') || statuses[0];
+      
+      const taskData = {
+        taskId: newTask.taskId, // Si es null, el backend crea. Si tiene valor, actualiza (save).
         title: newTask.title,
         description: newTask.description,
-        projectId: selectedProjectId,
-        userStoryId: newTask.userStoryId,
-        priorityId: newTask.priorityId,
         storyPoints: parseInt(newTask.storyPoints) || 0,
-        objectiveTime: parseInt(newTask.objetiveTime) || 0, 
-        sprintId: newTask.sprintId || null,
-        assignedUserId: newTask.assignedUserId || null
+        objetiveTime: parseInt(newTask.objetiveTime) || 0,
+        priority: { priorityId: newTask.priorityId },
+        userStory: newTask.userStoryId ? { userStoriesId: newTask.userStoryId } : null,
+        status: { statusId: pendingStatus.statusId },
+        project: { projectId: selectedProjectId },
+        deleted: 'N'
       };
 
       const res = await fetch('/tasks/atomic', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(taskData)
       });
 
-      if (!res.ok) throw new Error('Error al crear la tarea de forma atómica');
-
-      const taskId = await res.json();
-
-      // Actualizar la UI localmente
-      const targetCol = payload.sprintId ? `sprint-${payload.sprintId}` : 'backlog';
-      const storyObj = userStories.find(us => us.userStoriesId === payload.userStoryId);
-
-      setColumns(prev => ({
-        ...prev,
-        [targetCol]: {
-          ...prev[targetCol],
-          tasks: [...prev[targetCol].tasks, {
-            id: taskId.toString(),
-            title: payload.title,
-            description: payload.description,
-            userStoryId: payload.userStoryId,
-            userStoryName: storyObj?.name || 'Sin historia'
-          }]
-        }
-      }));
-
+      if (!res.ok) throw new Error('Error al guardar la tarea');
+      
+      await fetchData(); // Recargar datos
       setOpenTaskDialog(false);
-      setNewTask({
-        title: '',
-        description: '',
-        storyPoints: '',
-        objetiveTime: '',
-        priorityId: '',
-        userStoryId: '',
-        sprintId: '',
-        assignedUserId: ''
-      });
-
+      
     } catch (error) {
-      console.error('Error creating task:', error);
-      alert('Error al crear la tarea');
+      console.error('Error saving task:', error);
+      alert('Error al guardar la tarea');
     }
   };
 
@@ -472,120 +491,45 @@ function Sprints({ selectedProjectId }) {
   }
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'relative' 
-      }}
-    >
-
-    <Box className={`floating-menu ${openMenu ? 'open' : ''}`}>
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-        
-        {openMenu && (
-          <Button
-            variant="contained"
-            onClick={() => {
-              setSelectedSprintId(null)
-              setOpenMenu(false)
-            }}
-            sx={{
-              width: '2.5rem',
-              height: '2.5rem',
-              minWidth: 0,
-              padding: 0,
-              borderRadius: '50%',
-              backgroundColor: '#555',
-              '&:hover': { backgroundColor: '#333' },
-              mb: 1
-            }}
-          >
-            <RefreshIcon sx={{ fontSize: '1.2rem' }} />
-          </Button>
-        )}
-
-        <Button
-          className="main-btn"
-          variant="contained"
-          onClick={() => setOpenMenu(prev => !prev)}
-          sx={{
-            width: '2.5rem',
-            height: '2.5rem',
-            minWidth: 0,
-            padding: 0,
-            borderRadius: '50%',
-            zIndex: 1000
-          }}
-        >
-          <ViewWeekIcon sx={{ fontSize: '1.2rem' }} />
-        </Button>
-
-        {openMenu && (
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 1,
-              maxHeight: '200px',
-              overflowY: 'auto',
-              mt: 1,
-              padding: '4px',
-              '&::-webkit-scrollbar': { width: '4px' },
-              '&::-webkit-scrollbar-thumb': { backgroundColor: '#ccc', borderRadius: '4px' }
-            }}
-          >
-            {availableSprints.map((sprint) => (
-              <IconButton
-                key={sprint.id}
-                variant="outlined"
-                onClick={() => {
-                  setSelectedSprintId(sprint.id)
-                  setOpenMenu(false)
-                }}
-                sx={{
-                  width: '2.2rem',
-                  height: '2.2rem',
-                  minWidth: 0,
-                  padding: 0,
-                  borderRadius: '50%',
-                  backgroundColor: 'white',
-                  border: '1px solid #ccc',
-                  color: '#333',
-                  fontSize: '0.8rem'
-                }}
-              >
-                {sprint.number}
-              </IconButton>
-            ))}
-          </Box>
-        )}
-        
-      </Box>
-    </Box>
+    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       
+      <Box className={`floating-menu ${openMenu ? 'open' : ''}`}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+          {openMenu && (
+            <Button
+              variant="contained"
+              onClick={() => { setSelectedSprintId(null); setOpenMenu(false); }}
+              sx={{ width: '2.5rem', height: '2.5rem', minWidth: 0, padding: 0, borderRadius: '50%', backgroundColor: '#555', mb: 1 }}
+            >
+              <RefreshIcon sx={{ fontSize: '1.2rem' }} />
+            </Button>
+          )}
+          <Button
+            className="main-btn"
+            variant="contained"
+            onClick={() => setOpenMenu(prev => !prev)}
+            sx={{ width: '2.5rem', height: '2.5rem', minWidth: 0, padding: 0, borderRadius: '50%', zIndex: 1000 }}
+          >
+            <ViewWeekIcon sx={{ fontSize: '1.2rem' }} />
+          </Button>
+          {openMenu && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, maxHeight: '200px', overflowY: 'auto', mt: 1, padding: '4px' }}>
+              {availableSprints.map((sprint) => (
+                <IconButton
+                  key={sprint.id}
+                  onClick={() => { setSelectedSprintId(sprint.id); setOpenMenu(false); }}
+                  sx={{ width: '2.2rem', height: '2.2rem', minWidth: 0, padding: 0, borderRadius: '50%', backgroundColor: 'white', border: '1px solid #ccc', color: '#333', fontSize: '0.8rem' }}
+                >
+                  {sprint.number}
+                </IconButton>
+              ))}
+            </Box>
+          )}
+        </Box>
+      </Box>
 
-      {/* CONTENIDO PRINCIPAL */}
-      <Box
-        sx={{
-          display: 'flex',
-          py: 3,
-          pr: 3,
-          pl: 0,
-          ml: 3,
-          overflowX: 'auto',
-          width: 'calc(100% - 24px)',
-          flexGrow: 1,
-          alignItems: 'stretch',
-          justifyContent: 'flex-start',
-          pb: 10 
-        }}
-      >
-        <DndContext
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
+      <Box sx={{ display: 'flex', py: 3, pr: 3, pl: 0, ml: 3, overflowX: 'auto', width: 'calc(100% - 24px)', flexGrow: 1, alignItems: 'stretch', justifyContent: 'flex-start', pb: 10 }}>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           {visibleColumnsToRender.map((id) => {
             const columnData = columns[id];
             return (
@@ -595,7 +539,8 @@ function Sprints({ selectedProjectId }) {
                 title={columnData.title}
                 tasks={columnData.tasks}
                 visibleColumnCount={visibleColumnCount}
-                onAddTask={() => setOpenTaskDialog(true)}
+                onAddTask={handleOpenAddTask}
+                onEditTask={handleOpenEditTask}
                 isSticky={id === 'backlog'}
               />
             );
@@ -603,35 +548,14 @@ function Sprints({ selectedProjectId }) {
         </DndContext>
       </Box>
 
-      {/* Boton para crear sirnt */}
-      <Fab 
-        color="primary" 
-        variant="extended"
-        aria-label="add sprint" 
-        onClick={() => setOpenDialog(true)}
-        sx={{ 
-          position: 'fixed', 
-          bottom: 40, 
-          right: 40, 
-          fontWeight: 'bold',
-          boxShadow: '0 4px 12px rgba(95, 4, 4, 0.2)',
-          backgroundColor: '#cc0707',
-       
-        }}
-      >
+      <Fab color="primary" variant="extended" onClick={() => setOpenDialog(true)} sx={{ position: 'fixed', bottom: 40, right: 40, fontWeight: 'bold', backgroundColor: '#cc0707' }}>
         + Crear Sprint
       </Fab>
 
-      {/* MODAL DE CONFIRMACIÓN SPRINT */}
-      <Dialog
-        open={openDialog}
-        onClose={() => setOpenDialog(false)}
-      >
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
         <DialogTitle sx={{ fontWeight: 'bold' }}>Crear nuevo Sprint</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            ¿Estás seguro de que deseas agregar un nuevo Sprint al tablero? Se agregará automáticamente como una columna vacía al final de la derecha.
-          </DialogContentText>
+          <DialogContentText>¿Estás seguro de que deseas agregar un nuevo Sprint al tablero?</DialogContentText>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
           <Button onClick={() => setOpenDialog(false)} color="inherit">Cancelar</Button>
@@ -639,119 +563,55 @@ function Sprints({ selectedProjectId }) {
         </DialogActions>
       </Dialog>
 
-      {/* SIDE DRAWER DE CREACIÓN DE TAREA */}
       <Drawer
         anchor="right"
         open={openTaskDialog}
         onClose={() => setOpenTaskDialog(false)}
-        PaperProps={{
-          sx: {
-            width: { xs: '100%', sm: '50vw' },
-            display: 'flex',
-            flexDirection: 'column',
-            boxShadow: '-2px 0 15px rgba(93, 93, 93, 0.24)',
-          }
-        }}
+        PaperProps={{ sx: { width: { xs: '100%', sm: '50vw' }, display: 'flex', flexDirection: 'column', boxShadow: '-2px 0 15px rgba(93, 93, 93, 0.24)' } }}
       >
-        {/* Header del Drawer */}
-        <Box sx={{ 
-          p: 2, 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          backgroundColor: 'white',
-          borderBottom: '2px solid #f0f0f0'
-        }}>
-          <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#333' }}>
-            Nueva Tarea
-          </Typography>
-          <IconButton onClick={() => setOpenTaskDialog(false)} size="small">
-            <CloseIcon />
-          </IconButton>
+        <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'white', borderBottom: '2px solid #f0f0f0' }}>
+          <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#333' }}>{isEditing ? 'Editar Tarea' : 'Nueva Tarea'}</Typography>
+          <IconButton onClick={() => setOpenTaskDialog(false)} size="small"><CloseIcon /></IconButton>
         </Box>
-
-        {/* Contenido del Drawer */}
         <Box sx={{ flexGrow: 1, p: 3, overflowY: 'auto' }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            
-            <TextField
-              label="Nombre de la tarea"
-              fullWidth
-              value={newTask.title}
-              onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-            />
-
-            <TextField
-              label="Descripción"
-              fullWidth
-              multiline
-              rows={4}
-              value={newTask.description}
-              onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-            />
-
+            <TextField label="Nombre de la tarea" fullWidth value={newTask.title} onChange={(e) => setNewTask({ ...newTask, title: e.target.value })} />
+            <TextField label="Descripción" fullWidth multiline rows={4} value={newTask.description} onChange={(e) => setNewTask({ ...newTask, description: e.target.value })} />
             <Box sx={{ display: 'flex', gap: 2 }}>
-              <TextField
-                label="Story Points"
-                type="number"
-                fullWidth
-                value={newTask.storyPoints}
-                onChange={(e) => setNewTask({ ...newTask, storyPoints: e.target.value })}
-              />
-              <TextField
-                label="Tiempo Estimado (horas)"
-                type="number"
-                fullWidth
-                value={newTask.objetiveTime}
-                onChange={(e) => setNewTask({ ...newTask, objetiveTime: e.target.value })}
-              />
+              <TextField label="Story Points" type="number" fullWidth value={newTask.storyPoints} onChange={(e) => setNewTask({ ...newTask, storyPoints: e.target.value })} />
+              <TextField label="Tiempo Estimado (horas)" type="number" fullWidth value={newTask.objetiveTime} onChange={(e) => setNewTask({ ...newTask, objetiveTime: e.target.value })} />
             </Box>
 
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <FormControl fullWidth>
-                <InputLabel>Prioridad</InputLabel>
-                <MuiSelect
-                  label="Prioridad"
-                  value={newTask.priorityId}
-                  onChange={(e) => setNewTask({ ...newTask, priorityId: e.target.value })}
-                >
-                  {priorities.map((p) => (
-                    <MenuItem key={p.priorityId} value={p.priorityId}>
-                      {p.priorityName}
-                    </MenuItem>
-                  ))}
-                </MuiSelect>
-              </FormControl>
 
-              <FormControl fullWidth>
-                <InputLabel>Sprint (Opcional)</InputLabel>
-                <MuiSelect
-                  label="Sprint (Opcional)"
-                  value={newTask.sprintId}
-                  onChange={(e) => setNewTask({ ...newTask, sprintId: e.target.value })}
-                >
-                  <MenuItem value=""><em>Backlog</em></MenuItem>
-                  {availableSprints.map((s) => (
-                    <MenuItem key={s.id} value={s.id}>
-                      Sprint {s.number}
-                    </MenuItem>
-                  ))}
-                </MuiSelect>
-              </FormControl>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+            <FormControl fullWidth>
+              <InputLabel>Prioridad</InputLabel>
+              <MuiSelect label="Prioridad" value={newTask.priorityId} onChange={(e) => setNewTask({ ...newTask, priorityId: e.target.value })}>
+                {priorities.map(p => <MenuItem key={p.priorityId} value={p.priorityId}>{p.priorityName}</MenuItem>)}
+              </MuiSelect>
+            </FormControl>
+            <FormControl fullWidth>
+              <InputLabel>Sprint (Opcional)</InputLabel>
+              <MuiSelect
+                label="Sprint (Opcional)"
+                value={newTask.sprintId}
+                onChange={(e) => setNewTask({ ...newTask, sprintId: e.target.value })}
+              >
+                <MenuItem value=""><em>Backlog</em></MenuItem>
+                {availableSprints.map((s) => (
+                  <MenuItem key={s.id} value={s.id}>
+                    Sprint {s.number}
+                  </MenuItem>
+                ))}
+              </MuiSelect>
+            </FormControl>
             </Box>
+
 
             <FormControl fullWidth>
               <InputLabel>Historia de Usuario</InputLabel>
-              <MuiSelect
-                label="Historia de Usuario"
-                value={newTask.userStoryId}
-                onChange={(e) => setNewTask({ ...newTask, userStoryId: e.target.value })}
-              >
-                {userStories.map((us) => (
-                  <MenuItem key={us.userStoriesId} value={us.userStoriesId}>
-                    {us.name}
-                  </MenuItem>
-                ))}
+              <MuiSelect label="Historia de Usuario" value={newTask.userStoryId} onChange={(e) => setNewTask({ ...newTask, userStoryId: e.target.value })}>
+                {userStories.map(us => <MenuItem key={us.userStoriesId} value={us.userStoriesId}>{us.name}</MenuItem>)}
               </MuiSelect>
             </FormControl>
 
@@ -771,32 +631,16 @@ function Sprints({ selectedProjectId }) {
               </MuiSelect>
             </FormControl>
 
+
           </Box>
         </Box>
-
-        {/* Footer del Drawer */}
-        <Box sx={{ 
-          p: 2, 
-          borderTop: '1px solid #f0f0f0', 
-          display: 'flex', 
-          justifyContent: 'flex-end',
-          gap: 2,
-          backgroundColor: 'white'
-        }}>
+        <Box sx={{ p: 2, borderTop: '1px solid #f0f0f0', display: 'flex', justifyContent: 'flex-end', gap: 2, backgroundColor: 'white' }}>
           <Button onClick={() => setOpenTaskDialog(false)} color="inherit">Cancelar</Button>
-          <Button 
-            onClick={handleCreateTask} 
-            variant="contained" 
-            sx={{ backgroundColor: '#cc0707', '&:hover': { backgroundColor: '#a30606' }, fontWeight: 'bold' }}
-            disabled={!newTask.title || !newTask.priorityId || !newTask.userStoryId}
-          >
-            Crear Tarea
-          </Button>
+          <Button onClick={handleSaveTask} variant="contained" sx={{ backgroundColor: '#cc0707', '&:hover': { backgroundColor: '#a30606' }, fontWeight: 'bold' }}>{isEditing ? 'Guardar Cambios' : 'Crear Tarea'}</Button>
         </Box>
       </Drawer>
 
       <Footer />
-
     </Box>
   )
 }
