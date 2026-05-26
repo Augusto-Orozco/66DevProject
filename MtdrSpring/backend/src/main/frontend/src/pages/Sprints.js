@@ -258,8 +258,8 @@ function Sprints({ selectedProjectId }) {
             userStoryId: t.userStory?.userStoriesId || 'none',
             userStoryName: t.userStory?.name || 'Sin historia',
             priorityId: t.priority?.priorityId || '',
-            storyPoints: t.storyPoints || '',
-            objetiveTime: t.objetiveTime || ''
+            storyPoints: t.storyPoints || t.STORY_POINTS || '',
+            objetiveTime: t.objetiveTime || t.OBJETIVE_TIME || t.objectiveTime || t.OBJECTIVE_TIME || ''
           })) : []
         }
       }
@@ -308,7 +308,10 @@ function Sprints({ selectedProjectId }) {
               title: t.title || t.TITLE || 'Sin título',
               description: t.description || t.DESCRIPTION || '',
               userStoryId: t.userStory?.userStoriesId || t.userStory?.USER_STORIES_ID || t.userStory?.id || t.userStory?.ID || 'none',
-              userStoryName: t.userStory?.name || t.userStory?.NAME || 'Sin historia'
+              userStoryName: t.userStory?.name || t.userStory?.NAME || 'Sin historia',
+              priorityId: t.priority?.priorityId || t.PRIORITY_ID || t.priority?.id || '',
+              storyPoints: t.storyPoints || t.STORY_POINTS || '',
+              objetiveTime: t.objetiveTime || t.OBJETIVE_TIME || t.objectiveTime || t.OBJECTIVE_TIME || ''
             })).filter(t => t.id) : []
           };
         }

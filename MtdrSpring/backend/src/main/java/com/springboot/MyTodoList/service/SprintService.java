@@ -105,7 +105,16 @@ public class SprintService {
                         taskNode.put("taskId", st.getTask().getTaskId());
                         taskNode.put("title", st.getTask().getTitle());
                         taskNode.put("description", st.getTask().getDescription());
+                        taskNode.put("storyPoints", st.getTask().getStoryPoints());
+                        taskNode.put("objetiveTime", st.getTask().getObjetiveTime());
                         
+                        if (st.getTask().getPriority() != null) {
+                            ObjectNode priorityNode = objectMapper.createObjectNode();
+                            priorityNode.put("priorityId", st.getTask().getPriority().getPriorityId());
+                            priorityNode.put("priorityName", st.getTask().getPriority().getPriorityName());
+                            taskNode.set("priority", priorityNode);
+                        }
+
                         if (st.getTask().getUserStory() != null) {
                             ObjectNode storyNode = objectMapper.createObjectNode();
                             storyNode.put("userStoriesId", st.getTask().getUserStory().getUserStoriesId());
