@@ -13,8 +13,9 @@ env:
 steps:
   - type: Command
     name: "Install GraalVM Enterprise 22.x Native Image for Java22"
-    command:  yum -y install graalvm-22-jdk.x86_64;
-              ls /usr/lib64/graalvm/
+    command: |
+      yum -y install graalvm-22-jdk.x86_64
+      ls /usr/lib64/graalvm/
 
   - type: Command
     name: "Set PATH Variable"
@@ -22,17 +23,55 @@ steps:
 
   - type: Command
     name: "Docker Login"
-    command:  cd MtdrSpring;
-              oci os object get --bucket-name reacttodo-m2has --name deployment_config.tgz --file deployment_config.tgz;
-              tar -xzvf deployment_config.tgz;
-              source env.sh;
-              cat at.cfg | docker login -u "axwh9stfit7f/dario.puentes2b@gmail.com" --password-stdin mx-queretaro-1.ocir.io
+    command: |
+      cd MtdrSpring
+      oci os object get --bucket-name reacttodo-m2has --name deployment_config.tgz --file deployment_config.tgz
+      tar -xzvf deployment_config.tgz
+      source env.sh
+      cat at.cfg | docker login -u "axwh9stfit7f/dario.puentes2b@gmail.com" --password-stdin mx-queretaro-1.ocir.io
 
   - type: Command
     name: "Build"
-    command:  cd MtdrSpring;
-              source env.sh;
-              (cd backend;source build.sh)
+    command: |
+      cd MtdrSpring
+      source env.sh
+      (cd backend; source build.sh)
+
+  - type: Command
+    name: "Install JMeter"
+    command: |
+      wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz
+      tar -xzf apache-jmeter-5.6.3.tgz
+
+  - type: Command
+    name: "Autenticar kubectl con OKE"
+    command: |
+      # Asegúrate de que el Build Pipeline tiene políticas para gestionar el clúster
+      oci ce cluster create-kubeconfig --cluster-id ocid1.cluster.oc1.mx-queretaro-1.aaaaaaaarjuqafusdykwq3sekqde5ifmdkfkscer3zcmeshbxcazynh7n36a --file $HOME/.kube/config --region mx-queretaro-1 --token-version 2.0.0 --auth instance_principal
+      export KUBECONFIG=$HOME/.kube/config
+
+  - type: Command
+    name: "Run Load Test"
+    command: |
+      export KUBECONFIG=$HOME/.kube/config
+      # 1. Obtener la IP externa dinámicamente del servicio de K8s
+      export EXTERNAL_IP=$(kubectl get svc todolistapp-springboot-service -n mtdrworkshop -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+      echo "Ejecutando prueba de carga contra la IP: $EXTERNAL_IP"
+      
+      # 2. Ejecutar JMeter pasando la IP como propiedad (-Jlb_ip)
+      # Ajusta la ruta del .jmx según dónde lo hayas guardado exactamente
+      ./apache-jmeter-5.6.3/bin/jmeter -n -t HTTP_Request.jmx -l results.jtl -Jlb_ip=$EXTERNAL_IP
+
+  - type: Command
+    name: "Check Results"
+    command: |
+      # Imprime un resumen de errores en el log del Build. 
+      grep -i "false" results.jtl || echo "No se encontraron errores en la prueba de carga"
+
+outputArtifacts:
+  - name: reporte_jmeter
+    type: BINARY
+    location: results.jtl
 
 
 

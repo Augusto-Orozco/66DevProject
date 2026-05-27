@@ -15,6 +15,16 @@ function Login({ setIsAuth, setUser }) {
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
 
+  // Opción 1: Renderizado Dinámico con OCI Object Storage
+  // Reemplazar con la URL pública real de tu bucket en OCI
+  const OCI_VIDEO_URL = "https://objectstorage.<REGION>.oraclecloud.com/n/<NAMESPACE>/b/<BUCKET>/o/BackgroundOracleVid8.mp4";
+  
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const videoSrc = isLocal ? videoBg : OCI_VIDEO_URL;
+  
+  // Opción 2: Sufijo para forzar precarga y evitar Range Requests complejos
+  const finalVideoSrc = `${videoSrc}#t=0.001`;
+
   const handleLogin = async () => {
     setError('');
     if (email && password) {
@@ -52,7 +62,7 @@ function Login({ setIsAuth, setUser }) {
 
       {/* Video */}
       <video autoPlay loop muted playsInline className="login-video">
-        <source src={videoBg} type="video/mp4" />
+        <source src={finalVideoSrc} type="video/mp4" />
       </video>
 
       <Box className="login-overlay" />
