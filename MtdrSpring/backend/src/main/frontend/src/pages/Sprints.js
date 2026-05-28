@@ -259,7 +259,8 @@ function Sprints({ selectedProjectId }) {
             userStoryName: t.userStory?.name || 'Sin historia',
             priorityId: t.priority?.priorityId || '',
             storyPoints: t.storyPoints || t.STORY_POINTS || '',
-            objetiveTime: t.objetiveTime || t.OBJETIVE_TIME || t.objectiveTime || t.OBJECTIVE_TIME || ''
+            objetiveTime: t.objetiveTime || t.OBJETIVE_TIME || t.objectiveTime || t.OBJECTIVE_TIME || '',
+            assignedUserId: t.assignedUserId || t.ASSIGNED_USER_ID || (t.taskUser ? (t.taskUser.userId || t.taskUser.USER_ID) : (t.assignedUser ? (t.assignedUser.userId || t.assignedUser.USER_ID) : ''))
           })) : []
         }
       }
@@ -311,13 +312,41 @@ function Sprints({ selectedProjectId }) {
               userStoryName: t.userStory?.name || t.userStory?.NAME || 'Sin historia',
               priorityId: t.priority?.priorityId || t.PRIORITY_ID || t.priority?.id || '',
               storyPoints: t.storyPoints || t.STORY_POINTS || '',
-              objetiveTime: t.objetiveTime || t.OBJETIVE_TIME || t.objectiveTime || t.OBJECTIVE_TIME || ''
+              objetiveTime: t.objetiveTime || t.OBJETIVE_TIME || t.objectiveTime || t.OBJECTIVE_TIME || '',
+              assignedUserId: t.assignedUserId || t.ASSIGNED_USER_ID || (t.taskUser ? (t.taskUser.userId || t.taskUser.USER_ID) : (t.assignedUser ? (t.assignedUser.userId || t.assignedUser.USER_ID) : ''))
             })).filter(t => t.id) : []
           };
         }
       });
 
       setColumns(newColumns);
+
+      // 4. Intentar obtener asignaciones de forma segura (no bloqueante para el resto)
+      try {
+        const assignmentsRes = await fetch(`/tasks/assignments/project/${selectedProjectId}`)
+        if (assignmentsRes.ok) {
+          const assignments = await assignmentsRes.json()
+          const assignmentMap = Array.isArray(assignments) ? assignments.reduce((acc, curr) => {
+            const tId = (curr.task?.taskId || curr.taskId || '').toString()
+            if (tId) acc[tId] = curr.user?.userId || curr.userId
+            return acc
+          }, {}) : {}
+
+          // Actualizar las columnas con las asignaciones encontradas
+          setColumns(prev => {
+            const updated = { ...prev }
+            Object.keys(updated).forEach(colKey => {
+              updated[colKey].tasks = updated[colKey].tasks.map(task => ({
+                ...task,
+                assignedUserId: assignmentMap[task.id] || task.assignedUserId || ''
+              }))
+            })
+            return updated
+          })
+        }
+      } catch (err) {
+        console.warn('No se pudieron cargar las asignaciones, pero el tablero continuará:', err)
+      }
 
       const [prioritiesRes, userStoriesRes, statusesRes] = await Promise.all([
         fetch('/priorities'),
@@ -476,8 +505,7 @@ function Sprints({ selectedProjectId }) {
       objetiveTime: task.objetiveTime || '',
       priorityId: task.priorityId || '',
       userStoryId: (task.userStoryId === 'none' || task.userStoryId === 'Sin ID') ? '' : task.userStoryId,
-      sprintId: '', // Se podría inferir de la columna
-      assignedUserId: ''
+      assignedUserId: task.assignedUserId || ''
     })
     setOpenTaskDialog(true)
   }
@@ -621,29 +649,12 @@ function Sprints({ selectedProjectId }) {
             </Box>
 
 
-            <Box sx={{ display: 'flex', gap: 2 }}>
             <FormControl fullWidth>
               <InputLabel>Prioridad</InputLabel>
               <MuiSelect label="Prioridad" value={newTask.priorityId} onChange={(e) => setNewTask({ ...newTask, priorityId: e.target.value })}>
                 {priorities.map(p => <MenuItem key={p.priorityId} value={p.priorityId}>{p.priorityName}</MenuItem>)}
               </MuiSelect>
             </FormControl>
-            <FormControl fullWidth>
-              <InputLabel>Sprint (Opcional)</InputLabel>
-              <MuiSelect
-                label="Sprint (Opcional)"
-                value={newTask.sprintId}
-                onChange={(e) => setNewTask({ ...newTask, sprintId: e.target.value })}
-              >
-                <MenuItem value=""><em>Backlog</em></MenuItem>
-                {availableSprints.map((s) => (
-                  <MenuItem key={s.id} value={s.id}>
-                    Sprint {s.number}
-                  </MenuItem>
-                ))}
-              </MuiSelect>
-            </FormControl>
-            </Box>
 
 
             <FormControl fullWidth>

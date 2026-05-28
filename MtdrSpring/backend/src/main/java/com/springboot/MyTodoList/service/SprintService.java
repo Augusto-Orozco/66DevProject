@@ -28,6 +28,9 @@ public class SprintService {
     private SprintTaskRepository sprintTaskRepository;
 
     @Autowired
+    private com.springboot.MyTodoList.repository.TaskUserRepository taskUserRepository;
+
+    @Autowired
     private JdbcTemplate jdbcTemplate;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -87,6 +90,7 @@ public class SprintService {
     private String buildHierarchyManual(Long projectId) {
         try {
             List<Sprint> sprints = sprintRepository.findByProject_ProjectId(projectId);
+            List<com.springboot.MyTodoList.model.TaskUser> allAssignments = taskUserRepository.findByProjectId(projectId);
             ArrayNode rootArray = objectMapper.createArrayNode();
             
             for (Sprint sprint : sprints) {
@@ -121,6 +125,18 @@ public class SprintService {
                             storyNode.put("name", st.getTask().getUserStory().getName());
                             taskNode.set("userStory", storyNode);
                         }
+
+                        // Buscar el usuario asignado en la lista previamente cargada
+                        Long assignedId = allAssignments.stream()
+                            .filter(tu -> tu.getTask().getTaskId().equals(st.getTask().getTaskId()))
+                            .map(tu -> tu.getUser().getUserId())
+                            .findFirst()
+                            .orElse(null);
+                        
+                        if (assignedId != null) {
+                            taskNode.put("assignedUserId", assignedId);
+                        }
+
                         tasksArray.add(taskNode);
                     }
                 }
