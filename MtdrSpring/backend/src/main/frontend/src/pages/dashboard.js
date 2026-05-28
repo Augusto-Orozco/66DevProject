@@ -155,7 +155,7 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
   // Calculamos porcentaje (Si real es 0 pero estimado es > 0, es 100% de efectividad)
   let efectividadValor = targetReal > 0 
     ? Math.round((targetEstimado / targetReal) * 100) 
-    : (targetEstimado > 0 ? 100 : 0);
+    : 0;
 
   // Colores según las reglas
   let efectividadColor = '#f44336';
