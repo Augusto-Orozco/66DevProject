@@ -47,7 +47,7 @@ function TaskCard({ task, onEditTask }) {
   } = useSortable({ id: task.id })
 
   const style = {
-    transform: CSS.Transform.toString(transform),
+    transform: CSS.Transform.toString(transform), 
     transition
   }
 
