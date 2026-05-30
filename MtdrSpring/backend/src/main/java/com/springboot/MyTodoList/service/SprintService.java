@@ -17,9 +17,15 @@ import java.sql.Clob;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
+import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class SprintService {
+
+    private static final Logger logger = LoggerFactory.getLogger(SprintService.class);
 
     @Autowired
     private SprintRepository sprintRepository;
@@ -82,7 +88,7 @@ public class SprintService {
                 }
             );
         } catch (Exception e) {
-            // Fallback to manual JPA build if SP fails (common in Oracle with data edge cases)
+            logger.warn("Stored procedure GET_PROJECT_SPRINTS_HIERARCHY failed for project {}. Falling back to manual build. Error: {}", projectId, e.getMessage());
             return buildHierarchyManual(projectId);
         }
     }
@@ -91,14 +97,24 @@ public class SprintService {
         try {
             List<Sprint> sprints = sprintRepository.findByProject_ProjectId(projectId);
             List<com.springboot.MyTodoList.model.TaskUser> allAssignments = taskUserRepository.findByProjectId(projectId);
+            
+            // Precompute map for O(1) lookups
+            Map<Long, Long> assignmentMap = allAssignments.stream()
+                .filter(tu -> tu.getTask() != null && tu.getUser() != null)
+                .collect(Collectors.toMap(
+                    tu -> tu.getTask().getTaskId(),
+                    tu -> tu.getUser().getUserId(),
+                    (existing, replacement) -> existing
+                ));
+
             ArrayNode rootArray = objectMapper.createArrayNode();
             
             for (Sprint sprint : sprints) {
                 ObjectNode sprintNode = objectMapper.createObjectNode();
                 sprintNode.put("sprintId", sprint.getSprintId());
                 sprintNode.put("sprintNum", sprint.getSprintNum());
-                sprintNode.put("startDate", sprint.getStartDate().toString());
-                sprintNode.put("endDate", sprint.getEndDate().toString());
+                sprintNode.put("startDate", sprint.getStartDate() != null ? sprint.getStartDate().toString() : "");
+                sprintNode.put("endDate", sprint.getEndDate() != null ? sprint.getEndDate().toString() : "");
                 
                 ArrayNode tasksArray = objectMapper.createArrayNode();
                 List<SprintTask> sprintTasks = sprintTaskRepository.findById_SprintId(sprint.getSprintId());
@@ -126,13 +142,7 @@ public class SprintService {
                             taskNode.set("userStory", storyNode);
                         }
 
-                        // Buscar el usuario asignado en la lista previamente cargada
-                        Long assignedId = allAssignments.stream()
-                            .filter(tu -> tu.getTask().getTaskId().equals(st.getTask().getTaskId()))
-                            .map(tu -> tu.getUser().getUserId())
-                            .findFirst()
-                            .orElse(null);
-                        
+                        Long assignedId = assignmentMap.get(st.getTask().getTaskId());
                         if (assignedId != null) {
                             taskNode.put("assignedUserId", assignedId);
                         }
@@ -145,7 +155,7 @@ public class SprintService {
             }
             return objectMapper.writeValueAsString(rootArray);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error building hierarchy manual for project {}: {}", projectId, e.getMessage());
             return "[]";
         }
     }

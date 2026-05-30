@@ -1,6 +1,7 @@
 package com.springboot.MyTodoList.util;
 
 public class TaskDTO {
+    private Long taskId;
     private String title;
     private String description;
     private Long projectId;
@@ -14,6 +15,9 @@ public class TaskDTO {
     public TaskDTO() {}
 
     // Getters and Setters
+    public Long getTaskId() { return taskId; }
+    public void setTaskId(Long taskId) { this.taskId = taskId; }
+
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
 

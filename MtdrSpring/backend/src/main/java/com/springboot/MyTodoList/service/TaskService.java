@@ -1,7 +1,9 @@
 package com.springboot.MyTodoList.service;
 
-import com.springboot.MyTodoList.model.Task;
 import com.springboot.MyTodoList.repository.TaskRepository;
+import com.springboot.MyTodoList.repository.ProjectRepository;
+import com.springboot.MyTodoList.repository.UserStoryRepository;
+import com.springboot.MyTodoList.repository.TaskPriorityRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -9,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.springboot.MyTodoList.util.TaskDTO;
+import com.springboot.MyTodoList.model.Task;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.CallableStatementCallback;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,8 +22,26 @@ public class TaskService {
 
     @Autowired
     private TaskRepository taskRepository;
-@Autowired
-private JdbcTemplate jdbcTemplate;
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private ProjectRepository projectRepository;
+
+    @Autowired
+    private UserStoryRepository userStoryRepository;
+
+    @Autowired
+    private TaskPriorityRepository taskPriorityRepository;
+
+    @Autowired
+    private SprintTaskService sprintTaskService;
+
+    @Autowired
+    private TaskUserService taskUserService;
+
+    @Autowired
+    private SprintService sprintService;
 
     @Transactional
     public Long createTaskAtomic(TaskDTO taskDto) {
@@ -46,6 +67,41 @@ private JdbcTemplate jdbcTemplate;
                 return cs.getLong(10);
             }
         );
+    }
+
+    @Transactional
+    public void updateTaskAtomic(TaskDTO taskDto) {
+        Task task = taskRepository.findById(taskDto.getTaskId())
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        task.setTitle(taskDto.getTitle());
+        task.setDescription(taskDto.getDescription());
+        task.setStoryPoints(taskDto.getStoryPoints());
+        task.setObjetiveTime(taskDto.getObjectiveTime());
+
+        if (taskDto.getProjectId() != null) {
+            task.setProject(projectRepository.findById(taskDto.getProjectId()).orElse(null));
+        }
+        if (taskDto.getUserStoryId() != null) {
+            task.setUserStory(userStoryRepository.findById(taskDto.getUserStoryId()).orElse(null));
+        }
+        if (taskDto.getPriorityId() != null) {
+            task.setPriority(taskPriorityRepository.findById(taskDto.getPriorityId()).orElse(null));
+        }
+
+        taskRepository.save(task);
+
+        // Update Sprint Assignment
+        if (taskDto.getSprintId() != null) {
+            sprintService.getSprintById(taskDto.getSprintId()).ifPresent(sprint -> {
+                sprintTaskService.assignTaskToSprint(task, sprint);
+            });
+        } else {
+            sprintTaskService.assignTaskToSprint(task, null);
+        }
+
+        // Update User Assignment
+        taskUserService.assignTaskToUser(task.getTaskId(), taskDto.getAssignedUserId());
     }
 
     public Task saveTask(Task task) {

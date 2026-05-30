@@ -203,7 +203,6 @@ function Sprints({ selectedProjectId }) {
   const [openTaskDialog, setOpenTaskDialog] = useState(false)
   const [priorities, setPriorities] = useState([])
   const [userStories, setUserStories] = useState([])
-  const [statuses, setStatuses] = useState([])
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
@@ -260,7 +259,8 @@ function Sprints({ selectedProjectId }) {
             priorityId: t.priority?.priorityId || '',
             storyPoints: t.storyPoints || t.STORY_POINTS || '',
             objetiveTime: t.objetiveTime || t.OBJETIVE_TIME || t.objectiveTime || t.OBJECTIVE_TIME || '',
-            assignedUserId: t.assignedUserId || t.ASSIGNED_USER_ID || (t.taskUser ? (t.taskUser.userId || t.taskUser.USER_ID) : (t.assignedUser ? (t.assignedUser.userId || t.assignedUser.USER_ID) : ''))
+            assignedUserId: t.assignedUserId || t.ASSIGNED_USER_ID || (t.taskUser ? (t.taskUser.userId || t.taskUser.USER_ID) : (t.assignedUser ? (t.assignedUser.userId || t.assignedUser.USER_ID) : '')),
+            sprintId: null
           })) : []
         }
       }
@@ -313,7 +313,8 @@ function Sprints({ selectedProjectId }) {
               priorityId: t.priority?.priorityId || t.PRIORITY_ID || t.priority?.id || '',
               storyPoints: t.storyPoints || t.STORY_POINTS || '',
               objetiveTime: t.objetiveTime || t.OBJETIVE_TIME || t.objectiveTime || t.OBJECTIVE_TIME || '',
-              assignedUserId: t.assignedUserId || t.ASSIGNED_USER_ID || (t.taskUser ? (t.taskUser.userId || t.taskUser.USER_ID) : (t.assignedUser ? (t.assignedUser.userId || t.assignedUser.USER_ID) : ''))
+              assignedUserId: t.assignedUserId || t.ASSIGNED_USER_ID || (t.taskUser ? (t.taskUser.userId || t.taskUser.USER_ID) : (t.assignedUser ? (t.assignedUser.userId || t.assignedUser.USER_ID) : '')),
+              sprintId: sId
             })).filter(t => t.id) : []
           };
         }
@@ -355,7 +356,6 @@ function Sprints({ selectedProjectId }) {
       ])
       setPriorities(await prioritiesRes.json())
       setUserStories(await userStoriesRes.json())
-      setStatuses(await statusesRes.json())
 
     } catch (error) {
       console.error('Error in fetchData:', error)
@@ -505,6 +505,7 @@ function Sprints({ selectedProjectId }) {
       objetiveTime: task.objetiveTime || '',
       priorityId: task.priorityId || '',
       userStoryId: (task.userStoryId === 'none' || task.userStoryId === 'Sin ID') ? '' : task.userStoryId,
+      sprintId: task.sprintId || '',
       assignedUserId: task.assignedUserId || ''
     })
     setOpenTaskDialog(true)
@@ -518,6 +519,7 @@ function Sprints({ selectedProjectId }) {
       }
 
       const taskData = {
+        taskId: isEditing ? newTask.taskId : null,
         title: newTask.title,
         description: newTask.description,
         projectId: selectedProjectId,
