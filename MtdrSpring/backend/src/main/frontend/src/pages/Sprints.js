@@ -240,8 +240,9 @@ function Sprints({ selectedProjectId }) {
       setLoading(true)
       console.log('Fetching data for project:', selectedProjectId);
       
-      // 1. Obtener tareas completas del proyecto. Este endpoint trae el status igual que el dashboard.
-      const allProjectTasksRes = await fetch(`/tasks/project/${selectedProjectId}`)
+      // 1. Obtener tareas completas para enriquecer las tarjetas por taskId.
+      // Algunas tareas pueden estar asignadas a un sprint aunque su PROJECT_ID sea distinto.
+      const allProjectTasksRes = await fetch('/tasks')
       const allProjectTasks = await allProjectTasksRes.json()
       const taskDetailsById = Array.isArray(allProjectTasks) ? allProjectTasks.reduce((acc, task) => {
         if (task?.taskId) acc[String(task.taskId)] = task
