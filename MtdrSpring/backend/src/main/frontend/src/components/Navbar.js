@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AppBar, Toolbar, Button, Box, Menu, MenuItem, Divider, ListSubheader } from '@mui/material';
+import { AppBar, Toolbar, Button, Box, Menu, MenuItem, Divider, ListSubheader, Typography } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 /* ICONOS MUI */
@@ -106,6 +106,12 @@ function Navbar(props) {
 
   // Determinar si debemos mostrar el selector de sprints en el menú unificado
   const showSprintSelector = !isActive('/Sprints');
+  const GetUserFullName = () => {
+    const firstName = props.user.firstName || '';
+    const lastName = props.user.lastName || '';
+    const fullName = `${firstName} ${lastName}`.trim();
+    return fullName;
+  }
 
   return (
     <Box className="navbar-wrapper" style={{ top: scrolled ? '10px' : '0px' }}>
@@ -126,6 +132,29 @@ function Navbar(props) {
                 style={{ height: '14px' }}
               />
             </Box>
+            {props.user && (
+                <Box 
+                  className="MensajeBinvenido"
+                  sx={{ 
+                    ml: '25px' // <--- ¡AQUÍ CONTROLAS LA SEPARACIÓN! 
+                              // Puedes cambiar '25px' por '15px', '40px', etc., hasta ver el espacio ideal.
+                  }}
+                >
+                  <Typography 
+                    variant="subtitle2" 
+                    sx={{ 
+                      fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif', 
+                      fontWeight: 700, 
+                      letterSpacing: '0.2px',
+                      color: scrolled ? 'scrolled' : '#333333', 
+                      opacity: 0.95,
+                      fontSize: '0.88rem'
+                    }}
+                  >
+                    Bienvenido, {GetUserFullName()}
+                  </Typography>
+                </Box>
+              )}
           </Box>
 
           {/* SECCIÓN CENTRAL: NAVEGACIÓN */}
