@@ -51,6 +51,12 @@ function TaskCard({ task, onEditTask }) {
     transition
   }
 
+  let sCol = '#000000', sBg = '#a9a9a9'
+  const statusStr = task.statusName || 'SIN ESTATUS'
+  if (statusStr === 'Completado') { sCol = '#123013'; sBg = '#94e59b' }
+  else if (statusStr === 'En Progreso') { sCol = '#483009'; sBg = '#fff9b9' }
+  else if (statusStr === 'Atrasado') { sCol = '#541111'; sBg = '#fdb4bf' }
+
   // Detenemos la propagación para que el drag no interfiera con el click si es necesario,
   // pero dnd-kit suele manejarlo. Sin embargo, listeners tienen el onClick del drag.
   // Usaremos un truco: si se mueve, no es click.
@@ -71,6 +77,9 @@ function TaskCard({ task, onEditTask }) {
       <Typography fontSize="0.75rem">
         {task.description}
       </Typography>
+      <Box sx={{ mt: 1, display: 'flex', justifyContent: 'flex-start' }}>
+        <span className="badge-base" style={{ backgroundColor: sBg, color: sCol }}>{statusStr}</span>
+      </Box>
     </Box>
   )
 }
@@ -231,18 +240,26 @@ function Sprints({ selectedProjectId }) {
       setLoading(true)
       console.log('Fetching data for project:', selectedProjectId);
       
-      // 1. Obtener tareas sin sprint
+      // 1. Obtener tareas completas del proyecto. Este endpoint trae el status igual que el dashboard.
+      const allProjectTasksRes = await fetch(`/tasks/project/${selectedProjectId}`)
+      const allProjectTasks = await allProjectTasksRes.json()
+      const taskDetailsById = Array.isArray(allProjectTasks) ? allProjectTasks.reduce((acc, task) => {
+        if (task?.taskId) acc[String(task.taskId)] = task
+        return acc
+      }, {}) : {}
+
+      // 2. Obtener tareas sin sprint
       const unassignedRes = await fetch(`/tasks/unassigned/project/${selectedProjectId}`)
       const unassignedTasks = await unassignedRes.json()
 
-      // 2. Obtener jerarquía completa
+      // 3. Obtener jerarquía completa
       const hierarchyRes = await fetch(`/sprints/project/${selectedProjectId}/hierarchy`)
       let sprintsHierarchy = await hierarchyRes.json()
       
       // Debug para ver qué llega exactamente del SP
       console.log('Raw Hierarchy Response:', sprintsHierarchy);
 
-      // 3. Obtener miembros del equipo
+      // 4. Obtener miembros del equipo
       const usersRes = await fetch(`/team/project/${selectedProjectId}`)
       const teamMembers = await usersRes.json()
       setUsers(Array.isArray(teamMembers) ? teamMembers : [])
@@ -250,18 +267,24 @@ function Sprints({ selectedProjectId }) {
       const newColumns = {
         'backlog': {
           title: 'Backlog',
-          tasks: Array.isArray(unassignedTasks) ? unassignedTasks.map(t => ({
-            id: (t.taskId || '').toString(),
-            title: t.title || 'Sin título',
-            description: t.description || '',
-            userStoryId: t.userStory?.userStoriesId || 'none',
-            userStoryName: t.userStory?.name || 'Sin historia',
-            priorityId: t.priority?.priorityId || '',
-            storyPoints: t.storyPoints || t.STORY_POINTS || '',
-            objetiveTime: t.objetiveTime || t.OBJETIVE_TIME || t.objectiveTime || t.OBJECTIVE_TIME || '',
-            assignedUserId: t.assignedUserId || t.ASSIGNED_USER_ID || (t.taskUser ? (t.taskUser.userId || t.taskUser.USER_ID) : (t.assignedUser ? (t.assignedUser.userId || t.assignedUser.USER_ID) : '')),
-            sprintId: null
-          })) : []
+          tasks: Array.isArray(unassignedTasks) ? unassignedTasks.map(t => {
+            const taskId = (t.taskId || '').toString()
+            const fullTask = taskDetailsById[taskId] || t
+
+            return {
+              id: taskId,
+              title: fullTask.title || t.title || 'Sin título',
+              description: fullTask.description || t.description || '',
+              userStoryId: fullTask.userStory?.userStoriesId || t.userStory?.userStoriesId || 'none',
+              userStoryName: fullTask.userStory?.name || t.userStory?.name || 'Sin historia',
+              priorityId: fullTask.priority?.priorityId || t.priority?.priorityId || '',
+              storyPoints: fullTask.storyPoints || t.storyPoints || t.STORY_POINTS || '',
+              objetiveTime: fullTask.objetiveTime || t.objetiveTime || t.OBJETIVE_TIME || t.objectiveTime || t.OBJECTIVE_TIME || '',
+              statusName: fullTask.status?.status || t.status?.status || 'SIN ESTATUS',
+              assignedUserId: t.assignedUserId || t.ASSIGNED_USER_ID || (t.taskUser ? (t.taskUser.userId || t.taskUser.USER_ID) : (t.assignedUser ? (t.assignedUser.userId || t.assignedUser.USER_ID) : '')),
+              sprintId: null
+            }
+          }) : []
         }
       }
 
@@ -304,18 +327,24 @@ function Sprints({ selectedProjectId }) {
         if (sId) {
           newColumns[`sprint-${sId}`] = {
             title: `Sprint ${sNum}`,
-            tasks: Array.isArray(sTasks) ? sTasks.map(t => ({
-              id: (t.taskId || t.TASK_ID || t.id || t.ID || '').toString(),
-              title: t.title || t.TITLE || 'Sin título',
-              description: t.description || t.DESCRIPTION || '',
-              userStoryId: t.userStory?.userStoriesId || t.userStory?.USER_STORIES_ID || t.userStory?.id || t.userStory?.ID || 'none',
-              userStoryName: t.userStory?.name || t.userStory?.NAME || 'Sin historia',
-              priorityId: t.priority?.priorityId || t.PRIORITY_ID || t.priority?.id || '',
-              storyPoints: t.storyPoints || t.STORY_POINTS || '',
-              objetiveTime: t.objetiveTime || t.OBJETIVE_TIME || t.objectiveTime || t.OBJECTIVE_TIME || '',
-              assignedUserId: t.assignedUserId || t.ASSIGNED_USER_ID || (t.taskUser ? (t.taskUser.userId || t.taskUser.USER_ID) : (t.assignedUser ? (t.assignedUser.userId || t.assignedUser.USER_ID) : '')),
-              sprintId: sId
-            })).filter(t => t.id) : []
+            tasks: Array.isArray(sTasks) ? sTasks.map(t => {
+              const taskId = (t.taskId || t.TASK_ID || t.id || t.ID || '').toString()
+              const fullTask = taskDetailsById[taskId] || t
+
+              return {
+                id: taskId,
+                title: fullTask.title || t.title || t.TITLE || 'Sin título',
+                description: fullTask.description || t.description || t.DESCRIPTION || '',
+                userStoryId: fullTask.userStory?.userStoriesId || t.userStory?.userStoriesId || t.userStory?.USER_STORIES_ID || t.userStory?.id || t.userStory?.ID || 'none',
+                userStoryName: fullTask.userStory?.name || t.userStory?.name || t.userStory?.NAME || 'Sin historia',
+                priorityId: fullTask.priority?.priorityId || t.priority?.priorityId || t.PRIORITY_ID || t.priority?.id || '',
+                storyPoints: fullTask.storyPoints || t.storyPoints || t.STORY_POINTS || '',
+                objetiveTime: fullTask.objetiveTime || t.objetiveTime || t.OBJETIVE_TIME || t.objectiveTime || t.OBJECTIVE_TIME || '',
+                statusName: fullTask.status?.status || t.status?.status || t.STATUS_NAME || 'SIN ESTATUS',
+                assignedUserId: t.assignedUserId || t.ASSIGNED_USER_ID || (t.taskUser ? (t.taskUser.userId || t.taskUser.USER_ID) : (t.assignedUser ? (t.assignedUser.userId || t.assignedUser.USER_ID) : '')),
+                sprintId: sId
+              }
+            }).filter(t => t.id) : []
           };
         }
       });

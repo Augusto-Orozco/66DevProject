@@ -79,6 +79,12 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
     ? assignments
     : assignments.filter(a => sprintTasksIds.includes(a.task?.taskId))
 
+  const getDeveloperNameForTask = (taskId) => {
+    const assignment = activeAssignments.find(a => a.task?.taskId === taskId)
+    if (!assignment?.user) return 'Sin asignar'
+    return `${assignment.user.firtsName || ''} ${assignment.user.lastName || ''}`.trim() || 'Sin asignar'
+  }
+
   // --- PREPARACIÓN DE DATOS PARA GRÁFICAS ---
 
   // 1. Gráfica de Estatus
@@ -296,6 +302,7 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
             <Box sx={{ display: 'flex', width: '100%', px: 2, mb: 1, opacity: 0.6 }}>
               <Typography variant="caption" sx={{ flex: 2, fontWeight: 'bold' }}>TAREA</Typography>
               <Typography variant="caption" sx={{ flex: 1, fontWeight: 'bold', textAlign: 'center' }}>ESTATUS</Typography>
+              <Typography variant="caption" sx={{ flex: 1, fontWeight: 'bold', textAlign: 'center' }}>DEVELOPER</Typography>
               <Typography variant="caption" sx={{ flex: 1, fontWeight: 'bold', textAlign: 'right' }}>PRIORIDAD</Typography>
             </Box>
           )}
@@ -313,6 +320,7 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
               if (statusStr === 'Completado') { sCol = '#123013'; sBg = '#94e59b'; border = '#4caf50' }
               else if (statusStr === 'En Progreso') { sCol = '#483009'; sBg = '#fff9b9'; border = '#fbc02d' }
               else if (statusStr === 'Atrasado') { sCol = '#541111'; sBg = '#fdb4bf'; border = '#ff2020' }
+              const developerName = getDeveloperNameForTask(item.taskId)
 
               return (
                 <Box key={item.taskId} className="task-row" style={{ borderLeft: `6px solid ${border}` }}>
@@ -322,6 +330,9 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
                   </Box>
                   <Box sx={{ flex: 1, textAlign: 'center' }}>
                     <span className="badge-base" style={{ backgroundColor: sBg, color: sCol }}>{statusStr || 'SIN ESTATUS'}</span>
+                  </Box>
+                  <Box sx={{ flex: 1, textAlign: 'center' }}>
+                    <Typography variant="body2" fontWeight={600}>{developerName}</Typography>
                   </Box>
                   <Box sx={{ flex: 1, textAlign: 'right' }}>
                     <span className="badge-base" style={{ backgroundColor: pBg, color: pCol }}>{priorityName || 'N/A'}</span>
