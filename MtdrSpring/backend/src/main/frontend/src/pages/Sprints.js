@@ -591,41 +591,6 @@ function Sprints({ selectedProjectId }) {
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       
-      <Box className={`floating-menu ${openMenu ? 'open' : ''}`}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-          {openMenu && (
-            <Button
-              variant="contained"
-              onClick={() => { setSelectedSprintId(null); setOpenMenu(false); }}
-              sx={{ width: '2.5rem', height: '2.5rem', minWidth: 0, padding: 0, borderRadius: '50%', backgroundColor: '#555', mb: 1 }}
-            >
-              <RefreshIcon sx={{ fontSize: '1.2rem' }} />
-            </Button>
-          )}
-          <Button
-            className="main-btn"
-            variant="contained"
-            onClick={() => setOpenMenu(prev => !prev)}
-            sx={{ width: '2.5rem', height: '2.5rem', minWidth: 0, padding: 0, borderRadius: '50%', zIndex: 1000 }}
-          >
-            <ViewWeekIcon sx={{ fontSize: '1.2rem' }} />
-          </Button>
-          {openMenu && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, maxHeight: '200px', overflowY: 'auto', mt: 1, padding: '4px' }}>
-              {availableSprints.map((sprint) => (
-                <IconButton
-                  key={sprint.id}
-                  onClick={() => { setSelectedSprintId(sprint.id); setOpenMenu(false); }}
-                  sx={{ width: '2.2rem', height: '2.2rem', minWidth: 0, padding: 0, borderRadius: '50%', backgroundColor: 'white', border: '1px solid #ccc', color: '#333', fontSize: '0.8rem' }}
-                >
-                  {sprint.number}
-                </IconButton>
-              ))}
-            </Box>
-          )}
-        </Box>
-      </Box>
-
       <Box sx={{ display: 'flex', py: 3, pr: 3, pl: 0, ml: 3, overflowX: 'auto', width: 'calc(100% - 24px)', flexGrow: 1, alignItems: 'stretch', justifyContent: 'flex-start', pb: 10 }}>
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           {visibleColumnsToRender.map((id) => {
@@ -646,9 +611,106 @@ function Sprints({ selectedProjectId }) {
         </DndContext>
       </Box>
 
-      <Fab color="primary" variant="extended" onClick={() => setOpenDialog(true)} sx={{ position: 'fixed', bottom: 40, right: 40, fontWeight: 'bold', backgroundColor: '#cc0707' }}>
-        + Crear Sprint
-      </Fab>
+      {/* Selector de Sprint (Parte Superior Derecha) */}
+      <Box sx={{ position: 'fixed', top: 110, right: 40, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', zIndex: 1100 }}>
+        
+        {/* Botón de Regreso a Vista General (Aparece ARRIBA del principal y CENTRADO) */}
+        {openMenu && (
+          <Button
+            variant="contained"
+            onClick={() => { setSelectedSprintId(null); setOpenMenu(false); }}
+            sx={{ 
+              position: 'absolute',
+              bottom: '100%',
+              left: '50%',
+              transform: 'translateX(-50%)', // Centrado relativo al contenedor (que mide lo mismo que el botón principal)
+              mb: 1.5,
+              width: '2.2rem', 
+              height: '2.2rem', 
+              minWidth: 0, 
+              padding: 0, 
+              borderRadius: '50%', 
+              backgroundColor: '#555', 
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            <RefreshIcon sx={{ fontSize: '1.1rem' }} />
+          </Button>
+        )}
+
+        {/* Botón Principal (Se mantiene fijo en su posición) */}
+        <Button
+          variant="contained"
+          onClick={() => setOpenMenu(prev => !prev)}
+          sx={{ 
+            width: '2.8rem', 
+            height: '2.8rem', 
+            minWidth: 0, 
+            padding: 0, 
+            borderRadius: '50%', 
+            backgroundColor: '#cc0707',
+            color: 'white',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15) !important',
+            '&:hover': {
+              backgroundColor: '#a30606'
+            }
+          }}
+        >
+          <ViewWeekIcon sx={{ fontSize: '1.4rem' }} />
+        </Button>
+        
+        {/* Números de Sprint (Aparecen DEBAJO del principal) */}
+        {openMenu && (
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1, mt: 1.5 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, maxHeight: '300px', overflowY: 'auto', padding: '4px' }}>
+              {availableSprints.map((sprint) => (
+                <IconButton
+                  key={sprint.id}
+                  onClick={() => { setSelectedSprintId(sprint.id); setOpenMenu(false); }}
+                  sx={{ width: '2.2rem', height: '2.2rem', minWidth: 0, padding: 0, borderRadius: '50%', backgroundColor: 'white', border: '1px solid #ccc', color: '#333', fontSize: '0.8rem', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
+                >
+                  {sprint.number}
+                </IconButton>
+              ))}
+            </Box>
+          </Box>
+        )}
+      </Box>
+
+      {/* Botón Crear Sprint (Parte Inferior Derecha) */}
+      <Box sx={{ position: 'fixed', bottom: 40, right: 40, zIndex: 1100 }}>
+        <Button
+          className="nav-button icon-btn"
+          onClick={() => setOpenDialog(true)}
+          sx={{
+            fontWeight: 'bold',
+            backgroundColor: '#cc0707 !important',
+            color: 'white !important',
+            minWidth: '50px !important',
+            height: '50px !important',
+            borderRadius: '50px !important',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+            padding: '0 !important',
+            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important',
+            '&:hover': {
+              padding: '0 20px !important',
+              backgroundColor: '#a30606 !important',
+              color: 'white !important',
+            },
+            '& .icon, & .label': {
+              color: 'white !important',
+            }
+          }}
+        >
+          <span className="icon">
+            <AddIcon />
+          </span>
+          <span className="label" style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'white' }}>
+            Crear Sprint
+          </span>
+        </Button>
+      </Box>
 
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
         <DialogTitle sx={{ fontWeight: 'bold' }}>Crear nuevo Sprint</DialogTitle>
@@ -720,7 +782,6 @@ function Sprints({ selectedProjectId }) {
           <Button onClick={handleSaveTask} variant="contained" sx={{ backgroundColor: '#cc0707', '&:hover': { backgroundColor: '#a30606' }, fontWeight: 'bold' }}>{isEditing ? 'Guardar Cambios' : 'Crear Tarea'}</Button>
         </Box>
       </Drawer>
-
       <Footer />
     </Box>
   )
