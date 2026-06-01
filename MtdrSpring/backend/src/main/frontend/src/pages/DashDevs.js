@@ -179,6 +179,11 @@ function DashDevs({ user, selectedProjectId, sprintFilter, setSprintFilter }) {
 
         </Box>
       </Box>
+      <br/>
+      <br/>
+      <br/>
+      <br/>
+      <br/>
       <Footer />
     </>
   ) 

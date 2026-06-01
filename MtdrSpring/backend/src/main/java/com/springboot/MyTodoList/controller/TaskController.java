@@ -57,8 +57,13 @@ public class TaskController {
     @PostMapping("/tasks/atomic")
     public ResponseEntity<Long> createTaskAtomic(@RequestBody TaskDTO taskDto) {
         try {
-            Long taskId = taskService.createTaskAtomic(taskDto);
-            return ResponseEntity.ok(taskId);
+            if (taskDto.getTaskId() != null) {
+                taskService.updateTaskAtomic(taskDto);
+                return ResponseEntity.ok(taskDto.getTaskId());
+            } else {
+                Long taskId = taskService.createTaskAtomic(taskDto);
+                return ResponseEntity.ok(taskId);
+            }
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.badRequest().build();

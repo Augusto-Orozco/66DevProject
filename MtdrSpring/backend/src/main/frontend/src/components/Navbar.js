@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AppBar, Toolbar, Button, Box, Menu, MenuItem } from '@mui/material';
+import { AppBar, Toolbar, Button, Box, Menu, MenuItem, Divider, ListSubheader } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 /* ICONOS MUI */
@@ -10,6 +10,7 @@ import AppRegistrationIcon from '@mui/icons-material/AppRegistration';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import TuneIcon from '@mui/icons-material/Tune';
 
 import '../Assets/styles.css';
 
@@ -18,15 +19,12 @@ function Navbar(props) {
   const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
 
-  // Estado para el selector de proyectos
-  const [anchorElProject, setAnchorElProject] = useState(null);
-  const [projects, setProjects] = useState([]);
-  const openProject = Boolean(anchorElProject);
+  // Estado para el menú unificado (Proyectos + Sprints)
+  const [anchorElUnified, setAnchorElUnified] = useState(null);
+  const openUnified = Boolean(anchorElUnified);
 
-  // Estado para el menú de Sprints
-  const [anchorElSprint, setAnchorElSprint] = useState(null);
+  const [projects, setProjects] = useState([]);
   const [sprints, setSprints] = useState([]);
-  const openSprint = Boolean(anchorElSprint);
 
   // Fetch de proyectos
   useEffect(() => {
@@ -48,7 +46,6 @@ function Navbar(props) {
         .then(res => res.json())
         .then(data => {
           if (Array.isArray(data)) {
-            // ordenar de manera ascendente
             const sortedSprints = [...data].sort((a, b) => a.sprintNum - b.sprintNum);
             setSprints(sortedSprints);
           } else {
@@ -61,7 +58,6 @@ function Navbar(props) {
 
   const selectedProjectName = projects.find(p => p.projectId === props.selectedProjectId)?.name || 'Seleccionar Proyecto';
 
-  //Sprint id para tener su numero de sprint
   const currentSprintObj = sprints.find(s => s.sprintId === props.sprintFilter);
   const selectedSprintName = props.sprintFilter === 'all' || !props.sprintFilter
     ? 'Todos los Sprints'
@@ -83,35 +79,33 @@ function Navbar(props) {
     navigate('/');
   };
 
-  // Controladores Proyecto
-  const handleClickProject = (event) => {
-    setAnchorElProject(event.currentTarget);
+  const handleClickUnified = (event) => {
+    setAnchorElUnified(event.currentTarget);
   };
 
-  const handleCloseProject = (project) => {
-    if (project) {
-      props.setSelectedProjectId(project.projectId);
-      if (props.setSprintFilter) {
-        props.setSprintFilter('all');
-      }
+  const handleCloseUnified = () => {
+    setAnchorElUnified(null);
+  };
+
+  const handleSelectProject = (project) => {
+    props.setSelectedProjectId(project.projectId);
+    if (props.setSprintFilter) {
+      props.setSprintFilter('all');
     }
-    setAnchorElProject(null);
+    handleCloseUnified();
   };
 
-  // Controladores Sprint
-  const handleClickSprint = (event) => {
-    setAnchorElSprint(event.currentTarget);
-  };
-
-  const handleCloseSprint = (sprintId) => {
-    if (sprintId !== undefined && props.setSprintFilter) {
-    
+  const handleSelectSprint = (sprintId) => {
+    if (props.setSprintFilter) {
       props.setSprintFilter(sprintId);
     }
-    setAnchorElSprint(null);
+    handleCloseUnified();
   };
 
   const isActive = (path) => location.pathname === path;
+
+  // Determinar si debemos mostrar el selector de sprints en el menú unificado
+  const showSprintSelector = !isActive('/Sprints');
 
   return (
     <Box className="navbar-wrapper" style={{ top: scrolled ? '10px' : '0px' }}>
@@ -167,87 +161,81 @@ function Navbar(props) {
             )}
           </Box>
 
-            {/* SECCIÓN DERECHA: FILTROS Y LOGOUT */}
+            {/* SECCIÓN DERECHA: UNIFICADO Y LOGOUT */}
             <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, justifyContent: 'flex-end', gap: 1 }}>
 
-              {/* FILTRO DE SPRINT */}
-              {(isActive('/dashboard') || isActive('/DashDevs')) && (
-                <>
-                  <Button
-                    className={`nav-button icon-btn no-grow ${scrolled ? 'scrolled' : ''}`}
-                    onClick={handleClickSprint}
-                    endIcon={<ArrowDropDownIcon />}
-                    sx={{ mr: 1 }}
-                  >
-                    <span className="icon"><CalendarTodayIcon fontSize="small" /></span>
-                    <span className="label">{selectedSprintName}</span>
-                  </Button>
-                  <Menu
-                    anchorEl={anchorElSprint}
-                    open={openSprint}
-                    onClose={() => handleCloseSprint()}
-                    PaperProps={{
-                      style: {
-                        borderRadius: '12px',
-                        marginTop: '8px',
-                        minWidth: '180px',
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
-                      },
-                    }}
-                  >
-                    <MenuItem 
-                      onClick={() => handleCloseSprint('all')}
-                      selected={props.sprintFilter === 'all' || !props.sprintFilter}
-                      sx={{ fontSize: '0.85rem' }}
-                    >
-                      Todos los Sprints
-                    </MenuItem>
-                    {sprints.map((sprint) => (
-                      <MenuItem 
-                        key={sprint.sprintId} 
-                        onClick={() => handleCloseSprint(sprint.sprintId)}
-                        selected={sprint.sprintId === props.sprintFilter} 
-                        sx={{ fontSize: '0.85rem' }}
-                      >
-                        {sprint.sprintName || `Sprint ${sprint.sprintNum}`}
-                      </MenuItem>
-                    ))}
-                  </Menu>
-                </>
-              )}
-
-            {/* SELECTOR DE PROYECTOS */}
+            {/* BOTÓN UNIFICADO DE SELECTORES */}
             <Button
               className={`nav-button icon-btn no-grow ${scrolled ? 'scrolled' : ''}`}
-              onClick={handleClickProject}
+              onClick={handleClickUnified}
               endIcon={<ArrowDropDownIcon />}
+              sx={{ minWidth: 'auto', px: 2 }}
             >
-              <span className="icon"><AccountTreeIcon fontSize="small" /></span>
-              <span className="label">{selectedProjectName}</span>
+              <span className="icon"><TuneIcon fontSize="small" /></span>
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', ml: 0.5 }}>
+                <span className="label" style={{ fontSize: '0.7rem', opacity: 0.8, lineHeight: 1 }}>{selectedProjectName}</span>
+                {showSprintSelector && (
+                  <span className="label" style={{ fontSize: '0.75rem', fontWeight: 'bold', lineHeight: 1.2 }}>{selectedSprintName}</span>
+                )}
+              </Box>
             </Button>
+
             <Menu
-              anchorEl={anchorElProject}
-              open={openProject}
-              onClose={() => handleCloseProject()}
+              anchorEl={anchorElUnified}
+              open={openUnified}
+              onClose={handleCloseUnified}
               PaperProps={{
                 style: {
                   borderRadius: '12px',
                   marginTop: '8px',
-                  minWidth: '180px',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                  minWidth: '220px',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                  maxHeight: '400px'
                 },
               }}
             >
+              <ListSubheader sx={{ fontWeight: 'bold', lineHeight: '32px', color: '#cc0707' }}>
+                PROYECTO
+              </ListSubheader>
               {projects.map((project) => (
                 <MenuItem 
                   key={project.projectId} 
-                  onClick={() => handleCloseProject(project)}
+                  onClick={() => handleSelectProject(project)}
                   selected={project.projectId === props.selectedProjectId}
-                  sx={{ fontSize: '0.85rem' }}
+                  sx={{ fontSize: '0.85rem', py: 1 }}
                 >
+                  <AccountTreeIcon fontSize="small" sx={{ mr: 1, opacity: 0.7 }} />
                   {project.name}
                 </MenuItem>
               ))}
+
+              {showSprintSelector && (
+                <>
+                  <Divider sx={{ my: 1 }} />
+                  <ListSubheader sx={{ fontWeight: 'bold', lineHeight: '32px', color: '#cc0707' }}>
+                    SPRINT
+                  </ListSubheader>
+                  <MenuItem 
+                    onClick={() => handleSelectSprint('all')}
+                    selected={props.sprintFilter === 'all' || !props.sprintFilter}
+                    sx={{ fontSize: '0.85rem', py: 1 }}
+                  >
+                    <CalendarTodayIcon fontSize="small" sx={{ mr: 1, opacity: 0.7 }} />
+                    Todos los Sprints
+                  </MenuItem>
+                  {sprints.map((sprint) => (
+                    <MenuItem 
+                      key={sprint.sprintId} 
+                      onClick={() => handleSelectSprint(sprint.sprintId)}
+                      selected={sprint.sprintId === props.sprintFilter} 
+                      sx={{ fontSize: '0.85rem', py: 1 }}
+                    >
+                      <CalendarTodayIcon fontSize="small" sx={{ mr: 1, opacity: 0.7 }} />
+                      {sprint.sprintName || `Sprint ${sprint.sprintNum}`}
+                    </MenuItem>
+                  ))}
+                </>
+              )}
             </Menu>
 
             <Button
