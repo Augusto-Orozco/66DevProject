@@ -23,7 +23,16 @@ import {
   MenuItem
 } from '@mui/material' 
 import CloseIcon from '@mui/icons-material/Close'
-import { DndContext, closestCenter, useDroppable, useSensor, useSensors, PointerSensor } from '@dnd-kit/core'
+import { 
+  DndContext, 
+  closestCenter, 
+  rectIntersection,
+  useDroppable, 
+  useSensor, 
+  useSensors, 
+  PointerSensor,
+  DragOverlay
+} from '@dnd-kit/core'
 import {SortableContext, verticalListSortingStrategy, useSortable} from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import RefreshIcon from '@mui/icons-material/Refresh'
@@ -43,24 +52,17 @@ function TaskCard({ task, onEditTask }) {
     listeners,
     setNodeRef,
     transform,
-    transition
+    transition,
+    isDragging
   } = useSortable({ id: task.id })
 
   const style = {
     transform: CSS.Transform.toString(transform), 
-    transition
+    transition,
+    opacity: isDragging ? 0.3 : 1,
+    cursor: 'grab'
   }
 
-  let sCol = '#000000', sBg = '#a9a9a9'
-  const statusStr = task.statusName || 'SIN ESTATUS'
-  if (statusStr === 'Completado') { sCol = '#123013'; sBg = '#94e59b' }
-  else if (statusStr === 'En Progreso') { sCol = '#483009'; sBg = '#fff9b9' }
-  else if (statusStr === 'Atrasado') { sCol = '#541111'; sBg = '#fdb4bf' }
-
-  // Detenemos la propagación para que el drag no interfiera con el click si es necesario,
-  // pero dnd-kit suele manejarlo. Sin embargo, listeners tienen el onClick del drag.
-  // Usaremos un truco: si se mueve, no es click.
-  
   return (
     <Box
       ref={setNodeRef}
@@ -68,9 +70,27 @@ function TaskCard({ task, onEditTask }) {
       {...attributes}
       {...listeners}
       className="devs-task-card"
-      onClick={() => onEditTask(task)}
-      sx={{ cursor: 'pointer', '&:hover': { boxShadow: '0 4px 8px rgba(0,0,0,0.15)' } }}
+      onClick={(e) => {
+        // Evitar que el click se dispare si se está arrastrando
+        if (!isDragging) onEditTask(task);
+      }}
+      sx={{ '&:hover': { boxShadow: '0 4px 8px rgba(0,0,0,0.15)' } }}
     >
+      <TaskCardContent task={task} />
+    </Box>
+  )
+}
+
+/* --- CONTENIDO DE LA TARJETA (Compartido con Overlay) --- */
+function TaskCardContent({ task }) {
+  let sCol = '#000000', sBg = '#a9a9a9'
+  const statusStr = task.statusName || 'SIN ESTATUS'
+  if (statusStr === 'Completado') { sCol = '#123013'; sBg = '#94e59b' }
+  else if (statusStr === 'En Progreso') { sCol = '#483009'; sBg = '#fff9b9' }
+  else if (statusStr === 'Atrasado') { sCol = '#541111'; sBg = '#fdb4bf' }
+
+  return (
+    <>
       <Typography fontSize="0.85rem" fontWeight="bold">
         {task.title}
       </Typography>
@@ -80,7 +100,7 @@ function TaskCard({ task, onEditTask }) {
       <Box sx={{ mt: 1, display: 'flex', justifyContent: 'flex-start' }}>
         <span className="badge-base" style={{ backgroundColor: sBg, color: sCol }}>{statusStr}</span>
       </Box>
-    </Box>
+    </>
   )
 }
 
@@ -229,6 +249,7 @@ function Sprints({ selectedProjectId }) {
 
   const [openMenu, setOpenMenu] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
+  const [activeTask, setActiveTask] = useState(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -237,6 +258,14 @@ function Sprints({ selectedProjectId }) {
       },
     })
   )
+
+  const handleDragStart = (event) => {
+    const { active } = event;
+    // Encontrar la tarea completa para el overlay
+    const allTasks = Object.values(columns).flatMap(col => col.tasks);
+    const task = allTasks.find(t => t.id === active.id);
+    setActiveTask(task);
+  };
 
   const fetchData = async () => {
     if (!selectedProjectId) return;
@@ -436,6 +465,7 @@ function Sprints({ selectedProjectId }) {
 
   const handleDragEnd = async (event) => {
     const { active, over } = event
+    setActiveTask(null); // Limpiar la tarea activa al soltar
     if (!over) return
 
     const from = findContainer(active.id)
@@ -615,7 +645,12 @@ function Sprints({ selectedProjectId }) {
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       
       <Box sx={{ display: 'flex', py: 3, pr: 3, pl: 0, ml: 3, overflowX: 'auto', width: 'calc(100% - 24px)', flexGrow: 1, alignItems: 'stretch', justifyContent: 'flex-start', pb: 10 }}>
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <DndContext 
+          sensors={sensors} 
+          collisionDetection={rectIntersection} 
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
           {visibleColumnsToRender.map((id) => {
             const columnData = columns[id];
             return (
@@ -631,6 +666,15 @@ function Sprints({ selectedProjectId }) {
               />
             );
           })}
+
+          {/* Overlay que permite ver la tarjeta encima de todo mientras se arrastra */}
+          <DragOverlay zIndex={2000}>
+            {activeTask ? (
+              <Box className="devs-task-card" sx={{ boxShadow: '0 10px 20px rgba(0,0,0,0.3)', cursor: 'grabbing', width: '280px' }}>
+                <TaskCardContent task={activeTask} />
+              </Box>
+            ) : null}
+          </DragOverlay>
         </DndContext>
       </Box>
 
