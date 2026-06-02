@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Box, Typography, CircularProgress, IconButton, FormControl, Select, MenuItem } from '@mui/material'
 import CachedIcon from '@mui/icons-material/Cached';
 import { PieChart, Pie, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'
@@ -70,10 +70,27 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
     }
   }, [sprintFilter])
 
-  // --- LÓGICA DE FILTRADO ---
-  const activeTasks = (!sprintFilter || sprintFilter === 'all')
-    ? items 
-    : items.filter(t => sprintTasksIds.includes(t.taskId))
+  // --- LÓGICA DE FILTRADO Y ORDENAMIENTO ---
+  const activeTasks = useMemo(() => {
+    let tasks = (!sprintFilter || sprintFilter === 'all')
+      ? items 
+      : items.filter(t => sprintTasksIds.includes(t.taskId));
+
+    // Ordenar por estatus: Atrasado > En Progreso > Completado > Otros
+    const getPriority = (status) => {
+      const s = String(status || '').trim().toLowerCase();
+      if (s === 'atrasado') return 1;
+      if (s === 'en progreso') return 2;
+      if (s === 'completado') return 3;
+      return 4; // SIN ESTATUS u otros
+    };
+
+    return [...tasks].sort((a, b) => {
+      const priorityA = getPriority(a.status?.status);
+      const priorityB = getPriority(b.status?.status);
+      return priorityA - priorityB;
+    });
+  }, [items, sprintFilter, sprintTasksIds]);
 
   const activeAssignments = (!sprintFilter || sprintFilter === 'all')
     ? assignments

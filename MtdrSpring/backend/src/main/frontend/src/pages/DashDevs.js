@@ -54,17 +54,35 @@ function DashDevs({ user, selectedProjectId, sprintFilter, setSprintFilter }) {
     const tasksOfProject = items.filter(t => 
       (t.projectId === selectedProjectId) || (t.project?.projectId === selectedProjectId)
     );
-    if (sprintFilter === 'all' || !sprintFilter) return tasksOfProject;
-    return tasksOfProject.filter(t => sprintTasksIds.includes(t.taskId));
+    
+    let filteredTasks = tasksOfProject;
+    if (sprintFilter !== 'all' && sprintFilter) {
+      filteredTasks = tasksOfProject.filter(t => sprintTasksIds.includes(t.taskId));
+    }
+
+    // Ordenar por estatus: Atrasado > En Progreso > Completado > Otros
+    const getPriority = (status) => {
+      const s = String(status || '').trim().toLowerCase();
+      if (s === 'atrasado') return 1;
+      if (s === 'en progreso') return 2;
+      if (s === 'completado') return 3;
+      return 4; // SIN ESTATUS u otros
+    };
+
+    return [...filteredTasks].sort((a, b) => {
+      const priorityA = getPriority(a.status?.status);
+      const priorityB = getPriority(b.status?.status);
+      return priorityA - priorityB;
+    });
   }, [items, sprintFilter, sprintTasksIds, selectedProjectId]);
 
   const chartData = useMemo(() => {
     let completadas = 0, pendientes = 0, enProgreso = 0, estimado = 0, real = 0;
 
     activeTasks.forEach(task => {
-      const status = task.status?.status;
-      if (status === 'Completado') completadas += 1;
-      else if (status === 'En Progreso') enProgreso += 1;
+      const status = String(task.status?.status || '').trim().toLowerCase();
+      if (status === 'completado') completadas += 1;
+      else if (status === 'en progreso') enProgreso += 1;
       else pendientes += 1;
 
       estimado += (task.objetiveTime || 0);
@@ -106,15 +124,23 @@ function DashDevs({ user, selectedProjectId, sprintFilter, setSprintFilter }) {
             </Box>
 
             <Box sx={{ overflowY: 'auto', flexGrow: 1 }}>
-              {activeTasks.map(item => (
-                <Box key={item.taskId} className="devs-task-card" sx={{ 
-                  borderLeft: `6px solid ${item.status?.status === 'Completado' ? '#4caf50' : item.status?.status === 'En Progreso' ? '#fbc02d' : '#9e9e9e'}`, 
-                  p: 1.5, mb: 1.5, bgcolor: 'background.paper', borderRadius: '0 8px 8px 0' 
-                }}>
-                  <Typography variant="subtitle2" fontWeight="bold">{item.title}</Typography>
-                  <Typography variant="caption" color="text.secondary">{item.description}</Typography>
-                </Box>
-              ))}
+              {activeTasks.map(item => {
+                const status = String(item.status?.status || '').trim().toLowerCase();
+                let borderColor = '#9e9e9e'; // Default grey
+                if (status === 'atrasado') borderColor = '#ef5350'; // Red
+                else if (status === 'en progreso') borderColor = '#fbc02d'; // Yellow
+                else if (status === 'completado') borderColor = '#4caf50'; // Green
+
+                return (
+                  <Box key={item.taskId} className="devs-task-card" sx={{ 
+                    borderLeft: `6px solid ${borderColor}`, 
+                    p: 1.5, mb: 1.5, bgcolor: 'background.paper', borderRadius: '0 8px 8px 0' 
+                  }}>
+                    <Typography variant="subtitle2" fontWeight="bold">{item.title}</Typography>
+                    <Typography variant="caption" color="text.secondary">{item.description}</Typography>
+                  </Box>
+                );
+              })}
             </Box>
           </Box>
 
