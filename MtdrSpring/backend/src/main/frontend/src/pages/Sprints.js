@@ -172,8 +172,8 @@ function Column({ id, title, tasks, visibleColumnCount, onAddTask, onEditTask, i
                   color: '#000000', 
                   mb: 1, 
                   pl: 1,
-                  borderLeft: '4px solid #1976d2',
-                  background: 'linear-gradient(90deg, rgba(132, 164, 196, 0.12) 0%, rgba(135, 171, 198, 0.01) 100%)',
+                  borderLeft: '4px solid var(--oracle-red)',
+                  background: 'linear-gradient(90deg, rgba(199, 69, 52, 0.12) 0%, rgba(199, 69, 52, 0.01) 100%)',
                   py: 0.5
                 }}
               >
@@ -207,6 +207,10 @@ function Sprints({ selectedProjectId }) {
   
   // --- ESTADO PARA EL MODAL DE CONFIRMACIÓN ---
   const [openDialog, setOpenDialog] = useState(false)
+  const [sprintConfig, setSprintConfig] = useState({
+    durationWeeks: 2,
+    firstSprintStartDate: new Date().toISOString().split('T')[0]
+  })
 
   // --- ESTADO PARA EL MODAL DE CREACIÓN DE TAREAS ---
   const [openTaskDialog, setOpenTaskDialog] = useState(false)
@@ -469,16 +473,46 @@ function Sprints({ selectedProjectId }) {
     try {
       if (!selectedProjectId) return;
       const formatDateForJava = (date) => date.toISOString().split('.')[0]; 
-      const now = new Date();
-      const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      
+      // 1. Obtener los sprints actuales para saber cuándo termina el último
+      const resHierarchy = await fetch(`/sprints/project/${selectedProjectId}/hierarchy`);
+      const hierarchyData = await resHierarchy.json();
+      
+      let sprintsArray = [];
+      if (Array.isArray(hierarchyData)) {
+        sprintsArray = hierarchyData;
+      } else if (hierarchyData && typeof hierarchyData === 'object') {
+        sprintsArray = hierarchyData.sprints || hierarchyData.SPRINTS || [];
+      }
+
+      // Ordenar por fecha de fin para encontrar el último
+      const sortedSprints = [...sprintsArray].sort((a, b) => {
+        const dateA = new Date(a.endDate || a.END_DATE);
+        const dateB = new Date(b.endDate || b.END_DATE);
+        return dateA - dateB;
+      });
+
+      let startDate;
+      if (sortedSprints.length > 0) {
+        // El nuevo sprint comienza el día después de que termina el último
+        const lastEndDate = new Date(sortedSprints[sortedSprints.length - 1].endDate || sortedSprints[sortedSprints.length - 1].END_DATE);
+        startDate = new Date(lastEndDate);
+        startDate.setDate(startDate.getDate() + 1);
+      } else {
+        // Si es el primer sprint, usar la fecha base elegida por el usuario
+        startDate = new Date(sprintConfig.firstSprintStartDate + 'T00:00:00');
+      }
+
+      const endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + (sprintConfig.durationWeeks * 7) - 1);
 
       const res = await fetch(`/sprints`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           project: { projectId: selectedProjectId },
-          startDate: formatDateForJava(now),
-          endDate: formatDateForJava(nextWeek)
+          startDate: formatDateForJava(startDate),
+          endDate: formatDateForJava(endDate)
         })
       });
 
@@ -488,18 +522,7 @@ function Sprints({ selectedProjectId }) {
       }
       const data = await res.json();
       
-      setColumns(prev => ({
-        ...prev,
-        [`sprint-${data.sprintId}`]: {
-          title: `Sprint ${data.sprintNum}`, 
-          tasks: []
-        }
-      }));
-
-      setAvailableSprints(prev => [
-        ...prev, 
-        { id: data.sprintId, number: data.sprintNum }
-      ]);
+      await fetchData(); // Recargar todo el tablero
 
     } catch (error) {
       console.error('Error al crear el nuevo sprint:', error);
@@ -715,11 +738,38 @@ function Sprints({ selectedProjectId }) {
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
         <DialogTitle sx={{ fontWeight: 'bold' }}>Crear nuevo Sprint</DialogTitle>
         <DialogContent>
-          <DialogContentText>¿Estás seguro de que deseas agregar un nuevo Sprint al tablero?</DialogContentText>
+          <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <DialogContentText>Define la configuración para el nuevo Sprint:</DialogContentText>
+            
+            <TextField
+              label="Duración (Semanas)"
+              type="number"
+              fullWidth
+              value={sprintConfig.durationWeeks}
+              onChange={(e) => setSprintConfig({ ...sprintConfig, durationWeeks: parseInt(e.target.value) || 1 })}
+            />
+
+            {availableSprints.length === 0 && (
+              <TextField
+                label="Fecha de Inicio (Primer Sprint)"
+                type="date"
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+                value={sprintConfig.firstSprintStartDate}
+                onChange={(e) => setSprintConfig({ ...sprintConfig, firstSprintStartDate: e.target.value })}
+              />
+            )}
+            
+            <Typography variant="caption" color="textSecondary">
+              {availableSprints.length > 0 
+                ? "El sprint comenzará automáticamente después del último sprint registrado."
+                : "Indica la fecha en la que deseas que comience tu primer sprint."}
+            </Typography>
+          </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
           <Button onClick={() => setOpenDialog(false)} color="inherit">Cancelar</Button>
-          <Button onClick={handleCreateSprint} variant="contained" color="primary">Aceptar</Button>
+          <Button onClick={handleCreateSprint} variant="contained" sx={{ backgroundColor: 'var(--oracle-red)', '&:hover': { backgroundColor: 'var(--oracle-red-hover)' }}}>Crear</Button>
         </DialogActions>
       </Dialog>
 

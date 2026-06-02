@@ -179,6 +179,16 @@ function Navbar(props) {
               </Button>
             )}
 
+            {props.user?.roleName === 'Product Owner' && (
+              <Button
+                className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/Roadmap') ? 'active' : ''}`}
+                onClick={() => navigate('/Roadmap')}
+              >
+                <span className="icon"><AccountTreeIcon fontSize="small" /></span>
+                <span className="label">Roadmap</span>
+              </Button>
+            )}
+
             {props.user?.roleName === 'Developer' && (
               <Button
                 className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/DashDevs') ? 'active' : ''}`}

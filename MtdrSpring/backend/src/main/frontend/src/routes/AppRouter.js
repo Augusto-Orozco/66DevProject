@@ -8,6 +8,7 @@ import Navbar from '../components/Navbar'
 import Sprints from '../pages/Sprints'
 import AddDevs from '../pages/AddDevs'
 import TaskCreator from '../pages/TaskCreator'
+import Roadmap from '../pages/Roadmap'
 
 function AppRouter({ isAuth, setIsAuth, user, setUser, selectedProjectId, setSelectedProjectId }) {
   
@@ -90,6 +91,14 @@ function AppRouter({ isAuth, setIsAuth, user, setUser, selectedProjectId, setSel
             element={
               isAuth && user?.roleName === 'Product Owner'
                 ? <Sprints selectedProjectId={selectedProjectId} />
+                : <Navigate to={isAuth ? "/DashDevs" : "/"} />
+            }
+          />
+          <Route 
+            path="/Roadmap" 
+            element={
+              isAuth && user?.roleName === 'Product Owner'
+                ? <Roadmap selectedProjectId={selectedProjectId} />
                 : <Navigate to={isAuth ? "/DashDevs" : "/"} />
             }
           />
