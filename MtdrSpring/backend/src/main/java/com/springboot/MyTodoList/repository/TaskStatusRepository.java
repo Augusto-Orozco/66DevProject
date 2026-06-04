@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface TaskStatusRepository extends JpaRepository<TaskStatus, Long> {
+    java.util.Optional<TaskStatus> findByStatusIgnoreCase(String status);
 }

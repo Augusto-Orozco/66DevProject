@@ -55,7 +55,18 @@ public class Task {
     @Column(name = "DELETED_BY")
     private Long deletedBy;
 
+    @Transient
+    private String resolutionNote;
+
     public Task() {}
+
+    public String getResolutionNote() {
+        return resolutionNote;
+    }
+
+    public void setResolutionNote(String resolutionNote) {
+        this.resolutionNote = resolutionNote;
+    }
 
     public Task(UserStory userStory, String title, String description, TaskStatus status, Integer storyPoints, TaskPriority priority, Integer objetiveTime, Project project) {
         this.userStory = userStory;

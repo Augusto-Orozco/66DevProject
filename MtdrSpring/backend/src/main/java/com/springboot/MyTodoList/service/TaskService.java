@@ -12,6 +12,12 @@ import java.util.Optional;
 
 import com.springboot.MyTodoList.util.TaskDTO;
 import com.springboot.MyTodoList.model.Task;
+import com.springboot.MyTodoList.repository.TaskStatusRepository;
+import com.springboot.MyTodoList.repository.TaskHistoryRepository;
+import com.springboot.MyTodoList.repository.UserRepository;
+import com.springboot.MyTodoList.model.TaskHistory;
+import com.springboot.MyTodoList.model.TaskStatus;
+import com.springboot.MyTodoList.model.User;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.CallableStatementCallback;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +41,15 @@ public class TaskService {
     private TaskPriorityRepository taskPriorityRepository;
 
     @Autowired
+    private TaskStatusRepository taskStatusRepository;
+
+    @Autowired
+    private TaskHistoryRepository taskHistoryRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
     private SprintTaskService sprintTaskService;
 
     @Autowired
@@ -42,6 +57,40 @@ public class TaskService {
 
     @Autowired
     private SprintService sprintService;
+
+    @Transactional
+    public void updateTaskStatusWithHistory(Long taskId, String statusName, Long userId, String changes) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+        
+        TaskStatus status = taskStatusRepository.findByStatusIgnoreCase(statusName)
+                .orElseThrow(() -> new RuntimeException("Status not found: " + statusName));
+        
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        task.setStatus(status);
+        if ("Completado".equalsIgnoreCase(statusName)) {
+            task.setFinishedAt(java.time.LocalDateTime.now());
+        } else {
+            task.setFinishedAt(null);
+        }
+        taskRepository.save(task);
+
+        TaskHistory history = new TaskHistory(task, user, changes);
+        taskHistoryRepository.save(history);
+    }
+
+    public void populateResolutionNote(Task task) {
+        if (task.getStatus() != null && "Completado".equalsIgnoreCase(task.getStatus().getStatus())) {
+            taskHistoryRepository.findFirstByTask_TaskIdOrderByChangedAtDesc(task.getTaskId())
+                    .ifPresent(history -> task.setResolutionNote(history.getChanges()));
+        }
+    }
+
+    public void populateResolutionNotes(List<Task> tasks) {
+        tasks.forEach(this::populateResolutionNote);
+    }
 
     @Transactional
     public Long createTaskAtomic(TaskDTO taskDto) {
@@ -105,31 +154,45 @@ public class TaskService {
     }
 
     public Task saveTask(Task task) {
-        return taskRepository.save(task);
+        Task savedTask = taskRepository.save(task);
+        populateResolutionNote(savedTask);
+        return savedTask;
     }
 
     public List<Task> getAllTasks() {
-        return taskRepository.findAll();
+        List<Task> tasks = taskRepository.findAll();
+        populateResolutionNotes(tasks);
+        return tasks;
     }
 
     public List<Task> getTasksByProjectId(Long projectId) {
-        return taskRepository.findByProject_ProjectId(projectId);
+        List<Task> tasks = taskRepository.findByProject_ProjectId(projectId);
+        populateResolutionNotes(tasks);
+        return tasks;
     }
 
     public List<Task> getUnassignedTasksByProjectId(Long projectId) {
-        return taskRepository.findUnassignedTasksByProject(projectId);
+        List<Task> tasks = taskRepository.findUnassignedTasksByProject(projectId);
+        populateResolutionNotes(tasks);
+        return tasks;
     }
 
     public List<Task> getUnassignedTasks() {
-        return taskRepository.findUnassignedTasks();
+        List<Task> tasks = taskRepository.findUnassignedTasks();
+        populateResolutionNotes(tasks);
+        return tasks;
     }
 
     public List<Task> getTasksByUserStoryId(String userStoryId) {
-        return taskRepository.findByUserStory_UserStoriesId(userStoryId);
+        List<Task> tasks = taskRepository.findByUserStory_UserStoriesId(userStoryId);
+        populateResolutionNotes(tasks);
+        return tasks;
     }
 
     public Optional<Task> getTaskById(Long id) {
-        return taskRepository.findById(id);
+        Optional<Task> task = taskRepository.findById(id);
+        task.ifPresent(this::populateResolutionNote);
+        return task;
     }
 
     public void deleteTask(Long id) {

@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface TaskHistoryRepository extends JpaRepository<TaskHistory, Long> {
+    java.util.Optional<TaskHistory> findFirstByTask_TaskIdOrderByChangedAtDesc(Long taskId);
 }
