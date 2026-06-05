@@ -320,7 +320,7 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
               <Typography variant="caption" sx={{ flex: 2, fontWeight: 'bold' }}>TAREA</Typography>
               <Typography variant="caption" sx={{ flex: 1, fontWeight: 'bold', textAlign: 'center' }}>ESTATUS</Typography>
               <Typography variant="caption" sx={{ flex: 1, fontWeight: 'bold', textAlign: 'center' }}>DEVELOPER</Typography>
-              <Typography variant="caption" sx={{ flex: 1, fontWeight: 'bold', textAlign: 'right' }}>PRIORIDAD</Typography>
+              <Typography variant="caption" sx={{ flex: 1, fontWeight: 'bold', textAlign: 'center' }}>PRIORIDAD</Typography>
             </Box>
           )}
 
@@ -351,7 +351,7 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
                   <Box sx={{ flex: 1, textAlign: 'center' }}>
                     <Typography variant="body2" fontWeight={600}>{developerName}</Typography>
                   </Box>
-                  <Box sx={{ flex: 1, textAlign: 'right' }}>
+                  <Box sx={{ flex: 1, textAlign: 'center' }}>
                     <span className="badge-base" style={{ backgroundColor: pBg, color: pCol }}>{priorityName || 'N/A'}</span>
                   </Box>
                 </Box>
