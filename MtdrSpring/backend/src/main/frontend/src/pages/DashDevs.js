@@ -192,10 +192,21 @@ function DashDevs({ user, selectedProjectId, sprintFilter, setSprintFilter }) {
                   <Box 
                     key={item.taskId} 
                     className="devs-task-card" 
+                    role="button"
+                    tabIndex={0}
                     onClick={() => handleOpenDialog(item)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleOpenDialog(item);
+                      }
+                    }}
+                    aria-label={`Actualizar estado de: ${item.title}`}
                     sx={{ 
                       borderLeft: `6px solid ${borderColor}`, 
-                      p: 1.5, mb: 1.5, bgcolor: 'background.paper', borderRadius: '0 8px 8px 0' 
+                      p: 1.5, mb: 1.5, bgcolor: 'background.paper', borderRadius: '0 8px 8px 0',
+                      cursor: 'pointer',
+                      '&:focus': { outline: '2px solid var(--oracle-red)', outlineOffset: '2px' }
                     }}
                   >
                     <Typography variant="subtitle2" fontWeight="bold">{item.title}</Typography>
@@ -303,6 +314,8 @@ function DashDevs({ user, selectedProjectId, sprintFilter, setSprintFilter }) {
                 value={changesDescription}
                 onChange={(e) => setChangesDescription(e.target.value)}
                 placeholder="Describe brevemente los cambios o la resolución..."
+                inputProps={{ maxLength: 100 }}
+                helperText={`${(changesDescription || '').length}/100`}
               />
             </Box>
           )}

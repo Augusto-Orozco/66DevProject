@@ -59,12 +59,27 @@ public class TaskController {
     public ResponseEntity<Void> updateTaskStatusWithHistory(
             @PathVariable Long taskId,
             @RequestBody Map<String, Object> payload) {
+        Object userIdObj = payload.get("userId");
+        Object statusNameObj = payload.get("statusName");
+        Object changesObj = payload.get("changes");
+
+        if (userIdObj == null || statusNameObj == null || changesObj == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
         try {
-            Long userId = Long.valueOf(payload.get("userId").toString());
-            String statusName = payload.get("statusName").toString();
-            String changes = payload.get("changes").toString();
+            Long userId = Long.valueOf(userIdObj.toString());
+            String statusName = statusNameObj.toString();
+            String changes = changesObj.toString();
             taskService.updateTaskStatusWithHistory(taskId, statusName, userId, changes);
             return ResponseEntity.ok().build();
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (RuntimeException e) {
+            if (e.getMessage() != null && e.getMessage().toLowerCase().contains("not found")) {
+                return ResponseEntity.notFound().build();
+            }
+            throw e;
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.badRequest().build();

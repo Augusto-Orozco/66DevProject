@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.springboot.MyTodoList.util.TaskDTO;
 import com.springboot.MyTodoList.model.Task;
@@ -60,6 +62,9 @@ public class TaskService {
 
     @Transactional
     public void updateTaskStatusWithHistory(Long taskId, String statusName, Long userId, String changes) {
+        if (changes == null || changes.isBlank() || changes.length() > 100) {
+            throw new IllegalArgumentException("Los cambios deben de se entre 1 a 100 caracteres");
+        }
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
         
@@ -70,7 +75,7 @@ public class TaskService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         task.setStatus(status);
-        if ("Completado".equalsIgnoreCase(statusName)) {
+        if ("Completado".equalsIgnoreCase(status.getStatus())) {
             task.setFinishedAt(java.time.LocalDateTime.now());
         } else {
             task.setFinishedAt(null);
@@ -89,7 +94,27 @@ public class TaskService {
     }
 
     public void populateResolutionNotes(List<Task> tasks) {
-        tasks.forEach(this::populateResolutionNote);
+        if (tasks == null || tasks.isEmpty()) return;
+        
+        List<Long> taskIds = tasks.stream()
+                .filter(t -> t.getStatus() != null && "Completado".equalsIgnoreCase(t.getStatus().getStatus()))
+                .map(Task::getTaskId)
+                .collect(java.util.stream.Collectors.toList());
+
+        if (taskIds.isEmpty()) return;
+
+        List<TaskHistory> histories = taskHistoryRepository.findLatestHistoryByTaskIds(taskIds);
+        java.util.Map<Long, String> historyMap = histories.stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        h -> h.getTask().getTaskId(),
+                        TaskHistory::getChanges
+                ));
+
+        tasks.forEach(task -> {
+            if (historyMap.containsKey(task.getTaskId())) {
+                task.setResolutionNote(historyMap.get(task.getTaskId()));
+            }
+        });
     }
 
     @Transactional
