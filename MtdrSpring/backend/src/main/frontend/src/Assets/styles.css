@@ -303,6 +303,14 @@
   border-radius: 12px;
   background-color: #f9f9f9;
   box-sizing: border-box;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.devs-task-card:hover {
+  background-color: #f1f1f1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
 /* --- LOGIN --- */

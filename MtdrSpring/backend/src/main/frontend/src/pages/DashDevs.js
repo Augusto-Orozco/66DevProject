@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Box, CircularProgress, Typography, IconButton } from '@mui/material'
+import { Box, CircularProgress, Typography, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, FormControl, InputLabel, Select, MenuItem } from '@mui/material'
 import CachedIcon from '@mui/icons-material/Cached';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList } from 'recharts'
 
@@ -11,6 +11,13 @@ function DashDevs({ user, selectedProjectId, sprintFilter, setSprintFilter }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [sprintTasksIds, setSprintTasksIds] = useState([])
+
+  // Dialog State
+  const [openDialog, setOpenDialog] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [newStatus, setNewStatus] = useState('');
+  const [changesDescription, setChangesDescription] = useState('');
+  const [updating, setUpdating] = useState(false);
 
   const fetchTasks = () => {
     if (!user?.userId) return
@@ -26,6 +33,56 @@ function DashDevs({ user, selectedProjectId, sprintFilter, setSprintFilter }) {
         setLoading(false)
       })
   }
+
+  const handleOpenDialog = (task) => {
+    setSelectedTask(task);
+    const currentStatus = (task.status?.status || '').trim().toLowerCase();
+    if (currentStatus === 'completado') {
+        setNewStatus('Completado');
+    } else if (currentStatus === 'en progreso') {
+        setNewStatus('En Progreso');
+    } else {
+        setNewStatus('');
+    }
+    setChangesDescription(task.resolutionNote || '');
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setSelectedTask(null);
+  };
+
+  const handleUpdateStatus = () => {
+    if (!selectedTask || !newStatus || !changesDescription) {
+        alert("Por favor complete todos los campos");
+        return;
+    }
+
+    setUpdating(true);
+    fetch(`/tasks/${selectedTask.taskId}/status-update`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: user.userId,
+        statusName: newStatus,
+        changes: changesDescription
+      })
+    })
+    .then(res => {
+      if (res.ok) {
+        fetchTasks();
+        handleCloseDialog();
+      } else {
+        alert("Error al actualizar el estado");
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alert("Error de conexión");
+    })
+    .finally(() => setUpdating(false));
+  };
 
   useEffect(() => {
     fetchTasks()
@@ -132,12 +189,30 @@ function DashDevs({ user, selectedProjectId, sprintFilter, setSprintFilter }) {
                 else if (status === 'completado') borderColor = '#4caf50'; // Green
 
                 return (
-                  <Box key={item.taskId} className="devs-task-card" sx={{ 
-                    borderLeft: `6px solid ${borderColor}`, 
-                    p: 1.5, mb: 1.5, bgcolor: 'background.paper', borderRadius: '0 8px 8px 0' 
-                  }}>
+                  <Box 
+                    key={item.taskId} 
+                    className="devs-task-card" 
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleOpenDialog(item)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleOpenDialog(item);
+                      }
+                    }}
+                    aria-label={`Actualizar estado de: ${item.title}`}
+                    sx={{ 
+                      borderLeft: `6px solid ${borderColor}`, 
+                      p: 1.5, mb: 1.5, bgcolor: 'background.paper', borderRadius: '0 8px 8px 0',
+                      cursor: 'pointer',
+                      '&:focus': { outline: '2px solid var(--oracle-red)', outlineOffset: '2px' }
+                    }}
+                  >
                     <Typography variant="subtitle2" fontWeight="bold">{item.title}</Typography>
-                    <Typography variant="caption" color="text.secondary">{item.description}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {status === 'completado' ? (item.resolutionNote || item.description) : item.description}
+                    </Typography>
                   </Box>
                 );
               })}
@@ -210,6 +285,53 @@ function DashDevs({ user, selectedProjectId, sprintFilter, setSprintFilter }) {
       <br/>
       <br/>
       <br/>
+      <Dialog open={openDialog} onClose={handleCloseDialog} fullWidth maxWidth="sm">
+        <DialogTitle sx={{ fontWeight: 'bold' }}>Actualizar Estado de Tarea</DialogTitle>
+        <DialogContent dividers>
+          {selectedTask && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
+              <Typography variant="subtitle1" fontWeight="bold">
+                {selectedTask.title}
+              </Typography>
+              
+              <FormControl fullWidth>
+                <InputLabel>Estado</InputLabel>
+                <Select
+                  value={newStatus}
+                  label="Estado"
+                  onChange={(e) => setNewStatus(e.target.value)}
+                >
+                  <MenuItem value="En Progreso">En Progreso</MenuItem>
+                  <MenuItem value="Completado">Finalizada (Completado)</MenuItem>
+                </Select>
+              </FormControl>
+
+              <TextField
+                fullWidth
+                label="¿Qué se hizo para resolver la tarea?"
+                multiline
+                rows={4}
+                value={changesDescription}
+                onChange={(e) => setChangesDescription(e.target.value)}
+                placeholder="Describe brevemente los cambios o la resolución..."
+                inputProps={{ maxLength: 100 }}
+                helperText={`${(changesDescription || '').length}/100`}
+              />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={handleCloseDialog} color="inherit">Cancelar</Button>
+          <Button 
+            onClick={handleUpdateStatus} 
+            variant="contained" 
+            disabled={updating || !newStatus || !changesDescription}
+            sx={{ bgcolor: 'var(--oracle-red)', '&:hover': { bgcolor: 'var(--oracle-red-hover)' } }}
+          >
+            {updating ? <CircularProgress size={24} color="inherit" /> : 'Guardar Cambios'}
+          </Button>
+        </DialogActions>
+      </Dialog>
       <Footer />
     </>
   ) 

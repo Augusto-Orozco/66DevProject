@@ -28,7 +28,14 @@ function Navbar(props) {
 
   // Fetch de proyectos
   useEffect(() => {
-    fetch('/projects')
+    // Si es Developer, filtramos por sus proyectos asignados. 
+    // Si es Product Owner o no hay usuario, vemos todos.
+    const isDeveloper = props.user?.roleName === 'Developer';
+    const url = (isDeveloper && props.user?.userId) 
+                ? `/projects/user/${props.user.userId}` 
+                : '/projects';
+                
+    fetch(url)
       .then(res => res.json())
       .then(data => {
         setProjects(data);
@@ -37,7 +44,7 @@ function Navbar(props) {
         }
       })
       .catch(err => console.error("Error fetching projects:", err));
-  }, []);
+  }, [props.user?.userId, props.user?.roleName]);
 
   // Fetch de sprints cada vez que cambia el proyecto seleccionado
   useEffect(() => {
