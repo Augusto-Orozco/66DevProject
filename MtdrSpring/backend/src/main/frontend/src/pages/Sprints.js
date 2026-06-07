@@ -1,10 +1,3 @@
-//Si estas leyendo esto, quiero avisarte que ni Dios pudo arreglar este codigo, por razones que desconozco, las tarjetas que contienen
-//las tareas por sprint, no funcionan, pase 7 horas tratando de arreglar esto y no funciono, al menos se ve bonito
-
-//Matenme
-
-//actualizacion 26/05/2026, el codigo funciona, solo Dios y Gemini saben lo que le paso a este codigo... lo importante? Funciona.
-
 import { useState, useEffect } from 'react'
 import { 
   Box, 
@@ -853,9 +846,9 @@ function Sprints({ selectedProjectId }) {
             </FormControl>
 
             <FormControl fullWidth>
-              <InputLabel>Asignar a Desarrollador</InputLabel>
+              <InputLabel>Desarrollador</InputLabel>
               <MuiSelect
-                label="Asignar a Desarrollador"
+                label="Desarrollador"
                 value={newTask.assignedUserId}
                 onChange={(e) => setNewTask({ ...newTask, assignedUserId: e.target.value })}
               >

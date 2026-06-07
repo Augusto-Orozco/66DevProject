@@ -9,6 +9,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import AppRegistrationIcon from '@mui/icons-material/AppRegistration';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import AlignHorizontalLeftIcon from '@mui/icons-material/AlignHorizontalLeft';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import TuneIcon from '@mui/icons-material/Tune';
 
@@ -28,10 +29,9 @@ function Navbar(props) {
 
   // Fetch de proyectos
   useEffect(() => {
-    // Si es Developer, filtramos por sus proyectos asignados. 
-    // Si es Product Owner o no hay usuario, vemos todos.
-    const isDeveloper = props.user?.roleName === 'Developer';
-    const url = (isDeveloper && props.user?.userId) 
+    // El administrador ve todos los proyectos, los demás ven solo los suyos
+    const needsFiltering = ['Developer', 'Product Owner', 'Scrum Master'].includes(props.user?.roleName);
+    const url = (needsFiltering && props.user?.userId) 
                 ? `/projects/user/${props.user.userId}` 
                 : '/projects';
                 
@@ -113,12 +113,6 @@ function Navbar(props) {
 
   // Determinar si debemos mostrar el selector de sprints en el menú unificado
   const showSprintSelector = !isActive('/Sprints');
-  const GetUserFullName = () => {
-    const firstName = props.user.firstName || '';
-    const lastName = props.user.lastName || '';
-    const fullName = `${firstName} ${lastName}`.trim();
-    return fullName;
-  }
 
   return (
     <Box className="navbar-wrapper" style={{ top: scrolled ? '10px' : '0px' }}>
@@ -140,13 +134,7 @@ function Navbar(props) {
               />
             </Box>
             {props.user && (
-                <Box 
-                  className="MensajeBinvenido"
-                  sx={{ 
-                    ml: '25px' // <--- ¡AQUÍ CONTROLAS LA SEPARACIÓN! 
-                              // Puedes cambiar '25px' por '15px', '40px', etc., hasta ver el espacio ideal.
-                  }}
-                >
+                <Box className="MensajeBinvenido" sx={{ml: '25px'}}>
                   <Typography 
                     variant="subtitle2" 
                     sx={{ 
@@ -158,7 +146,7 @@ function Navbar(props) {
                       fontSize: '0.88rem'
                     }}
                   >
-                    Bienvenido, {GetUserFullName()}
+                    Bienvenido {props.user.firstName}
                   </Typography>
                 </Box>
               )}
@@ -166,7 +154,7 @@ function Navbar(props) {
 
           {/* SECCIÓN CENTRAL: NAVEGACIÓN */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {props.user?.roleName === 'Product Owner' && (
+            {['Product Owner', 'Scrum Master', 'Administrador'].includes(props.user?.roleName) && (
               <Button
                 className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/dashboard') ? 'active' : ''}`}
                 onClick={() => navigate('/dashboard')}
@@ -176,7 +164,7 @@ function Navbar(props) {
               </Button>
             )}
 
-            {props.user?.roleName === 'Product Owner' && (
+            {['Product Owner', 'Scrum Master', 'Administrador'].includes(props.user?.roleName) && (
               <Button
                 className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/Sprints') ? 'active' : ''}`}
                 onClick={() => navigate('/Sprints')}
@@ -186,17 +174,17 @@ function Navbar(props) {
               </Button>
             )}
 
-            {props.user?.roleName === 'Product Owner' && (
+            {['Product Owner', 'Scrum Master', 'Administrador'].includes(props.user?.roleName) && (
               <Button
                 className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/Roadmap') ? 'active' : ''}`}
                 onClick={() => navigate('/Roadmap')}
               >
-                <span className="icon"><AccountTreeIcon fontSize="small" /></span>
+                <span className="icon"><AlignHorizontalLeftIcon fontSize="small" /></span>
                 <span className="label">Roadmap</span>
               </Button>
             )}
 
-            {props.user?.roleName === 'Developer' && (
+            {['Developer', 'Scrum Master'].includes(props.user?.roleName) && (
               <Button
                 className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/DashDevs') ? 'active' : ''}`}
                 onClick={() => navigate('/DashDevs')}
