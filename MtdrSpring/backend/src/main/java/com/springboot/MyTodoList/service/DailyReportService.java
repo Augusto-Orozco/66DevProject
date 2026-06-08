@@ -18,15 +18,7 @@ public class DailyReportService {
         return dailyReportRepository.save(dailyReport);
     }
 
-    public List<DailyReport> getAllDailyReports() {
-        return dailyReportRepository.findAll();
-    }
-
     public Optional<DailyReport> getDailyReportById(Long id) {
         return dailyReportRepository.findById(id);
-    }
-
-    public void deleteDailyReport(Long id) {
-        dailyReportRepository.deleteById(id);
     }
 }

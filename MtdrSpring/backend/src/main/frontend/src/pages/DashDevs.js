@@ -17,6 +17,7 @@ function DashDevs({ user, selectedProjectId, sprintFilter, setSprintFilter }) {
   const [selectedTask, setSelectedTask] = useState(null);
   const [newStatus, setNewStatus] = useState('');
   const [changesDescription, setChangesDescription] = useState('');
+  const [hours, setHours] = useState('');
   const [updating, setUpdating] = useState(false);
 
   const fetchTasks = () => {
@@ -35,27 +36,36 @@ function DashDevs({ user, selectedProjectId, sprintFilter, setSprintFilter }) {
   }
 
   const handleOpenDialog = (task) => {
-    setSelectedTask(task);
     const currentStatus = (task.status?.status || '').trim().toLowerCase();
     if (currentStatus === 'completado') {
-        setNewStatus('Completado');
-    } else if (currentStatus === 'en progreso') {
+        return; 
+    }
+    
+    setSelectedTask(task);
+    if (currentStatus === 'en progreso') {
         setNewStatus('En Progreso');
     } else {
         setNewStatus('');
     }
     setChangesDescription(task.resolutionNote || '');
+    setHours(task.realTime || '');
     setOpenDialog(true);
   };
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setSelectedTask(null);
+    setHours('');
   };
 
   const handleUpdateStatus = () => {
-    if (!selectedTask || !newStatus || !changesDescription) {
-        alert("Por favor complete todos los campos");
+    if (!selectedTask || !newStatus) {
+        alert("Por favor seleccione un estado");
+        return;
+    }
+
+    if (newStatus === 'Completado' && (!hours || !changesDescription)) {
+        alert("Por favor ingrese las horas y la descripción de la resolución");
         return;
     }
 
@@ -66,7 +76,8 @@ function DashDevs({ user, selectedProjectId, sprintFilter, setSprintFilter }) {
       body: JSON.stringify({
         userId: user.userId,
         statusName: newStatus,
-        changes: changesDescription
+        changes: newStatus === 'Completado' ? changesDescription : `Cambio de estado a ${newStatus}`,
+        realTime: newStatus === 'Completado' ? parseInt(hours) : null
       })
     })
     .then(res => {
@@ -205,8 +216,16 @@ function DashDevs({ user, selectedProjectId, sprintFilter, setSprintFilter }) {
                     sx={{ 
                       borderLeft: `6px solid ${borderColor}`, 
                       p: 1.5, mb: 1.5, bgcolor: 'background.paper', borderRadius: '0 8px 8px 0',
-                      cursor: 'pointer',
-                      '&:focus': { outline: '2px solid var(--oracle-red)', outlineOffset: '2px' }
+                      cursor: status === 'completado' ? 'default' : 'pointer',
+                      opacity: status === 'completado' ? 0.8 : 1,
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        transform: status === 'completado' ? 'none' : 'translateY(-2px)',
+                        boxShadow: status === 'completado' ? 'none' : '0 4px 8px rgba(0,0,0,0.1)'
+                      },
+                      '&:active': {
+                        transform: status === 'completado' ? 'none' : 'scale(0.98)'
+                      }
                     }}
                   >
                     <Typography variant="subtitle2" fontWeight="bold">{item.title}</Typography>
@@ -302,21 +321,34 @@ function DashDevs({ user, selectedProjectId, sprintFilter, setSprintFilter }) {
                   onChange={(e) => setNewStatus(e.target.value)}
                 >
                   <MenuItem value="En Progreso">En Progreso</MenuItem>
-                  <MenuItem value="Completado">Finalizada (Completado)</MenuItem>
+                  <MenuItem value="Completado">Completado</MenuItem>
                 </Select>
               </FormControl>
 
-              <TextField
-                fullWidth
-                label="¿Qué se hizo para resolver la tarea?"
-                multiline
-                rows={4}
-                value={changesDescription}
-                onChange={(e) => setChangesDescription(e.target.value)}
-                placeholder="Describe brevemente los cambios o la resolución..."
-                inputProps={{ maxLength: 100 }}
-                helperText={`${(changesDescription || '').length}/100`}
-              />
+              {newStatus === 'Completado' && (
+                <>
+                  <TextField
+                    fullWidth
+                    label="Horas trabajadas"
+                    type="number"
+                    value={hours}
+                    onChange={(e) => setHours(e.target.value)}
+                    placeholder="Horas"
+                    required
+                  />
+                  <TextField
+                    fullWidth
+                    label="¿Qué se hizo para resolver la tarea?"
+                    multiline
+                    rows={4}
+                    value={changesDescription}
+                    onChange={(e) => setChangesDescription(e.target.value)}
+                    placeholder="Describe brevemente los cambios o la resolución"
+                    inputProps={{ maxLength: 200 }}
+                    helperText={`${(changesDescription || '').length}/200`}
+                  />
+                </>
+              )}
             </Box>
           )}
         </DialogContent>
@@ -325,7 +357,7 @@ function DashDevs({ user, selectedProjectId, sprintFilter, setSprintFilter }) {
           <Button 
             onClick={handleUpdateStatus} 
             variant="contained" 
-            disabled={updating || !newStatus || !changesDescription}
+            disabled={updating || !newStatus || (newStatus === 'Completado' && (!hours || !changesDescription))}
             sx={{ bgcolor: 'var(--oracle-red)', '&:hover': { bgcolor: 'var(--oracle-red-hover)' } }}
           >
             {updating ? <CircularProgress size={24} color="inherit" /> : 'Guardar Cambios'}

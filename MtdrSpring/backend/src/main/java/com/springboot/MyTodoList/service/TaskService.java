@@ -61,7 +61,7 @@ public class TaskService {
     private SprintService sprintService;
 
     @Transactional
-    public void updateTaskStatusWithHistory(Long taskId, String statusName, Long userId, String changes) {
+    public void updateTaskStatusWithHistory(Long taskId, String statusName, Long userId, String changes, Integer realTime) {
         if (changes == null || changes.isBlank() || changes.length() > 100) {
             throw new IllegalArgumentException("Los cambios deben de se entre 1 a 100 caracteres");
         }
@@ -77,6 +77,9 @@ public class TaskService {
         task.setStatus(status);
         if ("Completado".equalsIgnoreCase(status.getStatus())) {
             task.setFinishedAt(java.time.LocalDateTime.now());
+            if (realTime != null) {
+                task.setRealTime(realTime);
+            }
         } else {
             task.setFinishedAt(null);
         }

@@ -18,18 +18,6 @@ public class CredentialService {
         return credentialRepository.save(credential);
     }
 
-    public List<Credential> getAllCredentials() {
-        return credentialRepository.findAll();
-    }
-
-    public Optional<Credential> getCredentialById(Long id) {
-        return credentialRepository.findById(id);
-    }
-
-    public void deleteCredential(Long id) {
-        credentialRepository.deleteById(id);
-    }
-
     public Optional<Credential> authenticate(String email, String password) {
         return credentialRepository.findByEmail(email)
                 .filter(c -> c.getPassword().equals(password));

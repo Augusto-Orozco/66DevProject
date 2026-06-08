@@ -62,6 +62,7 @@ public class TaskController {
         Object userIdObj = payload.get("userId");
         Object statusNameObj = payload.get("statusName");
         Object changesObj = payload.get("changes");
+        Object realTimeObj = payload.get("realTime");
 
         if (userIdObj == null || statusNameObj == null || changesObj == null) {
             return ResponseEntity.badRequest().build();
@@ -71,7 +72,8 @@ public class TaskController {
             Long userId = Long.valueOf(userIdObj.toString());
             String statusName = statusNameObj.toString();
             String changes = changesObj.toString();
-            taskService.updateTaskStatusWithHistory(taskId, statusName, userId, changes);
+            Integer realTime = realTimeObj != null ? Integer.valueOf(realTimeObj.toString()) : null;
+            taskService.updateTaskStatusWithHistory(taskId, statusName, userId, changes, realTime);
             return ResponseEntity.ok().build();
         } catch (NumberFormatException e) {
             return ResponseEntity.badRequest().build();
