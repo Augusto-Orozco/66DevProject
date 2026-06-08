@@ -33,6 +33,7 @@ import ViewWeekIcon from '@mui/icons-material/ViewWeek'
 import AddIcon from '@mui/icons-material/Add'
 import AssignmentAddIcon from '@mui/icons-material/AssignmentAdd'
 import IconButton from '@mui/material/IconButton'
+import DeleteIcon from '@mui/icons-material/Delete';
 import { TextField, Select as MuiSelect, InputLabel, FormControl } from '@mui/material'
 import Footer from '../components/Footer'
 import '../Assets/styles.css'
@@ -201,7 +202,7 @@ function Column({ id, title, tasks, visibleColumnCount, onAddTask, onEditTask, i
           ))}
           {tasks.length === 0 && (
             <Typography variant="body2" sx={{ color: 'text.disabled', textAlign: 'center', mt: 2 }}>
-              No tasks
+              Sin tareas
             </Typography>
           )}
         </Box>
@@ -220,6 +221,7 @@ function Sprints({ selectedProjectId }) {
   
   // --- ESTADO PARA EL MODAL DE CONFIRMACIÓN ---
   const [openDialog, setOpenDialog] = useState(false)
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false)
   const [sprintConfig, setSprintConfig] = useState({
     durationWeeks: 2,
     firstSprintStartDate: new Date().toISOString().split('T')[0]
@@ -334,26 +336,26 @@ function Sprints({ selectedProjectId }) {
       }
 
       const orderedSprints = [...sprintsArray].sort((a, b) => {
-        const numA = a.sprintNum || a.SPRINT_NUM || 0;
-        const numB = b.sprintNum || b.SPRINT_NUM || 0;
+        const numA = (a.sprintNum ?? a.SPRINT_NUM) ?? 0;
+        const numB = (b.sprintNum ?? b.SPRINT_NUM) ?? 0;
         return numA - numB;
       });
       
       const mappedAvailableSprints = orderedSprints.map((s) => ({
         id: (s.sprintId || s.SPRINT_ID || '').toString(),
-        number: s.sprintNum || s.SPRINT_NUM || 0
+        number: (s.sprintNum ?? s.SPRINT_NUM) ?? 0
       })).filter(s => s.id);
 
       setAvailableSprints(mappedAvailableSprints);
 
       orderedSprints.forEach(sprint => {
         const sId = (sprint.sprintId || sprint.SPRINT_ID || '').toString();
-        const sNum = sprint.sprintNum || sprint.SPRINT_NUM || '?';
+        const sNum = sprint.sprintNum ?? sprint.SPRINT_NUM;
         const sTasks = sprint.tasks || sprint.TASKS || [];
         
         if (sId) {
           newColumns[`sprint-${sId}`] = {
-            title: `Sprint ${sNum}`,
+            title: `Sprint ${sNum !== undefined ? sNum : '?'}`,
             tasks: Array.isArray(sTasks) ? sTasks.map(t => {
               const taskId = (t.taskId || t.TASK_ID || t.id || t.ID || '').toString()
               const fullTask = taskDetailsById[taskId] || t
@@ -626,6 +628,26 @@ function Sprints({ selectedProjectId }) {
     }
   };
 
+  const handleDeleteTask = () => {
+    if (!newTask.taskId) return;
+    setOpenDeleteDialog(true);
+  };
+
+  const confirmDeleteTask = async () => {
+    try {
+      const res = await fetch(`/tasks/${newTask.taskId}`, {
+        method: 'DELETE'
+      });
+      if (!res.ok) throw new Error('Error al eliminar la tarea');
+      await fetchData();
+      setOpenTaskDialog(false);
+      setOpenDeleteDialog(false);
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      alert('Error al eliminar la tarea');
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
@@ -864,11 +886,43 @@ function Sprints({ selectedProjectId }) {
 
           </Box>
         </Box>
-        <Box sx={{ p: 2, borderTop: '1px solid #f0f0f0', display: 'flex', justifyContent: 'flex-end', gap: 2, backgroundColor: 'white' }}>
-          <Button onClick={() => setOpenTaskDialog(false)} color="inherit">Cancelar</Button>
-          <Button onClick={handleSaveTask} variant="contained" sx={{ backgroundColor: '#cc0707', '&:hover': { backgroundColor: '#a30606' }, fontWeight: 'bold' }}>{isEditing ? 'Guardar Cambios' : 'Crear Tarea'}</Button>
+        <Box sx={{ p: 2, borderTop: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'white' }}>
+          <Box>
+            {isEditing && (
+              <IconButton 
+                onClick={handleDeleteTask}
+                sx={{ 
+                  color: 'black', 
+                  '&:hover': { 
+                    color: '#cc0707',
+                    backgroundColor: 'rgba(204, 7, 7, 0.04)'
+                  } 
+                }}
+              >
+                <DeleteIcon />
+              </IconButton>
+            )}
+          </Box>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button onClick={() => setOpenTaskDialog(false)} color="inherit">Cancelar</Button>
+            <Button onClick={handleSaveTask} variant="contained" sx={{ backgroundColor: '#cc0707', '&:hover': { backgroundColor: '#a30606' }, fontWeight: 'bold' }}>{isEditing ? 'Guardar Cambios' : 'Crear Tarea'}</Button>
+          </Box>
         </Box>
       </Drawer>
+
+      <Dialog open={openDeleteDialog} onClose={() => setOpenDeleteDialog(false)}>
+        <DialogTitle sx={{ fontWeight: 'bold' }}>¿Eliminar tarea?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            ¿Estás seguro de que deseas eliminar la tarea "<strong>{newTask.title}</strong>"? Esta acción no se puede deshacer.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setOpenDeleteDialog(false)} color="inherit">Cancelar</Button>
+          <Button onClick={confirmDeleteTask} variant="contained" sx={{ backgroundColor: '#cc0707', '&:hover': { backgroundColor: '#a30606' }}}>Eliminar</Button>
+        </DialogActions>
+      </Dialog>
+      
       <Footer />
     </Box>
   )

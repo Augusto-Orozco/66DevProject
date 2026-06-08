@@ -30,7 +30,7 @@ function Navbar(props) {
   // Fetch de proyectos
   useEffect(() => {
     // El administrador ve todos los proyectos, los demás ven solo los suyos
-    const needsFiltering = ['Developer', 'Product Owner', 'Scrum Master'].includes(props.user?.roleName);
+    const needsFiltering = ['Developer', 'Manager', 'Leader'].includes(props.user?.roleName);
     const url = (needsFiltering && props.user?.userId) 
                 ? `/projects/user/${props.user.userId}` 
                 : '/projects';
@@ -112,7 +112,7 @@ function Navbar(props) {
   const isActive = (path) => location.pathname === path;
 
   // Determinar si debemos mostrar el selector de sprints en el menú unificado
-  const showSprintSelector = !isActive('/Sprints');
+  const showSprintSelector = !isActive('/Sprints') && !isActive('/Roadmap');
 
   return (
     <Box className="navbar-wrapper" style={{ top: scrolled ? '10px' : '0px' }}>
@@ -154,7 +154,7 @@ function Navbar(props) {
 
           {/* SECCIÓN CENTRAL: NAVEGACIÓN */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {['Product Owner', 'Scrum Master', 'Administrador'].includes(props.user?.roleName) && (
+            {['Manager', 'Administrador'].includes(props.user?.roleName) && (
               <Button
                 className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/dashboard') ? 'active' : ''}`}
                 onClick={() => navigate('/dashboard')}
@@ -164,7 +164,7 @@ function Navbar(props) {
               </Button>
             )}
 
-            {['Product Owner', 'Scrum Master', 'Administrador'].includes(props.user?.roleName) && (
+            {['Manager', 'Leader', 'Administrador'].includes(props.user?.roleName) && (
               <Button
                 className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/Sprints') ? 'active' : ''}`}
                 onClick={() => navigate('/Sprints')}
@@ -174,7 +174,7 @@ function Navbar(props) {
               </Button>
             )}
 
-            {['Product Owner', 'Scrum Master', 'Administrador'].includes(props.user?.roleName) && (
+            {['Manager', 'Leader', 'Administrador'].includes(props.user?.roleName) && (
               <Button
                 className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/Roadmap') ? 'active' : ''}`}
                 onClick={() => navigate('/Roadmap')}
@@ -184,7 +184,7 @@ function Navbar(props) {
               </Button>
             )}
 
-            {['Developer', 'Scrum Master'].includes(props.user?.roleName) && (
+            {['Developer', 'Leader'].includes(props.user?.roleName) && (
               <Button
                 className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/DashDevs') ? 'active' : ''}`}
                 onClick={() => navigate('/DashDevs')}

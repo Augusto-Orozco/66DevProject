@@ -201,7 +201,7 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
         
         {/* --- FILA 1 --- */}
         <Box className="base-card" sx={{ gridColumn: 'span 1' }}>
-          <Typography variant="h6" sx={{ mb: 1 }}>Estado de Tareas</Typography>
+          <Typography variant="h6" sx={{ mb: 1 }}>Estado General</Typography>
           {loading ? <CircularProgress /> : (
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
@@ -228,10 +228,10 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
 
         <Box className="base-card" sx={{ gridColumn: 'span 2' }}>
           <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6">Cantidad de Tareas</Typography>
+            <Typography variant="h6">Tareas Totales</Typography>
             <FormControl size="small" sx={{ minWidth: 150 }}>
               <Select value={devFilterTasks} onChange={(e) => setDevFilterTasks(e.target.value)} displayEmpty sx={{ fontSize: '0.75rem' }}>
-                <MenuItem value="all" sx={{ fontSize: '0.75rem' }}>Todos los Devs</MenuItem>
+                <MenuItem value="all" sx={{ fontSize: '0.75rem' }}>Todos</MenuItem>
                 {allDevStats.map(dev => (
                   <MenuItem key={dev.name} value={dev.name} sx={{ fontSize: '0.75rem' }}>{dev.name}</MenuItem>
                 ))}
@@ -253,10 +253,10 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
   
         <Box className="base-card" sx={{ gridColumn: 'span 3' }}>
           <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6">Comparativa de Horas (Real vs Estimado)</Typography>
+            <Typography variant="h6">Horas Estimadas vs Horas Reales</Typography>
             <FormControl size="small" sx={{ minWidth: 150 }}>
               <Select value={devFilterHours} onChange={(e) => setDevFilterHours(e.target.value)} displayEmpty sx={{ fontSize: '0.75rem' }}>
-                <MenuItem value="all" sx={{ fontSize: '0.75rem' }}>Todos los Devs</MenuItem>
+                <MenuItem value="all" sx={{ fontSize: '0.75rem' }}>Todos</MenuItem>
                 {allDevStats.map(dev => (
                   <MenuItem key={dev.name} value={dev.name} sx={{ fontSize: '0.75rem' }}>{dev.name}</MenuItem>
                 ))}
@@ -319,7 +319,7 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
             <Box sx={{ display: 'flex', width: '100%', px: 2, mb: 1, opacity: 0.6 }}>
               <Typography variant="caption" sx={{ flex: 2, fontWeight: 'bold' }}>TAREA</Typography>
               <Typography variant="caption" sx={{ flex: 1, fontWeight: 'bold', textAlign: 'center' }}>ESTATUS</Typography>
-              <Typography variant="caption" sx={{ flex: 1, fontWeight: 'bold', textAlign: 'center' }}>DEVELOPER</Typography>
+              <Typography variant="caption" sx={{ flex: 1, fontWeight: 'bold', textAlign: 'center' }}>DESARROLLADOR</Typography>
               <Typography variant="caption" sx={{ flex: 1, fontWeight: 'bold', textAlign: 'center' }}>PRIORIDAD</Typography>
             </Box>
           )}

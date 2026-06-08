@@ -17,7 +17,9 @@ import com.springboot.MyTodoList.service.ProjectService;
 import com.springboot.MyTodoList.service.TaskPriorityService;
 import com.springboot.MyTodoList.service.TaskStatusService;
 import com.springboot.MyTodoList.service.UserStoryService;
+import com.springboot.MyTodoList.service.TaskHistoryService;
 import com.springboot.MyTodoList.util.TaskDTO;
+import com.springboot.MyTodoList.model.TaskHistory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -54,6 +56,9 @@ public class TaskController {
 
     @Autowired
     private UserStoryService userStoryService;
+
+    @Autowired
+    private TaskHistoryService taskHistoryService;
 
     @PutMapping("/tasks/{taskId}/status-update")
     public ResponseEntity<Void> updateTaskStatusWithHistory(
@@ -112,6 +117,11 @@ public class TaskController {
     @GetMapping("/tasks/project/{projectId}")
     public List<Task> getTasksByProjectId(@PathVariable Long projectId) {
         return taskService.getTasksByProjectId(projectId);
+    }
+
+    @GetMapping("/tasks/history/project/{projectId}")
+    public List<TaskHistory> getTaskHistoryByProjectId(@PathVariable Long projectId) {
+        return taskHistoryService.getTaskHistoryByProjectId(projectId);
     }
 
     @GetMapping("/tasks/user/{userId}")

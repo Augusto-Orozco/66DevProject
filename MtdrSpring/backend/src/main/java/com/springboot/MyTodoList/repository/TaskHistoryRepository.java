@@ -11,6 +11,8 @@ import java.util.List;
 public interface TaskHistoryRepository extends JpaRepository<TaskHistory, Long> {
     java.util.Optional<TaskHistory> findFirstByTask_TaskIdOrderByChangedAtDesc(Long taskId);
 
+    List<TaskHistory> findByTask_Project_ProjectIdOrderByChangedAtDesc(Long projectId);
+
     @Query("SELECT th FROM TaskHistory th WHERE th.historyId IN " +
            "(SELECT MAX(th2.historyId) FROM TaskHistory th2 WHERE th2.task.taskId IN :taskIds GROUP BY th2.task.taskId)")
     List<TaskHistory> findLatestHistoryByTaskIds(@Param("taskIds") List<Long> taskIds);

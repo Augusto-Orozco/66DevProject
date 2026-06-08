@@ -143,10 +143,11 @@
   padding: 0 16px !important; 
 }
 
-/* CLASE PARA EVITAR EL CRECIMIENTO */
+/* CLASE PARA EVITAR EL CRECIMIENTO POR HOVER PERO PERMITIRLO POR CONTENIDO */
 .nav-button.no-grow {
   padding: 0 16px !important;
-  min-width: 140px !important;
+  min-width: auto !important;
+  width: auto !important;
   color: var(--dark-text) !important; /* Texto siempre oscuro */
 }
 
@@ -207,11 +208,12 @@
   margin-left: 8px;
 }
 
-/* TEXTO SIEMPRE VISIBLE PARA NO-GROW */
+/* TEXTO SIEMPRE VISIBLE PARA NO-GROW Y RESPONSIVO */
 .nav-button.no-grow .label {
-  max-width: 150px;
+  max-width: none !important;
   opacity: 1;
   margin-left: 8px;
+  overflow: visible;
 }
 
 /* LOGOUT */

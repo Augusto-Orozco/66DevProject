@@ -48,7 +48,7 @@ function AppRouter({ isAuth, setIsAuth, user, setUser, selectedProjectId, setSel
           <Route 
             path="/dashboard" 
             element={
-              isAuth && ['Product Owner', 'Scrum Master', 'Administrador'].includes(user?.roleName)
+              isAuth && ['Manager', 'Leader', 'Administrador'].includes(user?.roleName)
                 // <-- 4. Le pasamos el valor actual del filtro al Dashboard
                 ? <Dashboard selectedProjectId={selectedProjectId} sprintFilter={sprintFilter} />
                 : <Navigate to={isAuth ? "/DashDevs" : "/"} />
@@ -58,7 +58,7 @@ function AppRouter({ isAuth, setIsAuth, user, setUser, selectedProjectId, setSel
           <Route
             path="/DashDevs"
             element={
-              isAuth && ['Developer', 'Scrum Master'].includes(user?.roleName)
+              isAuth && ['Developer', 'Leader'].includes(user?.roleName)
                 ? <DashDevs 
                     user={user} 
                     selectedProjectId={selectedProjectId} 
@@ -72,7 +72,7 @@ function AppRouter({ isAuth, setIsAuth, user, setUser, selectedProjectId, setSel
           <Route
             path="/AddDevs"
             element={
-              isAuth && ['Product Owner', 'Scrum Master', 'Administrador'].includes(user?.roleName)
+              isAuth && ['Manager', 'Leader', 'Administrador'].includes(user?.roleName)
                 ? <AddDevs />
                 : <Navigate to={isAuth ? "/DashDevs" : "/"} />
             }
@@ -81,7 +81,7 @@ function AppRouter({ isAuth, setIsAuth, user, setUser, selectedProjectId, setSel
           <Route 
             path="/TaskCreator" 
             element={
-              isAuth && ['Product Owner', 'Scrum Master', 'Administrador'].includes(user?.roleName)
+              isAuth && ['Manager', 'Leader', 'Administrador'].includes(user?.roleName)
                 ? <TaskCreator selectedProjectId={selectedProjectId} />
                 : <Navigate to={isAuth ? "/DashDevs" : "/"} />
             }
@@ -89,7 +89,7 @@ function AppRouter({ isAuth, setIsAuth, user, setUser, selectedProjectId, setSel
           <Route 
             path="/Sprints" 
             element={
-              isAuth && ['Product Owner', 'Scrum Master', 'Administrador'].includes(user?.roleName)
+              isAuth && ['Manager', 'Leader', 'Administrador'].includes(user?.roleName)
                 ? <Sprints selectedProjectId={selectedProjectId} />
                 : <Navigate to={isAuth ? "/DashDevs" : "/"} />
             }
@@ -97,7 +97,7 @@ function AppRouter({ isAuth, setIsAuth, user, setUser, selectedProjectId, setSel
           <Route 
             path="/Roadmap" 
             element={
-              isAuth && ['Product Owner', 'Scrum Master', 'Administrador'].includes(user?.roleName)
+              isAuth && ['Manager', 'Leader', 'Administrador'].includes(user?.roleName)
                 ? <Roadmap selectedProjectId={selectedProjectId} />
                 : <Navigate to={isAuth ? "/DashDevs" : "/"} />
             }

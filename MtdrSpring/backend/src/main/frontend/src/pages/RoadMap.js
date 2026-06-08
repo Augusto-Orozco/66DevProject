@@ -16,6 +16,7 @@ const Roadmap = ({ selectedProjectId }) => {
   const [tasks, setTasks] = useState([]);
   const [sprints, setSprints] = useState([]);
   const [team, setTeam] = useState([]);
+  const [taskHistory, setTaskHistory] = useState([]);
   const [currentTab, setCurrentTab] = useState(0);
 
   useEffect(() => {
@@ -70,6 +71,13 @@ const Roadmap = ({ selectedProjectId }) => {
         setTasks(projectTasks.map(t => ({ ...t, assignedDevId: 'unassigned' })));
       }
 
+      // 5. Fetch Task History
+      const historyRes = await fetch(`/tasks/history/project/${selectedProjectId}`);
+      if (historyRes.ok) {
+        const historyData = await historyRes.json();
+        setTaskHistory(Array.isArray(historyData) ? historyData : []);
+      }
+
     } catch (error) {
       console.error("Error fetching roadmap data:", error);
     } finally {
@@ -110,9 +118,32 @@ const Roadmap = ({ selectedProjectId }) => {
 
   // Timeline Logic
   const { timelineStart, timelineEnd, daysCount, monthLabels } = useMemo(() => {
-    // Forzamos el rango de Febrero a Julio de 2026
-    const start = new Date(2026, 2, 1); // Marzo 1
-    const end = new Date(2026, 5, 30); // Junio 30
+    let start, end;
+
+    const allStartDates = [
+      ...sprints.map(s => new Date(s.startDate || s.START_DATE)),
+      ...tasks.map(t => new Date(t.createdAt))
+    ].filter(d => !isNaN(d));
+
+    const allEndDates = [
+      ...sprints.map(s => new Date(s.endDate || s.END_DATE)),
+      ...tasks.map(t => new Date(t.finishedAt || t.createdAt))
+    ].filter(d => !isNaN(d));
+
+    if (allStartDates.length > 0) {
+      // Encontrar la fecha mínima y máxima absoluta
+      const minDate = new Date(Math.min(...allStartDates));
+      const maxDate = new Date(Math.max(...allEndDates));
+
+      // Ajustar al inicio del primer mes y al final del último mes para que se vea completo
+      start = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+      end = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0);
+    } else {
+      // Rango por defecto si no hay datos (3 meses desde hoy)
+      const now = new Date();
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      end = new Date(now.getFullYear(), now.getMonth() + 3, 0);
+    }
 
     const diffTime = Math.abs(end - start);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
@@ -121,7 +152,10 @@ const Roadmap = ({ selectedProjectId }) => {
     const labels = [];
     let current = new Date(start);
     while (current <= end) {
-      const daysInMonth = new Date(current.getFullYear(), current.getMonth() + 1, 0).getDate();
+      const year = current.getFullYear();
+      const month = current.getMonth();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      
       labels.push({
         name: current.toLocaleString('default', { month: 'long' }),
         days: daysInMonth,
@@ -131,7 +165,17 @@ const Roadmap = ({ selectedProjectId }) => {
     }
 
     return { timelineStart: start, timelineEnd: end, daysCount: diffDays, monthLabels: labels };
-  }, [tasks, sprints]);
+  }, [sprints, tasks]);
+
+  // Cálculo del ancho total de la línea de tiempo
+  const timelineMinWidth = useMemo(() => {
+    const monthsCount = monthLabels.length;
+    // Si hay más de 5 meses, forzamos un ancho mínimo para habilitar el scroll
+    if (monthsCount > 5) {
+      return `${(monthsCount / 5) * 100}%`;
+    }
+    return '100%';
+  }, [monthLabels]);
 
   // Funciones para calcular posición y ancho en porcentajes (0% a 100%)
   const getPositionPercent = (dateStr) => {
@@ -179,6 +223,7 @@ const Roadmap = ({ selectedProjectId }) => {
           >
             <Tab label="Sprints" sx={{ fontWeight: 'bold', textTransform: 'none' }} />
             <Tab label="Desarrolladores" sx={{ fontWeight: 'bold', textTransform: 'none' }} />
+            <Tab label="Historial de cambios" sx={{ fontWeight: 'bold', textTransform: 'none' }} />
           </Tabs>
         </Paper>
       </Box>
@@ -192,116 +237,97 @@ const Roadmap = ({ selectedProjectId }) => {
         flexDirection: 'column'
       }}>
         {/* Contenedor principal responsive */}
-        <Box sx={{ position: 'relative', width: '100%' }}>
-
-          {/* Timeline Header (Months) */}
-          <Box sx={{ display: 'flex', width: '100%', backgroundColor: '#f1f3f4', borderBottom: '1px solid #e0e0e0' }}>
-            <Box sx={{ minWidth: '250px', maxWidth: '250px', p: 2, borderRight: '1px solid #e0e0e0', backgroundColor: '#f1f3f4', zIndex: 10 }} />
-            <Box sx={{ flexGrow: 1, position: 'relative', height: '50px' }}>
-              {monthLabels.map((month, i) => (
-                <Box 
-                  key={i}
-                  sx={{ 
-                    position: 'absolute', 
-                    left: `${(month.startDay / daysCount) * 100}%`,
-                    width: `${(month.days / daysCount) * 100}%`,
-                    height: '100%',
-                    borderRight: '1px solid #e0e0e0',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '0.75rem',
-                    fontWeight: 'bold',
-                    color: '#555',
-                    textTransform: 'capitalize',
-                    backgroundColor: i % 2 === 0 ? 'rgba(0,0,0,0.02)' : 'transparent',
-                    boxSizing: 'border-box'
-                  }}
-                >
-                  {month.name}
-                </Box>
-              ))}
-            </Box>
-          </Box>
-
-          {/* Timeline Content */}
-          <Box sx={{ width: '100%', maxHeight: 'calc(100vh - 280px)', overflowY: 'auto', overflowX: 'hidden' }}>
-
-            {/* TAB 0: SPRINTS VIEW */}
-            {currentTab === 0 && (
-              <>
-                <Box sx={{ display: 'flex', backgroundColor: '#fafafa', borderBottom: '1px solid #eee' }}>
-                  <Box sx={{ minWidth: '250px', maxWidth: '250px', p: 1, borderRight: '1px solid #e0e0e0' }}>
-                    <Typography variant="caption" sx={{ fontWeight: 'bold', color: '#999', ml: 1 }}>LISTADO DE SPRINTS</Typography>
-                  </Box>
-                  <Box sx={{ flexGrow: 1 }} />
-                </Box>
-                {sprints.map((sprint, i) => (
-                  <Box key={i} sx={{ display: 'flex', borderBottom: '1px solid #f0f0f0', height: '50px', '&:hover': { backgroundColor: '#fcfcfc' } }}>
-                    <Box sx={{ minWidth: '250px', maxWidth: '250px', p: 1.5, borderRight: '1px solid #e0e0e0', fontSize: '0.85rem', fontWeight: 'bold', color: '#333', display: 'flex', alignItems: 'center' }}>
-                      Sprint {sprint.sprintNum || sprint.SPRINT_NUM}
+        <Box sx={{ position: 'relative', width: '100%', overflowX: 'auto', '&::-webkit-scrollbar': { height: '8px' }, '&::-webkit-scrollbar-thumb': { backgroundColor: '#ccc', borderRadius: '4px' } }}>
+          
+          <Box sx={{ width: timelineMinWidth }}>
+            {/* Timeline Header (Months) - Oculto en Tab de Historial */}
+            {currentTab !== 2 && (
+              <Box sx={{ display: 'flex', width: '100%', backgroundColor: '#f1f3f4', borderBottom: '1px solid #e0e0e0' }}>
+                <Box sx={{ minWidth: '250px', maxWidth: '250px', p: 2, borderRight: '1px solid #e0e0e0', backgroundColor: '#f1f3f4', zIndex: 10, position: 'sticky', left: 0 }} />
+                <Box sx={{ flexGrow: 1, position: 'relative', height: '50px' }}>
+                  {monthLabels.map((month, i) => (
+                    <Box 
+                      key={i}
+                      sx={{ 
+                        position: 'absolute', 
+                        left: `${(month.startDay / daysCount) * 100}%`,
+                        width: `${(month.days / daysCount) * 100}%`,
+                        height: '100%',
+                        borderRight: '1px solid #e0e0e0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '0.75rem',
+                        fontWeight: 'bold',
+                        color: '#555',
+                        textTransform: 'capitalize',
+                        backgroundColor: i % 2 === 0 ? 'rgba(0,0,0,0.02)' : 'transparent',
+                        boxSizing: 'border-box'
+                      }}
+                    >
+                      {month.name}
                     </Box>
-                    <Box sx={{ flexGrow: 1, position: 'relative', backgroundColor: 'rgba(0,0,0,0.01)' }}>
-                      <Tooltip title={`Sprint ${sprint.sprintNum}: ${new Date(sprint.startDate || sprint.START_DATE).toLocaleDateString()} - ${new Date(sprint.endDate || sprint.END_DATE).toLocaleDateString()}`}>
-                        <Box sx={{ 
-                          position: 'absolute',
-                          left: getPositionPercent(sprint.startDate || sprint.START_DATE),
-                          width: getWidthPercent(sprint.startDate || sprint.START_DATE, sprint.endDate || sprint.END_DATE),
-                          height: '24px',
-                          top: '13px',
-                          backgroundColor: 'rgba(199, 69, 52, 0.15)',
-                          border: '2px solid var(--oracle-red)',
-                          borderRadius: '6px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          px: 1,
-                          fontSize: '0.7rem',
-                          fontWeight: 'bold',
-                          color: 'var(--oracle-red)',
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          zIndex: 2,
-                          boxSizing: 'border-box'
-                        }}>
-                          Sprint {sprint.sprintNum}
-                        </Box>
-                      </Tooltip>
-                    </Box>
-                  </Box>
-                ))}
-              </>
+                  ))}
+                </Box>
+              </Box>
             )}
 
-            {/* TAB 1: DEVELOPERS VIEW */}
-            {currentTab === 1 && (
-              Object.entries(tasksByDev).map(([devId, devTasks]) => (
-                <Box key={devId} sx={{ borderBottom: '2px solid #eee' }}>
-                  {/* Seccion de Desarrollador */}
-                  {devTasks.length === 0 ? (
-                    // Fila vacía para devs sin tareas
-                    <Box sx={{ display: 'flex', borderBottom: '1px solid #f9f9f9', height: '45px' }}>
-                      <Box sx={{ 
-                        minWidth: '250px', 
-                        maxWidth: '250px', 
-                        p: 1.5, 
-                        borderRight: '1px solid #e0e0e0', 
-                        fontSize: '0.85rem', 
-                        fontWeight: 'bold', 
-                        color: getDevColor(devId),
-                        display: 'flex', 
-                        alignItems: 'center',
-                        backgroundColor: 'rgba(0,0,0,0.02)'
-                      }}>
-                        {getDevName(devId)}
+            {/* Timeline Content */}
+            <Box sx={{ width: '100%', maxHeight: 'calc(100vh - 280px)', overflowY: 'auto', overflowX: 'hidden' }}>
+
+              {/* TAB 0: SPRINTS VIEW */}
+              {currentTab === 0 && (
+                <>
+                  <Box sx={{ display: 'flex', backgroundColor: '#fafafa', borderBottom: '1px solid #eee' }}>
+                    <Box sx={{ minWidth: '250px', maxWidth: '250px', p: 1, borderRight: '1px solid #e0e0e0', backgroundColor: '#fafafa', position: 'sticky', left: 0, zIndex: 5 }}>
+                      <Typography variant="caption" sx={{ fontWeight: 'bold', color: '#999', ml: 1 }}>LISTADO DE SPRINTS</Typography>
+                    </Box>
+                    <Box sx={{ flexGrow: 1 }} />
+                  </Box>
+                  {sprints.map((sprint, i) => (
+                    <Box key={i} sx={{ display: 'flex', borderBottom: '1px solid #f0f0f0', height: '50px', '&:hover': { backgroundColor: '#fcfcfc' } }}>
+                      <Box sx={{ minWidth: '250px', maxWidth: '250px', p: 1.5, borderRight: '1px solid #e0e0e0', fontSize: '0.85rem', fontWeight: 'bold', color: '#333', display: 'flex', alignItems: 'center', backgroundColor: 'white', position: 'sticky', left: 0, zIndex: 5 }}>
+                        Sprint {sprint.sprintNum ?? sprint.SPRINT_NUM ?? '?'}
                       </Box>
-                      <Box sx={{ flexGrow: 1, position: 'relative', display: 'flex', alignItems: 'center', pl: 2 }}>
-                        <Typography variant="caption" sx={{ color: '#999', fontStyle: 'italic' }}>Sin tareas asignadas</Typography>
+                      <Box sx={{ flexGrow: 1, position: 'relative', backgroundColor: 'rgba(0,0,0,0.01)' }}>
+                        <Tooltip title={`Sprint ${sprint.sprintNum ?? sprint.SPRINT_NUM}: ${new Date(sprint.startDate || sprint.START_DATE).toLocaleDateString()} - ${new Date(sprint.endDate || sprint.END_DATE).toLocaleDateString()}`}>
+                          <Box sx={{ 
+                            position: 'absolute',
+                            left: getPositionPercent(sprint.startDate || sprint.START_DATE),
+                            width: getWidthPercent(sprint.startDate || sprint.START_DATE, sprint.endDate || sprint.END_DATE),
+                            height: '24px',
+                            top: '13px',
+                            backgroundColor: 'rgba(199, 69, 52, 0.15)',
+                            border: '2px solid var(--oracle-red)',
+                            borderRadius: '6px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            px: 1,
+                            fontSize: '0.7rem',
+                            fontWeight: 'bold',
+                            color: 'var(--oracle-red)',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            zIndex: 2,
+                            boxSizing: 'border-box'
+                          }}>
+                            Sprint {sprint.sprintNum ?? sprint.SPRINT_NUM ?? '?'}
+                          </Box>
+                        </Tooltip>
                       </Box>
                     </Box>
-                  ) : (
-                    devTasks.map((task, i) => (
-                      <Box key={i} sx={{ display: 'flex', borderBottom: '1px solid #f9f9f9', height: '45px', '&:hover': { backgroundColor: '#fcfcfc' } }}>
-                        {/* Sidebar con Nombre del Dev (Solo en la primera fila del grupo o en todas para claridad) */}
+                  ))}
+                </>
+              )}
+
+              {/* TAB 1: DEVELOPERS VIEW */}
+              {currentTab === 1 && (
+                Object.entries(tasksByDev).map(([devId, devTasks]) => (
+                  <Box key={devId} sx={{ borderBottom: '2px solid #eee' }}>
+                    {/* Seccion de Desarrollador */}
+                    {devTasks.length === 0 ? (
+                      // Fila vacía para devs sin tareas
+                      <Box sx={{ display: 'flex', borderBottom: '1px solid #f9f9f9', height: '45px' }}>
                         <Box sx={{ 
                           minWidth: '250px', 
                           maxWidth: '250px', 
@@ -312,66 +338,136 @@ const Roadmap = ({ selectedProjectId }) => {
                           color: getDevColor(devId),
                           display: 'flex', 
                           alignItems: 'center',
-                          backgroundColor: i === 0 ? 'rgba(0,0,0,0.02)' : 'transparent',
-                          position: 'relative'
+                          backgroundColor: 'rgba(0,0,0,0.02)',
+                          position: 'sticky',
+                          left: 0,
+                          zIndex: 5
                         }}>
-                          {i === 0 ? getDevName(devId) : ""}
-                          {i > 0 && <Box sx={{ width: '4px', height: '100%', backgroundColor: getDevColor(devId), position: 'absolute', left: 0 }} />}
+                          {getDevName(devId)}
                         </Box>
-
-                        {/* Timeline de la Tarea */}
-                        <Box sx={{ flexGrow: 1, position: 'relative' }}>
-                          <Tooltip title={`${task.title} (Status: ${task.status?.status || 'N/A'})`}>
-                            <Box sx={{ 
-                              position: 'absolute',
-                              left: getPositionPercent(task.createdAt),
-                              width: getWidthPercent(task.createdAt, task.finishedAt, task.storyPoints || 2),
-                              minWidth: '20px',
-                              height: '28px',
-                              top: '8px',
-                              backgroundColor: getDevColor(devId),
-                              borderRadius: '6px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              px: 1.5,
-                              fontSize: '0.75rem',
-                              fontWeight: 'bold',
-                              color: 'white',
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-                              zIndex: 3
-                            }}>
-                              {task.title}
-                            </Box>
-                          </Tooltip>
+                        <Box sx={{ flexGrow: 1, position: 'relative', display: 'flex', alignItems: 'center', pl: 2 }}>
+                          <Typography variant="caption" sx={{ color: '#999', fontStyle: 'italic' }}>Sin tareas asignadas</Typography>
                         </Box>
                       </Box>
-                    ))
-                  )}
+                    ) : (
+                      devTasks.map((task, i) => (
+                        <Box key={i} sx={{ display: 'flex', borderBottom: '1px solid #f9f9f9', height: '45px', '&:hover': { backgroundColor: '#fcfcfc' } }}>
+                          {/* Sidebar con Nombre del Dev */}
+                          <Box sx={{ 
+                            minWidth: '250px', 
+                            maxWidth: '250px', 
+                            p: 1.5, 
+                            borderRight: '1px solid #e0e0e0', 
+                            fontSize: '0.85rem', 
+                            fontWeight: 'bold', 
+                            color: getDevColor(devId),
+                            display: 'flex', 
+                            alignItems: 'center',
+                            backgroundColor: i === 0 ? 'rgba(0,0,0,0.02)' : 'white',
+                            position: 'sticky',
+                            left: 0,
+                            zIndex: 5
+                          }}>
+                            {i === 0 ? getDevName(devId) : ""}
+                            {i > 0 && <Box sx={{ width: '4px', height: '100%', backgroundColor: getDevColor(devId), position: 'absolute', left: 0 }} />}
+                          </Box>
+
+                          {/* Timeline de la Tarea */}
+                          <Box sx={{ flexGrow: 1, position: 'relative' }}>
+                            <Tooltip title={`${task.title} (Status: ${task.status?.status || 'N/A'})`}>
+                              <Box sx={{ 
+                                position: 'absolute',
+                                left: getPositionPercent(task.createdAt),
+                                width: getWidthPercent(task.createdAt, task.finishedAt, task.storyPoints || 2),
+                                minWidth: '20px',
+                                height: '28px',
+                                top: '8px',
+                                backgroundColor: getDevColor(devId),
+                                borderRadius: '6px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                px: 1.5,
+                                fontSize: '0.75rem',
+                                fontWeight: 'bold',
+                                color: 'white',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                                zIndex: 3
+                              }}>
+                                {task.title}
+                              </Box>
+                            </Tooltip>
+                          </Box>
+                        </Box>
+                      ))
+                    )}
+                  </Box>
+                ))
+              )}
+
+              {/* TAB 2: CHANGE HISTORY VIEW */}
+              {currentTab === 2 && (
+                <Box sx={{ p: 0, width: '100vw' }}>
+                  <Box sx={{ display: 'flex', backgroundColor: '#fafafa', borderBottom: '1px solid #eee', py: 1, px: 2, position: 'sticky', left: 0, zIndex: 5 }}>
+                  <Typography variant="caption" sx={{ flex: 1, fontWeight: 'bold', color: '#999' }}>FECHA</Typography>
+                  <Typography variant="caption" sx={{ flex: 2, fontWeight: 'bold', color: '#999' }}>TAREA</Typography>
+                  <Typography variant="caption" sx={{ flex: 1, fontWeight: 'bold', color: '#999' }}>USUARIO</Typography>
+                  <Typography variant="caption" sx={{ flex: 3, fontWeight: 'bold', color: '#999' }}>CAMBIOS / NOTAS</Typography>
                 </Box>
-              ))
+                {taskHistory.length === 0 ? (
+                  <Box sx={{ p: 4, textAlign: 'center' }}>
+                    <Typography variant="body2" sx={{ color: '#999', fontStyle: 'italic' }}>No hay historial de cambios disponible para este proyecto.</Typography>
+                  </Box>
+                ) : (
+                  taskHistory.map((history, i) => (
+                    <Box key={i} sx={{ display: 'flex', borderBottom: '1px solid #f0f0f0', py: 2, px: 2, '&:hover': { backgroundColor: '#fcfcfc' }, alignItems: 'center' }}>
+                      <Typography variant="body2" sx={{ flex: 1, color: '#666', fontSize: '0.8rem' }}>
+                        {new Date(history.changedAt).toLocaleString()}
+                      </Typography>
+                      <Typography variant="body2" sx={{ flex: 2, fontWeight: 'bold', color: '#333' }}>
+                        {history.task?.title || "Tarea Desconocida"}
+                      </Typography>
+                      <Typography variant="body2" sx={{ flex: 1, color: '#555' }}>
+                        {history.user ? `${history.user.firtsName} ${history.user.lastName}` : "Usuario"}
+                      </Typography>
+                      <Typography variant="body2" sx={{ flex: 3, color: '#444' }}>
+                        {history.changes}
+                      </Typography>
+                    </Box>
+                  ))
+                )}
+              </Box>
             )}
           </Box>
         </Box>
-      </Paper>
-      
-      {/* Legend */}
-      <Box sx={{ mt: 3, display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Box sx={{ width: 14, height: 14, borderRadius: '4px', border: '2px solid var(--oracle-red)', backgroundColor: 'rgba(199, 69, 52, 0.2)' }} />
-          <Typography variant="caption" fontWeight="bold">Sprints</Typography>
-        </Box>
-        <Divider orientation="vertical" flexItem />
-        <Typography variant="caption" sx={{ color: '#666' }}>Colores en tareas indican el Desarrollador asignado</Typography>
-        {team.map(member => (
-          <Box key={member.userId} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Box sx={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: getDevColor(member.userId) }} />
-            <Typography variant="caption">{member.firtsName}</Typography>
-          </Box>
-        ))}
       </Box>
+      </Paper>
+
+      {/* Legend */}
+      {currentTab !== 2 && (
+        <Box sx={{ mt: 3, display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap' }}>
+          {currentTab === 0 && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box sx={{ width: 14, height: 14, borderRadius: '4px', border: '2px solid var(--oracle-red)', backgroundColor: 'rgba(199, 69, 52, 0.2)' }} />
+              <Typography variant="caption" fontWeight="bold">Sprints</Typography>
+            </Box>
+          )}
+          
+          {currentTab === 1 && (
+            <>
+              <Typography variant="caption" sx={{ color: '#666' }}>Desarrollador:</Typography>
+              {team.map(member => (
+                <Box key={member.userId} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: getDevColor(member.userId) }} />
+                  <Typography variant="caption">{member.firtsName}</Typography>
+                </Box>
+              ))}
+            </>
+          )}
+        </Box>
+      )}
     </Box>
   );
 };

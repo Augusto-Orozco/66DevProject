@@ -22,6 +22,10 @@ public class TaskHistoryService {
         return taskHistoryRepository.findAll();
     }
 
+    public List<TaskHistory> getTaskHistoryByProjectId(Long projectId) {
+        return taskHistoryRepository.findByTask_Project_ProjectIdOrderByChangedAtDesc(projectId);
+    }
+
     public Optional<TaskHistory> getTaskHistoryById(Long id) {
         return taskHistoryRepository.findById(id);
     }
