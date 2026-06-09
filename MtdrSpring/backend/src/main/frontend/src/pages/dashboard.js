@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Box, Typography, CircularProgress, IconButton, FormControl, Select, MenuItem } from '@mui/material'
 import CachedIcon from '@mui/icons-material/Cached';
-import { PieChart, Pie, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'
+import { PieChart, Pie, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts'
 
 import Footer from '../components/Footer'
 import '../Assets/styles.css'
@@ -178,12 +178,35 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
   if (efectividadValor > 75) efectividadColor = '#4caf50'; 
   else if (efectividadValor >= 50) efectividadColor = '#fbc02d';
 
- 
   const barraEfectividadVisual = efectividadValor > 100 ? 100 : efectividadValor;
 
   const efectividadBarData = [
     { name: 'Efectividad', valor: barraEfectividadVisual, restante: 100 - barraEfectividadVisual }
   ]
+
+  // 5. BURNDOWN CHART
+  const burndownData = useMemo(() => {
+    if (totalEstimadoGlobal === 0) return [];
+
+    const data = [{ name: 'Inicio', ideal: totalEstimadoGlobal, real: totalEstimadoGlobal }];
+    const idealStep = totalEstimadoGlobal / (activeTasks.length || 1);
+    let currentRealRemaining = totalEstimadoGlobal;
+
+    activeTasks.forEach((task, index) => {
+      const assignment = activeAssignments.find(a => a.task?.taskId === task.taskId);
+      const realTimeConsumed = assignment?.task?.realTime || 0;
+      
+      currentRealRemaining -= realTimeConsumed;
+
+      data.push({
+        name: `T${index + 1}`, 
+        ideal: Math.max(0, Math.round(totalEstimadoGlobal - (idealStep * (index + 1)))),
+        real: Math.round(currentRealRemaining)
+      });
+    });
+
+    return data;
+  }, [activeTasks, activeAssignments, totalEstimadoGlobal]);
 
   return (
     <>
@@ -239,6 +262,35 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
               <Tooltip cursor={{fill: 'transparent'}} />
               <Bar dataKey="totalTareas" fill="#ab47bc" name="Tareas Asignadas" radius={[0, 4, 4, 0]} maxBarSize={40} />
             </BarChart>
+          </ResponsiveContainer>
+        </Box>
+
+        {/* --- BURNDOWN CHART --- */}
+        <Box className="base-card" sx={{ gridColumn: 'span 4' }}>
+          <Typography variant="h6" sx={{ mb: 2 }}>Esfuerzo general del equipo</Typography>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={burndownData} margin={{ top: 10, right: 30, left: 0, bottom: 10 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" tick={{fontSize: 12}} />
+              <YAxis tick={{fontSize: 12}} />
+              <Tooltip />
+              <Legend />
+              <Line 
+                type="monotone" 
+                dataKey="ideal" 
+                stroke="#004fee" 
+                name="Esfuerzo Ideal (Hrs)" 
+                strokeWidth={3} 
+                dot={false}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="real" 
+                stroke="#ef1e0f" 
+                name="Esfuerzo Real (Hrs)" 
+                strokeWidth={3} 
+              />
+            </LineChart>
           </ResponsiveContainer>
         </Box>
 
