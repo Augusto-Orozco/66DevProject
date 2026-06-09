@@ -188,13 +188,13 @@ public class TaskService {
     }
 
     public List<Task> getAllTasks() {
-        List<Task> tasks = taskRepository.findAll();
+        List<Task> tasks = taskRepository.findAllByDeleted("N");
         populateResolutionNotes(tasks);
         return tasks;
     }
 
     public List<Task> getTasksByProjectId(Long projectId) {
-        List<Task> tasks = taskRepository.findByProject_ProjectId(projectId);
+        List<Task> tasks = taskRepository.findByProject_ProjectIdAndDeleted(projectId, "N");
         populateResolutionNotes(tasks);
         return tasks;
     }
@@ -212,7 +212,7 @@ public class TaskService {
     }
 
     public List<Task> getTasksByUserStoryId(String userStoryId) {
-        List<Task> tasks = taskRepository.findByUserStory_UserStoriesId(userStoryId);
+        List<Task> tasks = taskRepository.findByUserStory_UserStoriesIdAndDeleted(userStoryId, "N");
         populateResolutionNotes(tasks);
         return tasks;
     }
@@ -223,7 +223,24 @@ public class TaskService {
         return task;
     }
 
-    public void deleteTask(Long id) {
-        taskRepository.deleteById(id);
+    @Transactional
+    public void deleteTask(Long id, Long userId) {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        if (userId != null) {
+            userRepository.findById(userId).ifPresent(user -> {
+                TaskHistory history = new TaskHistory(task, user, "Se borro la tarea: " + task.getTitle());
+                taskHistoryRepository.save(history);
+            });
+        }
+
+        task.setDeleted("Y");
+        task.setDeletedBy(userId);
+        taskRepository.save(task);
+
+        // Remove from Sprint and User assignments to keep active views clean
+        jdbcTemplate.update("DELETE FROM SPRINT_TASK WHERE TASK_ID = ?", id);
+        jdbcTemplate.update("DELETE FROM TASK_USERS WHERE TASK_ID = ?", id);
     }
 }

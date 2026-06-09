@@ -39,7 +39,15 @@ const Roadmap = ({ selectedProjectId }) => {
       } else if (sprintsData && typeof sprintsData === 'object') {
         sprintsArray = sprintsData.sprints || sprintsData.SPRINTS || [];
       }
-      setSprints(sprintsArray);
+      
+      // Ordenar sprints por número
+      const sortedSprints = [...sprintsArray].sort((a, b) => {
+        const numA = a.sprintNum ?? a.SPRINT_NUM ?? 0;
+        const numB = b.sprintNum ?? b.SPRINT_NUM ?? 0;
+        return numA - numB;
+      });
+      
+      setSprints(sortedSprints);
 
       // 3. Fetch all tasks and filter by project
       const tasksRes = await fetch(`/tasks`);
