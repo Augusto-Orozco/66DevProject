@@ -19,7 +19,6 @@ import {
   useDroppable, 
   useSensor, 
   useSensors, 
-  PointerSensor,
   MouseSensor,
   TouchSensor,
   DragOverlay
@@ -103,7 +102,7 @@ function Column({ id, title, tasks, visibleColumnCount, onAddTask, onEditTask, i
     if (isOver) {
       console.log("COLUMN OVER:", id)
     }
-  }, [isOver])
+  }, [isOver, id])
 
   const groupedTasks = tasks.reduce((acc, task) => {
     const key = task.userStoryId || 'none'
