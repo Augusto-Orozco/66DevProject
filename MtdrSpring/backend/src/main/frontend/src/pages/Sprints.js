@@ -98,11 +98,7 @@ function TaskCardContent({ task }) {
 function Column({ id, title, tasks, visibleColumnCount, onAddTask, onEditTask, isSticky }) {
   const { setNodeRef, isOver } = useDroppable({ id })
 
-  useEffect(() => {
-    if (isOver) {
-      console.log("COLUMN OVER:", id)
-    }
-  }, [isOver, id])
+  // Debug logging removed (was logging when column is hovered during drag).
 
   const groupedTasks = tasks.reduce((acc, task) => {
     const key = task.userStoryId || 'none'
