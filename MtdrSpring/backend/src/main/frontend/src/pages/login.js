@@ -29,7 +29,14 @@ function Login({ setIsAuth, setUser }) {
           localStorage.setItem('user', JSON.stringify(data));
           setUser(data);
           setIsAuth(true);
-          navigate('/dashboard');
+          
+          if (data.roleName === 'Manager') {
+            navigate('/Sprints');
+          } else if (data.roleName === 'Developer') {
+            navigate('/DashDevs');
+          } else {
+            navigate('/dashboard');
+          }
         } else if (response.status === 401) {
           setError('Usuario o contraseña incorrectos');
         } else {

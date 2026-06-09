@@ -38,10 +38,6 @@ public class ProjectService {
         return projectRepository.findById(id);
     }
 
-    public void deleteProject(Long id) {
-        projectRepository.deleteById(id);
-    }
-
     public String getProjectDashboardSummary(Long projectId) {
         return jdbcTemplate.execute(
             "{call GET_PROJECT_DASHBOARD_SUMMARY(?, ?)}",

@@ -95,7 +95,6 @@ function AddDevs() {
             )}
 
             {members.map(member => (
-          
               <Box
               key={member.id}
               className="devs-task-card"
@@ -107,18 +106,10 @@ function AddDevs() {
                 alignItems: 'center'
               }}
             >
-              
               <Typography variant="h6" fontWeight={600}>
                 {member.name} {member.lastName}
-              </Typography>
-
-
-
-              
+              </Typography> 
             </Box>
-
-              
-              
             ))}
           </Box>
         </Box>

@@ -6,7 +6,6 @@ import Dashboard from '../pages/dashboard'
 import DashDevs from '../pages/DashDevs'
 import Navbar from '../components/Navbar'
 import Sprints from '../pages/Sprints'
-import AddDevs from '../pages/AddDevs'
 import TaskCreator from '../pages/TaskCreator'
 import Roadmap from '../pages/Roadmap'
 
@@ -40,7 +39,7 @@ function AppRouter({ isAuth, setIsAuth, user, setUser, selectedProjectId, setSel
             path="/"
             element={
               isAuth
-                ? <Navigate to="/dashboard" />
+                ? <Navigate to={user?.roleName === 'Manager' ? "/Sprints" : "/dashboard"} />
                 : <Login setIsAuth={setIsAuth} setUser={setUser} />
             }
           />
@@ -48,17 +47,17 @@ function AppRouter({ isAuth, setIsAuth, user, setUser, selectedProjectId, setSel
           <Route 
             path="/dashboard" 
             element={
-              isAuth && ['Manager', 'Leader', 'Administrador'].includes(user?.roleName)
+              isAuth && ['Leader', 'Administrador'].includes(user?.roleName)
                 // <-- 4. Le pasamos el valor actual del filtro al Dashboard
                 ? <Dashboard selectedProjectId={selectedProjectId} sprintFilter={sprintFilter} />
-                : <Navigate to={isAuth ? "/DashDevs" : "/"} />
+                : <Navigate to={isAuth ? (user?.roleName === 'Manager' ? "/Sprints" : "/DashDevs") : "/"} />
             }
           />
 
           <Route
             path="/DashDevs"
             element={
-              isAuth && ['Developer', 'Leader'].includes(user?.roleName)
+              isAuth && ['Developer'].includes(user?.roleName)
                 ? <DashDevs 
                     user={user} 
                     selectedProjectId={selectedProjectId} 
@@ -66,15 +65,6 @@ function AppRouter({ isAuth, setIsAuth, user, setUser, selectedProjectId, setSel
                     setSprintFilter={setSprintFilter} 
                   />
                 : <Navigate to="/dashboard" />
-            }
-          />
-
-          <Route
-            path="/AddDevs"
-            element={
-              isAuth && ['Manager', 'Leader', 'Administrador'].includes(user?.roleName)
-                ? <AddDevs />
-                : <Navigate to={isAuth ? "/DashDevs" : "/"} />
             }
           />
 

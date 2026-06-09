@@ -23,14 +23,4 @@ public class ProjectController {
     public List<Project> getProjectsByUserId(@PathVariable Long userId) {
         return projectService.getProjectsByUserId(userId);
     }
-
-    @PostMapping("/projects")
-    public Project createProject(@RequestBody Project project) {
-        return projectService.saveProject(project);
-    }
-
-    @GetMapping(value = "/projects/{projectId}/dashboard-summary", produces = "application/json")
-    public String getDashboardSummary(@PathVariable Long projectId) {
-        return projectService.getProjectDashboardSummary(projectId);
-    }
 }

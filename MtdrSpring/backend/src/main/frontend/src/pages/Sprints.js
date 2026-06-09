@@ -1,28 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
-import { 
-  Box, 
-  Typography, 
-  CircularProgress, 
-  Button, 
-  Drawer,
-  Dialog, 
-  DialogTitle, 
-  DialogContent, 
-  DialogContentText, 
-  DialogActions,
-  MenuItem
-} from '@mui/material' 
+import { Box, Typography, CircularProgress, Button, Drawer,Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,MenuItem } from '@mui/material' 
 import CloseIcon from '@mui/icons-material/Close'
-import { 
-  DndContext, 
-  pointerWithin,
-  useDroppable, 
-  useSensor, 
-  useSensors, 
-  MouseSensor,
-  TouchSensor,
-  DragOverlay
-} from '@dnd-kit/core'
+import { DndContext, pointerWithin,useDroppable, useSensor, useSensors, MouseSensor, TouchSensor, DragOverlay } from '@dnd-kit/core'
 import {SortableContext, verticalListSortingStrategy, useSortable} from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import RefreshIcon from '@mui/icons-material/Refresh'
@@ -37,7 +16,7 @@ import '../Assets/styles.css'
 
 
 /* --- TARJETA DRAGGABLE --- */
-function TaskCard({ task, onEditTask }) {
+function TaskCard({ task, onEditTask, users }) {
   const {
     attributes,
     listeners,
@@ -66,36 +45,43 @@ function TaskCard({ task, onEditTask }) {
       }}
       sx={{ '&:hover': { boxShadow: '0 4px 8px rgba(0,0,0,0.15)' } }}
     >
-      <TaskCardContent task={task} />
+      <TaskCardContent task={task} users={users} />
     </Box>
   )
 }
 
 /* --- CONTENIDO DE LA TARJETA --- */
-function TaskCardContent({ task }) {
+function TaskCardContent({ task, users }) {
   let sCol = '#000000', sBg = '#a9a9a9'
   const statusStr = task.statusName || 'SIN ESTATUS'
   if (statusStr === 'Completado') { sCol = '#123013'; sBg = '#94e59b' }
   else if (statusStr === 'En Progreso') { sCol = '#483009'; sBg = '#fff9b9' }
   else if (statusStr === 'Atrasado') { sCol = '#541111'; sBg = '#fdb4bf' }
 
+  const assignedUser = Array.isArray(users) ? users.find(u => String(u.userId) === String(task.assignedUserId)) : null;
+
   return (
     <>
       <Typography fontSize="0.85rem" fontWeight="bold">
         {task.title}
       </Typography>
-      <Typography fontSize="0.75rem">
+      <Typography fontSize="0.75rem" sx={{ color: 'text.secondary', mb: 0.5 }}>
         {task.description}
       </Typography>
-      <Box sx={{ mt: 1, display: 'flex', justifyContent: 'flex-start' }}>
+      <Box sx={{ mt: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span className="badge-base" style={{ backgroundColor: sBg, color: sCol }}>{statusStr}</span>
+        {assignedUser && (
+          <Typography fontSize="0.7rem" color="text.secondary" sx={{ fontStyle: 'italic', fontWeight: 500 }}>
+            {assignedUser.firtsName} {assignedUser.lastName}
+          </Typography>
+        )}
       </Box>
     </>
   )
 }
 
 /* --- COLUMNA DROPPABLE --- */
-function Column({ id, title, tasks, visibleColumnCount, onAddTask, onEditTask, isSticky }) {
+function Column({ id, title, tasks, visibleColumnCount, onAddTask, onEditTask, isSticky, users }) {
   const { setNodeRef, isOver } = useDroppable({ id })
 
   // Debug logging removed (was logging when column is hovered during drag).
@@ -187,7 +173,7 @@ function Column({ id, title, tasks, visibleColumnCount, onAddTask, onEditTask, i
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                 {storyData.tasks.map(task => (
-                  <TaskCard key={task.id} task={task} onEditTask={onEditTask} />
+                  <TaskCard key={task.id} task={task} onEditTask={onEditTask} users={users} />
                 ))}
               </Box>
             </Box>
@@ -360,6 +346,14 @@ function Sprints({ selectedProjectId }) {
       const teamMembers = await usersRes.json()
       setUsers(Array.isArray(teamMembers) ? teamMembers : [])
 
+      const assignmentsRes = await fetch(`/tasks/assignments/project/${selectedProjectId}`)
+      const assignmentsData = await assignmentsRes.json()
+      const assignmentMap = Array.isArray(assignmentsData) ? assignmentsData.reduce((acc, curr) => {
+        const tId = curr.task?.taskId || curr.taskId;
+        if (tId) acc[String(tId)] = curr.user?.userId || curr.userId;
+        return acc;
+      }, {}) : {};
+
       const newColumns = {
         'backlog': {
           title: 'Backlog',
@@ -376,7 +370,7 @@ function Sprints({ selectedProjectId }) {
               storyPoints: fullTask.storyPoints || t.storyPoints || '',
               objetiveTime: fullTask.objetiveTime || t.objetiveTime || '',
               statusName: fullTask.status?.status || t.status?.status || 'SIN ESTATUS',
-              assignedUserId: t.assignedUserId || (t.taskUser?.userId || t.assignedUser?.userId || ''),
+              assignedUserId: assignmentMap[taskId] || t.assignedUserId || (t.taskUser?.userId || t.assignedUser?.userId || ''),
               sprintId: null
             }
           }) : []
@@ -407,7 +401,7 @@ function Sprints({ selectedProjectId }) {
                 storyPoints: fullTask.storyPoints || '',
                 objetiveTime: fullTask.objetiveTime || '',
                 statusName: fullTask.status?.status || 'SIN ESTATUS',
-                assignedUserId: t.assignedUserId || (t.taskUser?.userId || ''),
+                assignedUserId: assignmentMap[taskId] || t.assignedUserId || (t.taskUser?.userId || ''),
                 sprintId: sId
               }
             }).filter(t => t.id) : []
@@ -515,7 +509,7 @@ function Sprints({ selectedProjectId }) {
           }}>
             <Box sx={{ display: 'flex', width: isSprintSelected ? '100%' : 'max-content', alignItems: 'stretch', gap: 2.5 }}>
               {visibleColumnsToRender.map((id) => (
-                <Column key={id} id={id} title={columns[id].title} tasks={columns[id].tasks} visibleColumnCount={visibleColumnCount} onAddTask={handleOpenAddTask} onEditTask={handleOpenEditTask} isSticky={id === 'backlog'} />
+                <Column key={id} id={id} title={columns[id].title} tasks={columns[id].tasks} visibleColumnCount={visibleColumnCount} onAddTask={handleOpenAddTask} onEditTask={handleOpenEditTask} isSticky={id === 'backlog'} users={users} />
               ))}
             </Box>
           </Box>
@@ -524,7 +518,7 @@ function Sprints({ selectedProjectId }) {
         <DragOverlay zIndex={2000}>
           {activeTask ? (
             <Box className="devs-task-card" sx={{ boxShadow: '0 10px 20px rgba(0,0,0,0.3)', cursor: 'grabbing', width: '280px' }}>
-              <TaskCardContent task={activeTask} />
+              <TaskCardContent task={activeTask} users={users} />
             </Box>
           ) : null}
         </DragOverlay>

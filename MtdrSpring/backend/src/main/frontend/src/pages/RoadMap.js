@@ -1,13 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { 
-  Box, 
-  Typography, 
-  CircularProgress, 
-  Paper,
-  Tooltip,
-  Tabs,
-  Tab
-} from '@mui/material';
+import { Box, Typography, CircularProgress, Paper, Tooltip, Tabs, Tab } from '@mui/material';
 import Footer from '../components/Footer';
 import '../Assets/styles.css';
 
@@ -24,12 +16,12 @@ const Roadmap = ({ selectedProjectId }) => {
     try {
       setLoading(true);
       
-      // 1. Fetch Team to get developer names and map colors
+      // Fetch de desarrolladores por equipo
       const teamRes = await fetch(`/team/project/${selectedProjectId}`);
       const teamData = await teamRes.json();
       setTeam(Array.isArray(teamData) ? teamData : []);
 
-      // 2. Fetch Sprints with hierarchy to get dates
+      // Fetch de sprints con jerarquía
       const sprintsRes = await fetch(`/sprints/project/${selectedProjectId}/hierarchy`);
       const sprintsData = await sprintsRes.json();
       
@@ -49,12 +41,12 @@ const Roadmap = ({ selectedProjectId }) => {
       
       setSprints(sortedSprints);
 
-      // 3. Fetch all tasks and filter by project
+      // Fetch de tareas del proyecto
       const tasksRes = await fetch(`/tasks`);
       const allTasks = await tasksRes.json();
       const projectTasks = allTasks.filter(t => t.project?.projectId === selectedProjectId);
 
-      // 4. Fetch Assignments to map tasks to users correctly
+      // Fetch de asignaciones para mapear tareas a desarrolladores
       const assignmentsRes = await fetch(`/tasks/assignments/project/${selectedProjectId}`);
       if (assignmentsRes.ok) {
         const assignments = await assignmentsRes.json();
@@ -64,7 +56,6 @@ const Roadmap = ({ selectedProjectId }) => {
           return acc;
         }, {}) : {};
 
-        // Enriquecer tareas con el userId del desarrollador
         const enrichedTasks = projectTasks.map(task => ({
           ...task,
           assignedDevId: assignmentMap[String(task.taskId)] || 'unassigned'
@@ -74,7 +65,7 @@ const Roadmap = ({ selectedProjectId }) => {
         setTasks(projectTasks.map(t => ({ ...t, assignedDevId: 'unassigned' })));
       }
 
-      // 5. Fetch Task History
+      // Fetch de historial de cambios
       const historyRes = await fetch(`/tasks/history/project/${selectedProjectId}`);
       if (historyRes.ok) {
         const historyData = await historyRes.json();
@@ -92,7 +83,7 @@ const Roadmap = ({ selectedProjectId }) => {
     fetchData();
   }, [fetchData]);
 
-  // Group tasks by developer
+  // Agrupar tareas por desarrollador
   const tasksByDev = useMemo(() => {
     const grouped = tasks.reduce((acc, task) => {
       const devId = String(task.assignedDevId || 'unassigned');
@@ -123,7 +114,7 @@ const Roadmap = ({ selectedProjectId }) => {
     return colors[index % colors.length] || colors[0];
   };
 
-  // Timeline Logic
+  // Timeline
   const { timelineStart, daysCount, monthLabels } = useMemo(() => {
     let start, end;
 
@@ -155,7 +146,7 @@ const Roadmap = ({ selectedProjectId }) => {
     const diffTime = Math.abs(end - start);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
-    // Generate Month Labels
+    // Generar etiquetas de meses
     const labels = [];
     let current = new Date(start);
     while (current <= end) {
@@ -258,7 +249,7 @@ const Roadmap = ({ selectedProjectId }) => {
           }}>
 
             <Box sx={{ width: timelineMinWidth }}>
-              {/* Timeline Header (Months) - Oculto en Tab de Historial */}
+              {/* Timeline oculto en Tab de Historial */}
               {currentTab !== 2 && (
                 <Box sx={{ display: 'flex', width: '100%', backgroundColor: '#f1f3f4', borderBottom: '1px solid #e0e0e0' }}>
                   <Box sx={{ minWidth: '250px', maxWidth: '250px', p: 2, borderRight: '1px solid #e0e0e0', backgroundColor: '#f1f3f4', zIndex: 10, position: 'sticky', left: 0 }} />
@@ -290,7 +281,7 @@ const Roadmap = ({ selectedProjectId }) => {
                 </Box>
               )}
 
-              {/* Timeline Content */}
+              {/* Timeline*/}
               <Box sx={{ width: '100%', maxHeight: 'calc(100vh - 350px)', overflowY: 'auto' }}>
 
                 {/* TAB 0: SPRINTS VIEW */}
@@ -459,7 +450,7 @@ const Roadmap = ({ selectedProjectId }) => {
           </Box>
         </Paper>
 
-        {/* Legend */}
+        {/* Leyenda */}
         {currentTab !== 2 && (
           <Box sx={{ mt: 3, display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap' }}>
             {currentTab === 0 && (

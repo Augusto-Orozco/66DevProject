@@ -11,7 +11,7 @@ function DashDevs({ user, selectedProjectId, sprintFilter, setSprintFilter }) {
   const [loading, setLoading] = useState(false)
   const [sprintTasksIds, setSprintTasksIds] = useState([])
 
-  // Dialog State
+  // Estados para la modificación detareas
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [newStatus, setNewStatus] = useState('');
@@ -39,7 +39,6 @@ function DashDevs({ user, selectedProjectId, sprintFilter, setSprintFilter }) {
     if (currentStatus === 'completado') {
         return; 
     }
-    
     setSelectedTask(task);
     if (currentStatus === 'en progreso') {
         setNewStatus('En Progreso');
@@ -58,16 +57,6 @@ function DashDevs({ user, selectedProjectId, sprintFilter, setSprintFilter }) {
   };
 
   const handleUpdateStatus = () => {
-    if (!selectedTask || !newStatus) {
-        alert("Por favor seleccione un estado");
-        return;
-    }
-
-    if (newStatus === 'Completado' && (!hours || !changesDescription)) {
-        alert("Por favor ingrese las horas y la descripción de la resolución");
-        return;
-    }
-
     setUpdating(true);
     fetch(`/tasks/${selectedTask.taskId}/status-update`, {
       method: 'PUT',
@@ -145,7 +134,6 @@ function DashDevs({ user, selectedProjectId, sprintFilter, setSprintFilter }) {
 
   const chartData = useMemo(() => {
     let completadas = 0, pendientes = 0, enProgreso = 0, estimado = 0, real = 0;
-
     activeTasks.forEach(task => {
       const status = String(task.status?.status || '').trim().toLowerCase();
       if (status === 'completado') completadas += 1;
@@ -155,13 +143,8 @@ function DashDevs({ user, selectedProjectId, sprintFilter, setSprintFilter }) {
       estimado += (task.objetiveTime || 0);
       real += (task.realTime || 0);
     });
-
-    
     let porcentajeReal = real > 0 ? Math.round((estimado / real) * 100) : 0;
-    
-    
     let colorProd = '#ef5350'; 
-    
     if (porcentajeReal > 75) {
       colorProd = '#4caf50'; 
     } else if (porcentajeReal >= 50) {
@@ -239,7 +222,7 @@ function DashDevs({ user, selectedProjectId, sprintFilter, setSprintFilter }) {
 
           {/* GRÁFICA TOTAL DE TAREAS */}
           <Box className="base-card" sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <Typography variant="h6" fontWeight="bold" sx={{ mb: 1 }}>Total de Tareas</Typography>
+            <Typography variant="h6" fontWeight="bold" sx={{ mb: 1 }}>Tareas Totales</Typography>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart layout="vertical" data={chartData.qty} margin={{ top: 5, right: 40, left: 20, bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} />
@@ -277,7 +260,7 @@ function DashDevs({ user, selectedProjectId, sprintFilter, setSprintFilter }) {
 
           {/* COMPARATIVA HORAS */}
           <Box className="base-card" sx={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column' }}>
-            <Typography variant="h6" fontWeight="bold" sx={{ mb: 1 }}>Comparativa: Horas Estimadas vs Reales</Typography>
+            <Typography variant="h6" fontWeight="bold" sx={{ mb: 1 }}>Horas Estimadas vs Horas Reales</Typography>
             <ResponsiveContainer width="100%" height={230}>
               <BarChart layout="vertical" data={chartData.hours} margin={{ top: 10, right: 100, left: 20, bottom: 20 }} barGap={10}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} />
@@ -333,7 +316,6 @@ function DashDevs({ user, selectedProjectId, sprintFilter, setSprintFilter }) {
                     value={hours}
                     onChange={(e) => setHours(e.target.value)}
                     placeholder="Horas"
-                    required
                   />
                   <TextField
                     fullWidth

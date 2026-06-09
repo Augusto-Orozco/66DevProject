@@ -139,33 +139,9 @@ public class TaskController {
         return taskService.saveTask(task);
     }
 
-    @GetMapping("/userTasks/{id}")
-    public ResponseEntity<Task> getTaskUserById(@PathVariable Long id) {
-        return taskService.getTaskById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    @GetMapping("/tasks/{id}")
-    public ResponseEntity<Task> getTaskById(@PathVariable Long id) {
-        return taskService.getTaskById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    @GetMapping("/tasks/unassigned")
-    public List<Task> getUnassignedTasks() {
-        return taskService.getUnassignedTasks();
-    }
-
     @GetMapping("/tasks/unassigned/project/{projectId}")
     public List<Task> getUnassignedTasksByProjectId(@PathVariable Long projectId) {
         return taskService.getUnassignedTasksByProjectId(projectId);
-    }
-
-    @GetMapping("/tasks/assignments")
-    public List<TaskUser> getAllTaskAssignments() {
-        return taskUserService.getAllTaskUsers();
     }
 
     @GetMapping("/tasks/assignments/project/{projectId}")
@@ -183,19 +159,9 @@ public class TaskController {
         return taskUserService.saveTaskUser(taskUser);
     }
     
-    @GetMapping("/userStory/{userStoryId}")
-    public List<Task> getTasksByUserStoryId(@PathVariable String userStoryId) {
-        return taskService.getTasksByUserStoryId(userStoryId);
-    }
-
     @PostMapping("/sprints")
     public Sprint createSprint(@RequestBody Sprint sprint) {
         return sprintService.saveSprint(sprint);
-    }
-
-    @GetMapping("/sprints")
-    public List<Sprint> getAllSprints() {
-        return sprintService.getAllSprints();
     }
 
     @GetMapping("/sprints/project/{projectId}")

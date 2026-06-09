@@ -6,12 +6,10 @@ import { PieChart, Pie, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAx
 import Footer from '../components/Footer'
 import '../Assets/styles.css'
 
-
 function Dashboard({ selectedProjectId, sprintFilter }) {
   const [items, setItems] = useState([]) 
   const [assignments, setAssignments] = useState([])
   const [sprintTasksIds, setSprintTasksIds] = useState([]) 
-  
   const [loading, setLoading] = useState(false)
   
   // Filtros individuales por gráfica
@@ -21,9 +19,7 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
 
   const fetchData = useCallback(() => {
     if (!selectedProjectId) return;
-    
     setLoading(true)
-
     Promise.all([
       fetch(`/tasks/project/${selectedProjectId}`).then(res => res.json()),
       fetch(`/tasks/assignments/project/${selectedProjectId}`).then(res => res.json())
@@ -196,7 +192,7 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
       
       <Box className="dashboard-grid">
         
-        {/* --- FILA 1 --- */}
+        {/* --- FILA 1: ESTADO, PROGRESO Y TAREAS TOTALES --- */}
         <Box className="base-card" sx={{ gridColumn: 'span 1' }}>
           <Typography variant="h6" sx={{ mb: 1 }}>Estado General</Typography>
           {loading ? <CircularProgress /> : (
@@ -247,7 +243,6 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
         </Box>
 
         {/* --- FILA 2: HORAS Y EFECTIVIDAD --- */}
-  
         <Box className="base-card" sx={{ gridColumn: 'span 3' }}>
           <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h6">Horas Estimadas vs Horas Reales</Typography>
@@ -273,7 +268,6 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
           </ResponsiveContainer>
         </Box>
 
-        {/* NUEVA TARJETA: Efectividad (span 1) */}
         <Box className="base-card" sx={{ gridColumn: 'span 1' }}>
           <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h6">Efectividad</Typography>
@@ -307,7 +301,7 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
         <Box className="base-card" sx={{ gridColumn: 'span 4', alignItems: 'flex-start', justifyContent: 'flex-start', p: 3 }}>
           <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
             <Typography variant="h6" fontWeight="bold">
-              Listado de Tareas {(!sprintFilter || sprintFilter === 'all') ? '' : '(Filtrado por Sprint)'}
+              Listado de Tareas
             </Typography>
             <IconButton size="small" onClick={fetchData} disabled={loading}><CachedIcon /></IconButton>
           </Box>
@@ -325,17 +319,19 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
             {!loading && activeTasks.map((item) => {
               let pCol = '#292929', pBg = '#f5f5f5'
               const priorityName = item.priority?.priorityName;
-              if (priorityName === 'High' || priorityName === 'Alta') { pCol = '#541111'; pBg = '#fdb4bf' }
+              if (priorityName === 'Low' || priorityName === 'Baja') { pCol = '#123013'; pBg = '#94e59b' }
               else if (priorityName === 'Medium' || priorityName === 'Media') { pCol = '#483009'; pBg = '#fff9b9' }
-              else if (priorityName === 'Low' || priorityName === 'Baja') { pCol = '#123013'; pBg = '#94e59b' }
+              else if (priorityName === 'High' || priorityName === 'Alta') { pCol = '#541111'; pBg = '#fdb4bf' }
 
               let sCol = '#000000', sBg = '#a9a9a9', border = '#858585'
               const statusStr = item.status?.status;
               if (statusStr === 'Completado') { sCol = '#123013'; sBg = '#94e59b'; border = '#4caf50' }
               else if (statusStr === 'En Progreso') { sCol = '#483009'; sBg = '#fff9b9'; border = '#fbc02d' }
               else if (statusStr === 'Atrasado') { sCol = '#541111'; sBg = '#fdb4bf'; border = '#ff2020' }
+
               const developerName = getDeveloperNameForTask(item.taskId)
 
+              
               return (
                 <Box key={item.taskId} className="task-row" style={{ borderLeft: `6px solid ${border}` }}>
                   <Box sx={{ flex: 2 }}>
@@ -343,13 +339,13 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
                     <Typography variant="body2" color="text.secondary">{item.description}</Typography>
                   </Box>
                   <Box sx={{ flex: 1, textAlign: 'center' }}>
-                    <span className="badge-base" style={{ backgroundColor: sBg, color: sCol }}>{statusStr || 'SIN ESTATUS'}</span>
+                    <span className="badge-base" style={{ backgroundColor: sBg, color: sCol }}>{statusStr}</span>
                   </Box>
                   <Box sx={{ flex: 1, textAlign: 'center' }}>
                     <Typography variant="body2" fontWeight={600}>{developerName}</Typography>
                   </Box>
                   <Box sx={{ flex: 1, textAlign: 'center' }}>
-                    <span className="badge-base" style={{ backgroundColor: pBg, color: pCol }}>{priorityName || 'N/A'}</span>
+                    <span className="badge-base" style={{ backgroundColor: pBg, color: pCol }}>{priorityName}</span>
                   </Box>
                 </Box>
               )

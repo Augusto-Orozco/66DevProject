@@ -12,7 +12,6 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import AlignHorizontalLeftIcon from '@mui/icons-material/AlignHorizontalLeft';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import TuneIcon from '@mui/icons-material/Tune';
-
 import '../Assets/styles.css';
 
 function Navbar({ user, selectedProjectId, setSelectedProjectId, sprintFilter, setSprintFilter, setIsAuth, setUser }) {
@@ -20,21 +19,19 @@ function Navbar({ user, selectedProjectId, setSelectedProjectId, sprintFilter, s
   const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
 
-  // Estado para el menú unificado (Proyectos + Sprints)
+  // Filtro proyectos y sprints
   const [anchorElUnified, setAnchorElUnified] = useState(null);
   const openUnified = Boolean(anchorElUnified);
-
   const [projects, setProjects] = useState([]);
   const [sprints, setSprints] = useState([]);
 
   // Fetch de proyectos
   useEffect(() => {
-    // El administrador ve todos los proyectos, los demás ven solo los suyos
+    // Solo el administrador ve todos los proyectos existentes
     const needsFiltering = ['Developer', 'Manager', 'Leader'].includes(user?.roleName);
     const url = (needsFiltering && user?.userId) 
                 ? `/projects/user/${user.userId}` 
                 : '/projects';
-                
     fetch(url)
       .then(res => res.json())
       .then(data => {
@@ -43,33 +40,29 @@ function Navbar({ user, selectedProjectId, setSelectedProjectId, sprintFilter, s
           setSelectedProjectId(data[0].projectId);
         }
       })
-      .catch(err => console.error("Error fetching projects:", err));
+      .catch(err => console.error("Error al cargar proyectos:", err));
   }, [user?.userId, user?.roleName, selectedProjectId, setSelectedProjectId]);
 
-  // Fetch de sprints cada vez que cambia el proyecto seleccionado
+  // Fetch de sprints por proyecto
   useEffect(() => {
     if (selectedProjectId) {
       fetch(`/sprints/project/${selectedProjectId}`)
         .then(res => res.json())
         .then(data => {
-          if (Array.isArray(data)) {
-            const sortedSprints = [...data].sort((a, b) => a.sprintNum - b.sprintNum);
-            setSprints(sortedSprints);
-          } else {
-            setSprints([]);
-          }
+          const sortedSprints = [...data].sort((a, b) => a.sprintNum - b.sprintNum);
+          setSprints(sortedSprints);
         })
-        .catch(err => console.error("Error fetching sprints:", err));
+        .catch(err => console.error("Error al cargar sprints:", err));
     }
   }, [selectedProjectId]);
 
-  const selectedProjectName = projects.find(p => p.projectId === selectedProjectId)?.name || 'Seleccionar Proyecto';
-
+  const selectedProjectName = projects.find(p => p.projectId === selectedProjectId)?.name;
   const currentSprintObj = sprints.find(s => s.sprintId === sprintFilter);
   const selectedSprintName = sprintFilter === 'all' || !sprintFilter
     ? 'Todos los Sprints'
     : currentSprintObj ? `Sprint ${currentSprintObj.sprintNum}` : 'Todos los Sprints';
 
+  // Cambio de estilo al hacer scroll
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 30);
@@ -86,6 +79,7 @@ function Navbar({ user, selectedProjectId, setSelectedProjectId, sprintFilter, s
     navigate('/');
   };
 
+  //Event handlers para el filtro
   const handleClickUnified = (event) => {
     setAnchorElUnified(event.currentTarget);
   };
@@ -134,7 +128,7 @@ function Navbar({ user, selectedProjectId, setSelectedProjectId, sprintFilter, s
               />
             </Box>
             {user && (
-                <Box className="MensajeBinvenido" sx={{ml: '25px'}}>
+                <Box className="MensajeBienvenido" sx={{ml: '25px'}}>
                   <Typography 
                     variant="subtitle2" 
                     sx={{ 
@@ -154,7 +148,7 @@ function Navbar({ user, selectedProjectId, setSelectedProjectId, sprintFilter, s
 
           {/* SECCIÓN CENTRAL: NAVEGACIÓN */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {['Manager', 'Administrador'].includes(user?.roleName) && (
+            {['Leader', 'Administrador'].includes(user?.roleName) && (
               <Button
                 className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/dashboard') ? 'active' : ''}`}
                 onClick={() => navigate('/dashboard')}
@@ -184,7 +178,7 @@ function Navbar({ user, selectedProjectId, setSelectedProjectId, sprintFilter, s
               </Button>
             )}
 
-            {['Developer', 'Leader'].includes(user?.roleName) && (
+            {['Developer'].includes(user?.roleName) && (
               <Button
                 className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/DashDevs') ? 'active' : ''}`}
                 onClick={() => navigate('/DashDevs')}
@@ -195,10 +189,10 @@ function Navbar({ user, selectedProjectId, setSelectedProjectId, sprintFilter, s
             )}
           </Box>
 
-            {/* SECCIÓN DERECHA: UNIFICADO Y LOGOUT */}
+            {/* SECCIÓN DERECHA: FILTRO*/}
             <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, justifyContent: 'flex-end', gap: 1 }}>
 
-            {/* BOTÓN UNIFICADO DE SELECTORES */}
+            {/* BOTÓN DE PROYECTOS Y SPRINTS */}
             <Button
               className={`nav-button icon-btn no-grow ${scrolled ? 'scrolled' : ''}`}
               onClick={handleClickUnified}
