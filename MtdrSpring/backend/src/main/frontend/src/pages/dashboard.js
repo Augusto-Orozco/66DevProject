@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Box, Typography, CircularProgress, IconButton, FormControl, Select, MenuItem } from '@mui/material'
 import CachedIcon from '@mui/icons-material/Cached';
 import { PieChart, Pie, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'
@@ -13,18 +13,16 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
   const [sprintTasksIds, setSprintTasksIds] = useState([]) 
   
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
   
   // Filtros individuales por gráfica
   const [devFilterTasks, setDevFilterTasks] = useState('all') 
   const [devFilterHours, setDevFilterHours] = useState('all')
   const [devFilterEfectividad, setDevFilterEfectividad] = useState('all') 
 
-  const fetchData = () => {
+  const fetchData = useCallback(() => {
     if (!selectedProjectId) return;
     
     setLoading(true)
-    setError(null)
 
     Promise.all([
       fetch(`/tasks/project/${selectedProjectId}`).then(res => res.json()),
@@ -37,10 +35,9 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
     })
     .catch(err => {
       console.error("Error cargando dashboard:", err)
-      setError("No se pudieron cargar los datos")
       setLoading(false)
     })
-  }
+  }, [selectedProjectId])
 
   // Se ejecuta cuando cambia el proyecto
   useEffect(() => {
@@ -48,7 +45,7 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
     setDevFilterHours('all')
     setDevFilterEfectividad('all')
     fetchData()
-  }, [selectedProjectId])
+  }, [selectedProjectId, fetchData])
 
   // Se ejecuta cuando cambia el filtro de sprint
   useEffect(() => {

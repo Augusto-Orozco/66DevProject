@@ -15,7 +15,7 @@ import TuneIcon from '@mui/icons-material/Tune';
 
 import '../Assets/styles.css';
 
-function Navbar(props) {
+function Navbar({ user, selectedProjectId, setSelectedProjectId, sprintFilter, setSprintFilter, setIsAuth, setUser }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
@@ -30,26 +30,26 @@ function Navbar(props) {
   // Fetch de proyectos
   useEffect(() => {
     // El administrador ve todos los proyectos, los demás ven solo los suyos
-    const needsFiltering = ['Developer', 'Manager', 'Leader'].includes(props.user?.roleName);
-    const url = (needsFiltering && props.user?.userId) 
-                ? `/projects/user/${props.user.userId}` 
+    const needsFiltering = ['Developer', 'Manager', 'Leader'].includes(user?.roleName);
+    const url = (needsFiltering && user?.userId) 
+                ? `/projects/user/${user.userId}` 
                 : '/projects';
                 
     fetch(url)
       .then(res => res.json())
       .then(data => {
         setProjects(data);
-        if (data.length > 0 && !props.selectedProjectId) {
-          props.setSelectedProjectId(data[0].projectId);
+        if (data.length > 0 && !selectedProjectId) {
+          setSelectedProjectId(data[0].projectId);
         }
       })
       .catch(err => console.error("Error fetching projects:", err));
-  }, [props.user?.userId, props.user?.roleName]);
+  }, [user?.userId, user?.roleName, selectedProjectId, setSelectedProjectId]);
 
   // Fetch de sprints cada vez que cambia el proyecto seleccionado
   useEffect(() => {
-    if (props.selectedProjectId) {
-      fetch(`/sprints/project/${props.selectedProjectId}`)
+    if (selectedProjectId) {
+      fetch(`/sprints/project/${selectedProjectId}`)
         .then(res => res.json())
         .then(data => {
           if (Array.isArray(data)) {
@@ -61,12 +61,12 @@ function Navbar(props) {
         })
         .catch(err => console.error("Error fetching sprints:", err));
     }
-  }, [props.selectedProjectId]);
+  }, [selectedProjectId]);
 
-  const selectedProjectName = projects.find(p => p.projectId === props.selectedProjectId)?.name || 'Seleccionar Proyecto';
+  const selectedProjectName = projects.find(p => p.projectId === selectedProjectId)?.name || 'Seleccionar Proyecto';
 
-  const currentSprintObj = sprints.find(s => s.sprintId === props.sprintFilter);
-  const selectedSprintName = props.sprintFilter === 'all' || !props.sprintFilter
+  const currentSprintObj = sprints.find(s => s.sprintId === sprintFilter);
+  const selectedSprintName = sprintFilter === 'all' || !sprintFilter
     ? 'Todos los Sprints'
     : currentSprintObj ? `Sprint ${currentSprintObj.sprintNum}` : 'Todos los Sprints';
 
@@ -81,8 +81,8 @@ function Navbar(props) {
   const handleLogout = () => {
     localStorage.removeItem('isAuth');
     localStorage.removeItem('user');
-    props.setUser(null);
-    props.setIsAuth(false);
+    setUser(null);
+    setIsAuth(false);
     navigate('/');
   };
 
@@ -95,16 +95,16 @@ function Navbar(props) {
   };
 
   const handleSelectProject = (project) => {
-    props.setSelectedProjectId(project.projectId);
-    if (props.setSprintFilter) {
-      props.setSprintFilter('all');
+    setSelectedProjectId(project.projectId);
+    if (setSprintFilter) {
+      setSprintFilter('all');
     }
     handleCloseUnified();
   };
 
   const handleSelectSprint = (sprintId) => {
-    if (props.setSprintFilter) {
-      props.setSprintFilter(sprintId);
+    if (setSprintFilter) {
+      setSprintFilter(sprintId);
     }
     handleCloseUnified();
   };
@@ -133,7 +133,7 @@ function Navbar(props) {
                 style={{ height: '14px' }}
               />
             </Box>
-            {props.user && (
+            {user && (
                 <Box className="MensajeBinvenido" sx={{ml: '25px'}}>
                   <Typography 
                     variant="subtitle2" 
@@ -146,7 +146,7 @@ function Navbar(props) {
                       fontSize: '0.88rem'
                     }}
                   >
-                    Bienvenido {props.user.firstName}
+                    Bienvenido {user.firstName}
                   </Typography>
                 </Box>
               )}
@@ -154,7 +154,7 @@ function Navbar(props) {
 
           {/* SECCIÓN CENTRAL: NAVEGACIÓN */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {['Manager', 'Administrador'].includes(props.user?.roleName) && (
+            {['Manager', 'Administrador'].includes(user?.roleName) && (
               <Button
                 className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/dashboard') ? 'active' : ''}`}
                 onClick={() => navigate('/dashboard')}
@@ -164,7 +164,7 @@ function Navbar(props) {
               </Button>
             )}
 
-            {['Manager', 'Leader', 'Administrador'].includes(props.user?.roleName) && (
+            {['Manager', 'Leader', 'Administrador'].includes(user?.roleName) && (
               <Button
                 className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/Sprints') ? 'active' : ''}`}
                 onClick={() => navigate('/Sprints')}
@@ -174,7 +174,7 @@ function Navbar(props) {
               </Button>
             )}
 
-            {['Manager', 'Leader', 'Administrador'].includes(props.user?.roleName) && (
+            {['Manager', 'Leader', 'Administrador'].includes(user?.roleName) && (
               <Button
                 className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/Roadmap') ? 'active' : ''}`}
                 onClick={() => navigate('/Roadmap')}
@@ -184,7 +184,7 @@ function Navbar(props) {
               </Button>
             )}
 
-            {['Developer', 'Leader'].includes(props.user?.roleName) && (
+            {['Developer', 'Leader'].includes(user?.roleName) && (
               <Button
                 className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/DashDevs') ? 'active' : ''}`}
                 onClick={() => navigate('/DashDevs')}
@@ -235,7 +235,7 @@ function Navbar(props) {
                 <MenuItem 
                   key={project.projectId} 
                   onClick={() => handleSelectProject(project)}
-                  selected={project.projectId === props.selectedProjectId}
+                  selected={project.projectId === selectedProjectId}
                   sx={{ fontSize: '0.85rem', py: 1 }}
                 >
                   <AccountTreeIcon fontSize="small" sx={{ mr: 1, opacity: 0.7 }} />
@@ -251,7 +251,7 @@ function Navbar(props) {
                   </ListSubheader>
                   <MenuItem 
                     onClick={() => handleSelectSprint('all')}
-                    selected={props.sprintFilter === 'all' || !props.sprintFilter}
+                    selected={sprintFilter === 'all' || !sprintFilter}
                     sx={{ fontSize: '0.85rem', py: 1 }}
                   >
                     <CalendarTodayIcon fontSize="small" sx={{ mr: 1, opacity: 0.7 }} />
@@ -261,7 +261,7 @@ function Navbar(props) {
                     <MenuItem 
                       key={sprint.sprintId} 
                       onClick={() => handleSelectSprint(sprint.sprintId)}
-                      selected={sprint.sprintId === props.sprintFilter} 
+                      selected={sprint.sprintId === sprintFilter} 
                       sx={{ fontSize: '0.85rem', py: 1 }}
                     >
                       <CalendarTodayIcon fontSize="small" sx={{ mr: 1, opacity: 0.7 }} />

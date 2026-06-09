@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Box, CircularProgress, Typography, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, FormControl, InputLabel, Select, MenuItem } from '@mui/material'
 import CachedIcon from '@mui/icons-material/Cached';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList } from 'recharts'
@@ -9,7 +9,6 @@ import '../Assets/styles.css'
 function DashDevs({ user, selectedProjectId, sprintFilter, setSprintFilter }) {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
   const [sprintTasksIds, setSprintTasksIds] = useState([])
 
   // Dialog State
@@ -20,7 +19,7 @@ function DashDevs({ user, selectedProjectId, sprintFilter, setSprintFilter }) {
   const [hours, setHours] = useState('');
   const [updating, setUpdating] = useState(false);
 
-  const fetchTasks = () => {
+  const fetchTasks = useCallback(() => {
     if (!user?.userId) return
     setLoading(true)
     fetch(`/tasks/user/${user.userId}`)
@@ -30,10 +29,10 @@ function DashDevs({ user, selectedProjectId, sprintFilter, setSprintFilter }) {
         setLoading(false)
       })
       .catch(err => {
-        setError(err.message)
+        console.error("Error fetching tasks:", err)
         setLoading(false)
       })
-  }
+  }, [user?.userId])
 
   const handleOpenDialog = (task) => {
     const currentStatus = (task.status?.status || '').trim().toLowerCase();
@@ -97,7 +96,7 @@ function DashDevs({ user, selectedProjectId, sprintFilter, setSprintFilter }) {
 
   useEffect(() => {
     fetchTasks()
-  }, [user, selectedProjectId])
+  }, [fetchTasks, selectedProjectId])
 
   useEffect(() => {
     if (sprintFilter === 'all' || !sprintFilter) {
