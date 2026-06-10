@@ -12,6 +12,8 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import AlignHorizontalLeftIcon from '@mui/icons-material/AlignHorizontalLeft';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import TuneIcon from '@mui/icons-material/Tune';
+import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
+import HistoryIcon from '@mui/icons-material/History';
 import '../Assets/styles.css';
 
 function Navbar({ user, selectedProjectId, setSelectedProjectId, sprintFilter, setSprintFilter, setIsAuth, setUser }) {
@@ -106,7 +108,7 @@ function Navbar({ user, selectedProjectId, setSelectedProjectId, sprintFilter, s
   const isActive = (path) => location.pathname === path;
 
   // Determinar si debemos mostrar el selector de sprints en el menú unificado
-  const showSprintSelector = !isActive('/Sprints') && !isActive('/Roadmap');
+  const showSprintSelector = !isActive('/Sprints') && !isActive('/Roadmap') && !isActive('/Desarrolladores') && !isActive('/Cambios');
 
   return (
     <Box className="navbar-wrapper" style={{ top: scrolled ? '10px' : '0px' }}>
@@ -175,6 +177,26 @@ function Navbar({ user, selectedProjectId, setSelectedProjectId, sprintFilter, s
               >
                 <span className="icon"><AlignHorizontalLeftIcon fontSize="small" /></span>
                 <span className="label">Roadmap</span>
+              </Button>
+            )}
+
+            {['Manager', 'Leader', 'Administrador'].includes(user?.roleName) && (
+              <Button
+                className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/Desarrolladores') ? 'active' : ''}`}
+                onClick={() => navigate('/Desarrolladores')}
+              >
+                <span className="icon"><AssignmentIndIcon fontSize="small" /></span>
+                <span className="label">Asignaciones</span>
+              </Button>
+            )}
+
+            {['Manager', 'Leader', 'Administrador'].includes(user?.roleName) && (
+              <Button
+                className={`nav-button icon-btn ${scrolled ? 'scrolled' : ''} ${isActive('/Cambios') ? 'active' : ''}`}
+                onClick={() => navigate('/Cambios')}
+              >
+                <span className="icon"><HistoryIcon fontSize="small" /></span>
+                <span className="label">Cambios</span>
               </Button>
             )}
 

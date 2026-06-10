@@ -8,6 +8,8 @@ import Navbar from '../components/Navbar'
 import Sprints from '../pages/Sprints'
 import TaskCreator from '../pages/TaskCreator'
 import Roadmap from '../pages/Roadmap'
+import Desarrolladores from '../pages/Desarrolladores'
+import Cambios from '../pages/Cambios'
 
 function AppRouter({ isAuth, setIsAuth, user, setUser, selectedProjectId, setSelectedProjectId }) {
   
@@ -89,6 +91,22 @@ function AppRouter({ isAuth, setIsAuth, user, setUser, selectedProjectId, setSel
             element={
               isAuth && ['Manager', 'Leader', 'Administrador'].includes(user?.roleName)
                 ? <Roadmap selectedProjectId={selectedProjectId} />
+                : <Navigate to={isAuth ? "/DashDevs" : "/"} />
+            }
+          />
+          <Route 
+            path="/Desarrolladores" 
+            element={
+              isAuth && ['Manager', 'Leader', 'Administrador'].includes(user?.roleName)
+                ? <Desarrolladores selectedProjectId={selectedProjectId} />
+                : <Navigate to={isAuth ? "/DashDevs" : "/"} />
+            }
+          />
+          <Route 
+            path="/Cambios" 
+            element={
+              isAuth && ['Manager', 'Leader', 'Administrador'].includes(user?.roleName)
+                ? <Cambios selectedProjectId={selectedProjectId} />
                 : <Navigate to={isAuth ? "/DashDevs" : "/"} />
             }
           />

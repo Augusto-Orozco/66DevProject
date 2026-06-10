@@ -267,7 +267,7 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
 
         {/* --- BURNDOWN CHART --- */}
         <Box className="base-card" sx={{ gridColumn: 'span 4' }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>Esfuerzo general del equipo</Typography>
+          <Typography variant="h6" sx={{ mb: 2 }}>Burndown Chart</Typography>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={burndownData} margin={{ top: 10, right: 30, left: 0, bottom: 10 }}>
               <CartesianGrid strokeDasharray="3 3" />
