@@ -1,67 +1,89 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
-import { Box, Typography, CircularProgress, IconButton, FormControl, Select, MenuItem } from '@mui/material'
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Box, Typography, CircularProgress, IconButton, FormControl, Select, MenuItem } from '@mui/material';
 import CachedIcon from '@mui/icons-material/Cached';
-import { PieChart, Pie, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts'
+import { PieChart, Pie, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts';
 
-import Footer from '../components/Footer'
-import '../Assets/styles.css'
+import Footer from '../components/Footer';
+import '../Assets/styles.css';
 
 function Dashboard({ selectedProjectId, sprintFilter }) {
-  const [items, setItems] = useState([]) 
-  const [assignments, setAssignments] = useState([])
-  const [sprintTasksIds, setSprintTasksIds] = useState([]) 
-  const [loading, setLoading] = useState(false)
+  const [items, setItems] = useState([]);
+  const [assignments, setAssignments] = useState([]);
+  const [sprintTasksIds, setSprintTasksIds] = useState([]); 
+  const [loading, setLoading] = useState(false);
   
+  // Estados para la lógica de Sprints
+  const [sprints, setSprints] = useState([]);
+  const [sprintTasksMap, setSprintTasksMap] = useState({});
+
   // Filtros individuales por gráfica
-  const [devFilterTasks, setDevFilterTasks] = useState('all') 
-  const [devFilterHours, setDevFilterHours] = useState('all')
-  const [devFilterEfectividad, setDevFilterEfectividad] = useState('all') 
+  const [devFilterTasks, setDevFilterTasks] = useState('all');
+  const [devFilterHours, setDevFilterHours] = useState('all');
+  const [devFilterEfectividad, setDevFilterEfectividad] = useState('all');
 
-  const fetchData = useCallback(() => {
+  // --- OBTENCIÓN DE DATOS INTEGRADA ---
+  const fetchData = useCallback(async () => {
     if (!selectedProjectId) return;
-    setLoading(true)
-    Promise.all([
-      fetch(`/tasks/project/${selectedProjectId}`).then(res => res.json()),
-      fetch(`/tasks/assignments/project/${selectedProjectId}`).then(res => res.json())
-    ])
-    .then(([tasksData, assignmentsData]) => {
-      setItems(Array.isArray(tasksData) ? tasksData : [])
-      setAssignments(Array.isArray(assignmentsData) ? assignmentsData : [])
-      setLoading(false)
-    })
-    .catch(err => {
-      console.error("Error cargando dashboard:", err)
-      setLoading(false)
-    })
-  }, [selectedProjectId])
+    setLoading(true);
 
-  // Se ejecuta cuando cambia el proyecto
+    try {
+      const [tasksRes, assignmentsRes] = await Promise.all([
+        fetch(`/tasks/project/${selectedProjectId}`),
+        fetch(`/tasks/assignments/project/${selectedProjectId}`)
+      ]);
+
+      const tasksData = await tasksRes.json();
+      const assignmentsData = await assignmentsRes.json();
+
+      setItems(Array.isArray(tasksData) ? tasksData : []);
+      setAssignments(Array.isArray(assignmentsData) ? assignmentsData : []);
+
+      const sprintsRes = await fetch(`/sprints/project/${selectedProjectId}`);
+      const sprintsData = await sprintsRes.json();
+      
+      const sortedSprints = [...sprintsData].sort((a, b) => a.sprintNum - b.sprintNum);
+      setSprints(sortedSprints);
+
+      const tasksMap = {};
+      for (const sprint of sortedSprints) {
+        const stRes = await fetch(`/sprintTasks/${sprint.sprintId}`);
+        const stData = await stRes.json();
+        tasksMap[sprint.sprintId] = stData.map(st => st.task?.taskId || st.taskId);
+      }
+      setSprintTasksMap(tasksMap);
+
+    } catch (err) {
+      console.error("Error cargando dashboard:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedProjectId]);
+
   useEffect(() => {
-    setDevFilterTasks('all')
-    setDevFilterHours('all')
-    setDevFilterEfectividad('all')
-    fetchData()
-  }, [selectedProjectId, fetchData])
+    setDevFilterTasks('all');
+    setDevFilterHours('all');
+    setDevFilterEfectividad('all');
+    fetchData();
+  }, [selectedProjectId, fetchData]);
 
-  // Se ejecuta cuando cambia el filtro de sprint
   useEffect(() => {
     if (!sprintFilter || sprintFilter === 'all') {
-      setSprintTasksIds([])
+      setSprintTasksIds([]);
     } else {
-      setLoading(true)
+      setLoading(true);
       fetch(`/sprintTasks/${sprintFilter}`)
         .then(res => res.json())
         .then(data => {
-          const ids = data.map(st => st.task?.taskId || st.taskId)
-          setSprintTasksIds(ids)
-          setLoading(false)
+          const ids = data.map(st => st.task?.taskId || st.taskId);
+          setSprintTasksIds(ids);
+          setLoading(false);
         })
         .catch(err => {
-          console.error("Error cargando tareas del sprint:", err)
-          setLoading(false)
-        })
+          console.error("Error cargando tareas del sprint:", err);
+          setLoading(false);
+        });
     }
-  }, [sprintFilter])
+  }, [sprintFilter]);
 
   // --- LÓGICA DE FILTRADO Y ORDENAMIENTO ---
   const activeTasks = useMemo(() => {
@@ -69,13 +91,12 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
       ? items 
       : items.filter(t => sprintTasksIds.includes(t.taskId));
 
-    // Ordenar por estatus: Atrasado > En Progreso > Completado > Otros
     const getPriority = (status) => {
       const s = String(status || '').trim().toLowerCase();
       if (s === 'atrasado') return 1;
       if (s === 'en progreso') return 2;
       if (s === 'completado') return 3;
-      return 4; // SIN ESTATUS u otros
+      return 4;
     };
 
     return [...tasks].sort((a, b) => {
@@ -87,76 +108,70 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
 
   const activeAssignments = (!sprintFilter || sprintFilter === 'all')
     ? assignments
-    : assignments.filter(a => sprintTasksIds.includes(a.task?.taskId))
+    : assignments.filter(a => sprintTasksIds.includes(a.task?.taskId));
 
   const getDeveloperNameForTask = (taskId) => {
-    const assignment = activeAssignments.find(a => a.task?.taskId === taskId)
-    if (!assignment?.user) return 'Sin asignar'
-    return `${assignment.user.firtsName || ''} ${assignment.user.lastName || ''}`.trim() || 'Sin asignar'
-  }
+    const assignment = activeAssignments.find(a => a.task?.taskId === taskId);
+    if (!assignment?.user) return 'Sin asignar';
+    return `${assignment.user.firtsName || ''} ${assignment.user.lastName || ''}`.trim() || 'Sin asignar';
+  };
 
   // --- PREPARACIÓN DE DATOS PARA GRÁFICAS ---
 
-  // 1. Gráfica de Estatus
   const statusCount = activeTasks.reduce((acc, item) => {
-    const status = item.status?.status || 'SIN ESTATUS'
-    acc[status] = (acc[status] || 0) + 1
-    return acc
-  }, {})
+    const status = item.status?.status || 'SIN ESTATUS';
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, {});
 
   const statusChartData = Object.keys(statusCount).map(key => {
-    let color = '#9e9e9e'
-    if (key === 'Completado') color = '#4caf50'
-    else if (key === 'En Progreso') color = '#fbc02d'
-    else if (key === 'Atrasado') color = '#f44336'
-    return { name: key, value: statusCount[key], fill: color }
-  })
+    let color = '#9e9e9e';
+    if (key === 'Completado') color = '#4caf50';
+    else if (key === 'En Progreso') color = '#fbc02d';
+    else if (key === 'Atrasado') color = '#f44336';
+    return { name: key, value: statusCount[key], fill: color };
+  });
 
-  // 2. Base de datos de Desarrolladores y Cálculos Generales
-  let totalEstimadoGlobal = 0
-  let totalRealGlobal = 0
+  let totalEstimadoGlobal = 0;
+  let totalRealGlobal = 0;
 
   const devStatsMap = activeAssignments.reduce((acc, a) => {
-    if (!a.user || !a.task) return acc
-    const userName = `${a.user.firtsName} ${a.user.lastName}`
+    if (!a.user || !a.task) return acc;
+    const userName = `${a.user.firtsName} ${a.user.lastName}`;
     
     if (!acc[userName]) {
-      acc[userName] = { name: userName, estimado: 0, real: 0, totalTareas: 0 }
+      acc[userName] = { name: userName, estimado: 0, real: 0, totalTareas: 0 };
     }
     
-    const estimado = a.task.objetiveTime || 0
-    const real = a.task.realTime || 0
+    const estimado = a.task.objetiveTime || 0;
+    const real = a.task.realTime || 0;
 
-    acc[userName].estimado += estimado
-    acc[userName].real += real
-    acc[userName].totalTareas += 1
+    acc[userName].estimado += estimado;
+    acc[userName].real += real;
+    acc[userName].totalTareas += 1;
 
-    totalEstimadoGlobal += estimado
-    totalRealGlobal += real
+    totalEstimadoGlobal += estimado;
+    totalRealGlobal += real;
 
-    return acc
-  }, {})
+    return acc;
+  }, {});
 
-  const allDevStats = Object.values(devStatsMap)
+  const allDevStats = Object.values(devStatsMap);
   
-  // Datos filtrados para cada gráfica específica
-  const devTasksChartData = allDevStats.filter(dev => devFilterTasks === 'all' || dev.name === devFilterTasks)
-  const devHoursChartData = allDevStats.filter(dev => devFilterHours === 'all' || dev.name === devFilterHours)
+  const devTasksChartData = allDevStats.filter(dev => devFilterTasks === 'all' || dev.name === devFilterTasks);
+  const devHoursChartData = allDevStats.filter(dev => devFilterHours === 'all' || dev.name === devFilterHours);
 
-  // 3. Progreso General
-  const total = activeTasks.length
-  const completed = activeTasks.filter(t => t.status?.status === 'Completado').length
-  const progressPercent = total > 0 ? Math.round((completed / total) * 100) : 0
+  const total = activeTasks.length;
+  const completed = activeTasks.filter(t => t.status?.status === 'Completado').length;
+  const progressPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   const sprintProgressData = [
     { name: 'Sprint', completado: progressPercent, restante: 100 - progressPercent }
-  ]
+  ];
 
-  // 4. Lógica de Efectividad por Tiempos
   let targetEstimado = totalEstimadoGlobal;
   let targetReal = totalRealGlobal;
 
-  // Si hay un dev seleccionado, tomamos sus datos; si no, dejamos los globales
   if (devFilterEfectividad !== 'all') {
     const devData = devStatsMap[devFilterEfectividad];
     if (devData) {
@@ -168,12 +183,10 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
     }
   }
 
-  // Calculamos porcentaje (Si real es 0 pero estimado es > 0, es 100% de efectividad)
   let efectividadValor = targetReal > 0 
     ? Math.round((targetEstimado / targetReal) * 100) 
     : 0;
 
-  // Colores según las reglas
   let efectividadColor = '#f44336';
   if (efectividadValor > 75) efectividadColor = '#4caf50'; 
   else if (efectividadValor >= 50) efectividadColor = '#fbc02d';
@@ -182,40 +195,101 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
 
   const efectividadBarData = [
     { name: 'Efectividad', valor: barraEfectividadVisual, restante: 100 - barraEfectividadVisual }
-  ]
+  ];
 
-  // 5. BURNDOWN CHART
+
+// 5. BURNDOWN CHART DINÁMICO 
   const burndownData = useMemo(() => {
     if (totalEstimadoGlobal === 0) return [];
 
-    const data = [{ name: 'Inicio', ideal: totalEstimadoGlobal, real: totalEstimadoGlobal }];
-    const idealStep = totalEstimadoGlobal / (activeTasks.length || 1);
-    let currentRealRemaining = totalEstimadoGlobal;
-
-    activeTasks.forEach((task, index) => {
-      const assignment = activeAssignments.find(a => a.task?.taskId === task.taskId);
-      const realTimeConsumed = assignment?.task?.realTime || 0;
+    
+    if (!sprintFilter || sprintFilter === 'all') {
+      if (sprints.length === 0) return [];
       
-      currentRealRemaining -= realTimeConsumed;
+      const data = [{ name: 'Inicio', ideal: totalEstimadoGlobal, real: totalEstimadoGlobal }];
+      const idealStep = totalEstimadoGlobal / sprints.length;
+      
+      let cumulativeObj = 0;
+      let cumulativeReal = 0;
 
-      data.push({
-        name: `T${index + 1}`, 
-        ideal: Math.max(0, Math.round(totalEstimadoGlobal - (idealStep * (index + 1)))),
-        real: Math.round(currentRealRemaining)
+      sprints.forEach((sprint, index) => {
+        const taskIdsInThisSprint = sprintTasksMap[sprint.sprintId] || [];
+        
+        taskIdsInThisSprint.forEach(taskId => {
+          const task = items.find(t => t.taskId === taskId);
+          if (task) {
+            cumulativeObj += (task.objetiveTime || 0);
+            cumulativeReal += (task.realTime || 0);
+          }
+        });
+
+       
+        const idealPoint = Math.max(0, Math.round(totalEstimadoGlobal - (idealStep * (index + 1))));
+        
+       
+        const remainingObj = Math.max(0, totalEstimadoGlobal - cumulativeObj);
+        
+        let realPoint = remainingObj; 
+        
+
+        if (cumulativeReal > 0 && cumulativeObj > 0) {
+          const efficiency = cumulativeObj / cumulativeReal;
+
+          realPoint = remainingObj / efficiency;
+        }
+
+        data.push({
+          name: sprint.sprintName || `Sprint ${sprint.sprintNum}`,
+          ideal: idealPoint,
+          real: Math.max(0, Math.round(realPoint))
+        });
       });
-    });
+      return data;
+    } 
+    else {
+      if (activeTasks.length === 0) return [];
 
-    return data;
-  }, [activeTasks, activeAssignments, totalEstimadoGlobal]);
+      const data = [{ name: 'Inicio', ideal: totalEstimadoGlobal, real: totalEstimadoGlobal }];
+      const idealStep = totalEstimadoGlobal / activeTasks.length;
+      
+      let cumulativeObj = 0;
+      let cumulativeReal = 0;
 
+      activeTasks.forEach((task, index) => {
+        cumulativeObj += (task.objetiveTime || 0);
+        cumulativeReal += (task.realTime || 0);
+
+        const idealPoint = Math.max(0, Math.round(totalEstimadoGlobal - (idealStep * (index + 1))));
+        
+        const remainingObj = Math.max(0, totalEstimadoGlobal - cumulativeObj);
+        
+        let realPoint = remainingObj;
+        
+        if (cumulativeReal > 0 && cumulativeObj > 0) {
+          const efficiency = cumulativeObj / cumulativeReal;
+          realPoint = remainingObj / efficiency;
+        }
+
+        const taskName = task.title 
+          ? (task.title.length > 12 ? task.title.substring(0, 12) + '...' : task.title) 
+          : `T-${index + 1}`;
+
+        data.push({
+          name: taskName,
+          ideal: idealPoint,
+          real: Math.max(0, Math.round(realPoint))
+        });
+      });
+
+      return data;
+    }
+  }, [items, sprints, sprintTasksMap, totalEstimadoGlobal, sprintFilter, activeTasks]);
   return (
     <>
-    {/* Contenedor principal */}
     <Box sx={{ pt: 3, px: 3, pb: 4, maxWidth: '100%', margin: '0 auto' }}>
-      
       <Box className="dashboard-grid">
         
-        {/* --- FILA 1: ESTADO, PROGRESO Y TAREAS TOTALES --- */}
+        {/* --- FILA 1: ESTADO Y PROGRESO --- */}
         <Box className="base-card" sx={{ gridColumn: 'span 1' }}>
           <Typography variant="h6" sx={{ mb: 1 }}>Estado General</Typography>
           {loading ? <CircularProgress /> : (
@@ -327,7 +401,6 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
               <Select value={devFilterEfectividad} onChange={(e) => setDevFilterEfectividad(e.target.value)} displayEmpty sx={{ fontSize: '0.75rem' }}>
                 <MenuItem value="all" sx={{ fontSize: '0.75rem' }}>Todos</MenuItem>
                 {allDevStats.map(dev => (
-                  // Usamos solo el primer nombre para que no se desborde el pequeño Select
                   <MenuItem key={dev.name} value={dev.name} sx={{ fontSize: '0.75rem' }}>{dev.name.split(' ')[0]}</MenuItem>
                 ))}
               </Select>
@@ -369,21 +442,20 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
 
           <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 2 }}>
             {!loading && activeTasks.map((item) => {
-              let pCol = '#292929', pBg = '#f5f5f5'
+              let pCol = '#292929', pBg = '#f5f5f5';
               const priorityName = item.priority?.priorityName;
-              if (priorityName === 'Low' || priorityName === 'Baja') { pCol = '#123013'; pBg = '#94e59b' }
-              else if (priorityName === 'Medium' || priorityName === 'Media') { pCol = '#483009'; pBg = '#fff9b9' }
-              else if (priorityName === 'High' || priorityName === 'Alta') { pCol = '#541111'; pBg = '#fdb4bf' }
+              if (priorityName === 'Low' || priorityName === 'Baja') { pCol = '#123013'; pBg = '#94e59b'; }
+              else if (priorityName === 'Medium' || priorityName === 'Media') { pCol = '#483009'; pBg = '#fff9b9'; }
+              else if (priorityName === 'High' || priorityName === 'Alta') { pCol = '#541111'; pBg = '#fdb4bf'; }
 
-              let sCol = '#000000', sBg = '#a9a9a9', border = '#858585'
+              let sCol = '#000000', sBg = '#a9a9a9', border = '#858585';
               const statusStr = item.status?.status;
-              if (statusStr === 'Completado') { sCol = '#123013'; sBg = '#94e59b'; border = '#4caf50' }
-              else if (statusStr === 'En Progreso') { sCol = '#483009'; sBg = '#fff9b9'; border = '#fbc02d' }
-              else if (statusStr === 'Atrasado') { sCol = '#541111'; sBg = '#fdb4bf'; border = '#ff2020' }
+              if (statusStr === 'Completado') { sCol = '#123013'; sBg = '#94e59b'; border = '#4caf50'; }
+              else if (statusStr === 'En Progreso') { sCol = '#483009'; sBg = '#fff9b9'; border = '#fbc02d'; }
+              else if (statusStr === 'Atrasado') { sCol = '#541111'; sBg = '#fdb4bf'; border = '#ff2020'; }
 
-              const developerName = getDeveloperNameForTask(item.taskId)
+              const developerName = getDeveloperNameForTask(item.taskId);
 
-              
               return (
                 <Box key={item.taskId} className="task-row" style={{ borderLeft: `6px solid ${border}` }}>
                   <Box sx={{ flex: 2 }}>
@@ -400,7 +472,7 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
                     <span className="badge-base" style={{ backgroundColor: pBg, color: pCol }}>{priorityName}</span>
                   </Box>
                 </Box>
-              )
+              );
             })}
           </Box>
         </Box>
@@ -408,7 +480,7 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
     </Box>
     <Footer />
     </>
-  )
+  );
 }
 
-export default Dashboard
+export default Dashboard;
