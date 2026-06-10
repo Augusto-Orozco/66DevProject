@@ -15,7 +15,7 @@ import Footer from '../components/Footer'
 import '../Assets/styles.css'
 
 
-/* --- TARJETA DRAGGABLE --- */
+// Tarjeta draggeable
 function TaskCard({ task, onEditTask, users }) {
   const {
     attributes,
@@ -50,7 +50,7 @@ function TaskCard({ task, onEditTask, users }) {
   )
 }
 
-/* --- CONTENIDO DE LA TARJETA --- */
+// Contenido de la tarjeta de tarea
 function TaskCardContent({ task, users }) {
   let sCol = '#000000', sBg = '#a9a9a9'
   const statusStr = task.statusName || 'SIN ESTATUS'
@@ -80,12 +80,9 @@ function TaskCardContent({ task, users }) {
   )
 }
 
-/* --- COLUMNA DROPPABLE --- */
+// Columna de sprints
 function Column({ id, title, tasks, visibleColumnCount, onAddTask, onEditTask, isSticky, users }) {
   const { setNodeRef, isOver } = useDroppable({ id })
-
-  // Debug logging removed (was logging when column is hovered during drag).
-
   const groupedTasks = tasks.reduce((acc, task) => {
     const key = task.userStoryId || 'none'
     if (!acc[key]) {
@@ -163,10 +160,18 @@ function Column({ id, title, tasks, visibleColumnCount, onAddTask, onEditTask, i
               <Typography 
                 variant="subtitle2" 
                 sx={{ 
-                  fontWeight: 'bold', color: '#000000', mb: 1, pl: 1,
-                  borderLeft: '4px solid var(--oracle-red)',
-                  background: 'linear-gradient(90deg, rgba(199, 69, 52, 0.12) 0%, rgba(199, 69, 52, 0.01) 100%)',
-                  py: 0.5
+                  fontWeight: 'bold', 
+                  color: 'white', 
+                  mb: 1.5, 
+                  px: 2,
+                  py: 0.5,
+                  backgroundColor: 'var(--oracle-red)',
+                  borderRadius: '12px',
+                  display: 'block',
+                  fontSize: '0.75rem',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  width: '100%',
+                  textAlign: 'center'
                 }}
               >
                 {storyData.name}
@@ -189,7 +194,7 @@ function Column({ id, title, tasks, visibleColumnCount, onAddTask, onEditTask, i
   )
 }
 
-/* --- MAIN --- */
+// main
 function Sprints({ selectedProjectId }) {
   const [columns, setColumns] = useState({})
   const [loading, setLoading] = useState(true)
@@ -523,7 +528,7 @@ function Sprints({ selectedProjectId }) {
           ) : null}
         </DragOverlay>
 
-        {/* Floating UI Elements */}
+        {/* BOTONONES DE CREAR Y ORDENAR SPRINTS */}
         <Box sx={{ position: 'fixed', top: 110, right: 40, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', zIndex: 1100 }}>
           {openMenu && (
             <Button variant="contained" onClick={() => { setSelectedSprintId(null); setOpenMenu(false); }} sx={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', mb: 1.5, width: '2.2rem', height: '2.2rem', minWidth: 0, padding: 0, borderRadius: '50%', backgroundColor: '#555', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
@@ -549,7 +554,7 @@ function Sprints({ selectedProjectId }) {
           </Button>
         </Box>
 
-        {/* Dialogs */}
+        {/* MODAL DE CREACIÓN Y EDICIÓN DE SPRINTS Y TAREAS / BORRAR TAREAS */}
         <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
           <DialogTitle sx={{ fontWeight: 'bold' }}>Crear nuevo Sprint</DialogTitle>
           <DialogContent>

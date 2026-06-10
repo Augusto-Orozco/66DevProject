@@ -11,14 +11,12 @@ const Cambios = ({ selectedProjectId }) => {
     if (!selectedProjectId) return;
     try {
       setLoading(true);
-      
       // Fetch de historial de cambios
       const historyRes = await fetch(`/tasks/history/project/${selectedProjectId}`);
       if (historyRes.ok) {
         const historyData = await historyRes.json();
         setTaskHistory(Array.isArray(historyData) ? historyData : []);
       }
-
     } catch (error) {
       console.error("Error fetching history data:", error);
     } finally {
@@ -43,7 +41,7 @@ const Cambios = ({ selectedProjectId }) => {
       display: 'flex', 
       flexDirection: 'column', 
       minHeight: '100vh', 
-      backgroundColor: '#f8f9fa' 
+      backgroundColor: '#F1EFED' 
     }}>
       <Box sx={{ p: 4, flexGrow: 1 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, mt: 2 }}>
@@ -76,7 +74,7 @@ const Cambios = ({ selectedProjectId }) => {
                     {new Date(history.changedAt).toLocaleString()}
                   </Typography>
                   <Typography variant="body2" sx={{ flex: 2, fontWeight: 'bold', color: '#333' }}>
-                    {history.task?.title || "Tarea Desconocida"}
+                    {history.task?.title}
                   </Typography>
                   <Typography variant="body2" sx={{ flex: 1, color: '#555' }}>
                     {history.user ? `${history.user.firtsName} ${history.user.lastName}` : "Usuario"}

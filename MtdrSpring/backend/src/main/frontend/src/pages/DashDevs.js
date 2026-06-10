@@ -237,7 +237,7 @@ function DashDevs({ user, selectedProjectId, sprintFilter, setSprintFilter }) {
             </ResponsiveContainer>
           </Box>
 
-          {/* PRODUCTIVIDAD ACTUALIZADA */}
+          {/* PRODUCTIVIDAD */}
           <Box className="base-card" sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <Typography variant="h6" fontWeight="bold" sx={{ width: '100%', mb: 1 }}>Productividad</Typography>
             <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -258,7 +258,7 @@ function DashDevs({ user, selectedProjectId, sprintFilter, setSprintFilter }) {
             </Typography>
           </Box>
 
-          {/* COMPARATIVA HORAS */}
+          {/* COMPARATIVA DE HORAS */}
           <Box className="base-card" sx={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column' }}>
             <Typography variant="h6" fontWeight="bold" sx={{ mb: 1 }}>Horas Estimadas vs Horas Reales</Typography>
             <ResponsiveContainer width="100%" height={230}>

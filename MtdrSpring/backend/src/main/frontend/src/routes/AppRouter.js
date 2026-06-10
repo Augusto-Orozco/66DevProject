@@ -6,14 +6,12 @@ import Dashboard from '../pages/dashboard'
 import DashDevs from '../pages/DashDevs'
 import Navbar from '../components/Navbar'
 import Sprints from '../pages/Sprints'
-import TaskCreator from '../pages/TaskCreator'
 import Roadmap from '../pages/Roadmap'
 import Desarrolladores from '../pages/Desarrolladores'
 import Cambios from '../pages/Cambios'
 
 function AppRouter({ isAuth, setIsAuth, user, setUser, selectedProjectId, setSelectedProjectId }) {
-  
-  // <-- 2. Creamos el estado del filtro de sprints aquí a nivel global de las rutas
+
   const [sprintFilter, setSprintFilter] = useState('all')
 
   return (
@@ -26,14 +24,12 @@ function AppRouter({ isAuth, setIsAuth, user, setUser, selectedProjectId, setSel
           user={user} 
           selectedProjectId={selectedProjectId}
           setSelectedProjectId={setSelectedProjectId}
-          // <-- 3. Le pasamos el estado y la función para actualizarlo al Navbar
           sprintFilter={sprintFilter}
           setSprintFilter={setSprintFilter}
         />
       )}
 
       <Box>
-        {/* Esto empuja TODO el contenido debajo del navbar */}
         {isAuth && <Toolbar />}
 
         <Routes>
@@ -45,17 +41,14 @@ function AppRouter({ isAuth, setIsAuth, user, setUser, selectedProjectId, setSel
                 : <Login setIsAuth={setIsAuth} setUser={setUser} />
             }
           />
-
           <Route 
             path="/dashboard" 
             element={
               isAuth && ['Leader', 'Administrador'].includes(user?.roleName)
-                // <-- 4. Le pasamos el valor actual del filtro al Dashboard
                 ? <Dashboard selectedProjectId={selectedProjectId} sprintFilter={sprintFilter} />
                 : <Navigate to={isAuth ? (user?.roleName === 'Manager' ? "/Sprints" : "/DashDevs") : "/"} />
             }
           />
-
           <Route
             path="/DashDevs"
             element={
@@ -67,15 +60,6 @@ function AppRouter({ isAuth, setIsAuth, user, setUser, selectedProjectId, setSel
                     setSprintFilter={setSprintFilter} 
                   />
                 : <Navigate to="/dashboard" />
-            }
-          />
-
-          <Route 
-            path="/TaskCreator" 
-            element={
-              isAuth && ['Manager', 'Leader', 'Administrador'].includes(user?.roleName)
-                ? <TaskCreator selectedProjectId={selectedProjectId} />
-                : <Navigate to={isAuth ? "/DashDevs" : "/"} />
             }
           />
           <Route 
@@ -110,7 +94,6 @@ function AppRouter({ isAuth, setIsAuth, user, setUser, selectedProjectId, setSel
                 : <Navigate to={isAuth ? "/DashDevs" : "/"} />
             }
           />
-
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Box>

@@ -155,7 +155,6 @@ const Desarrolladores = ({ selectedProjectId }) => {
     return `${(days / daysCount) * 100}%`; 
   };
 
-  const today = new Date();
 
   if (loading) {
     return (
@@ -170,7 +169,7 @@ const Desarrolladores = ({ selectedProjectId }) => {
       display: 'flex', 
       flexDirection: 'column', 
       minHeight: '100vh', 
-      backgroundColor: '#f8f9fa' 
+      backgroundColor: '#F1EFED' 
     }}>
       <Box sx={{ p: 4, flexGrow: 1 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, mt: 2 }}>

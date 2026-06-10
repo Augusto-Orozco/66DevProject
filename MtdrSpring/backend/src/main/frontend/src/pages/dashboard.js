@@ -21,7 +21,7 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
   const [devFilterHours, setDevFilterHours] = useState('all');
   const [devFilterEfectividad, setDevFilterEfectividad] = useState('all');
 
-  // --- OBTENCIÓN DE DATOS INTEGRADA ---
+  // Obtención de datos
   const fetchData = useCallback(async () => {
     if (!selectedProjectId) return;
     setLoading(true);
@@ -85,7 +85,7 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
     }
   }, [sprintFilter]);
 
-  // --- LÓGICA DE FILTRADO Y ORDENAMIENTO ---
+  // Listado de tareas
   const activeTasks = useMemo(() => {
     let tasks = (!sprintFilter || sprintFilter === 'all')
       ? items 
@@ -106,6 +106,7 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
     });
   }, [items, sprintFilter, sprintTasksIds]);
 
+  // Gráfica de tareas por desarrollador
   const activeAssignments = (!sprintFilter || sprintFilter === 'all')
     ? assignments
     : assignments.filter(a => sprintTasksIds.includes(a.task?.taskId));
@@ -116,14 +117,13 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
     return `${assignment.user.firtsName || ''} ${assignment.user.lastName || ''}`.trim() || 'Sin asignar';
   };
 
-  // --- PREPARACIÓN DE DATOS PARA GRÁFICAS ---
-
   const statusCount = activeTasks.reduce((acc, item) => {
     const status = item.status?.status || 'SIN ESTATUS';
     acc[status] = (acc[status] || 0) + 1;
     return acc;
   }, {});
 
+  // Gráfica de estado general
   const statusChartData = Object.keys(statusCount).map(key => {
     let color = '#9e9e9e';
     if (key === 'Completado') color = '#4caf50';
@@ -135,6 +135,7 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
   let totalEstimadoGlobal = 0;
   let totalRealGlobal = 0;
 
+  // Graficas de Horas Estimadas vs Horas Reales
   const devStatsMap = activeAssignments.reduce((acc, a) => {
     if (!a.user || !a.task) return acc;
     const userName = `${a.user.firtsName} ${a.user.lastName}`;
@@ -142,17 +143,13 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
     if (!acc[userName]) {
       acc[userName] = { name: userName, estimado: 0, real: 0, totalTareas: 0 };
     }
-    
     const estimado = a.task.objetiveTime || 0;
     const real = a.task.realTime || 0;
-
     acc[userName].estimado += estimado;
     acc[userName].real += real;
     acc[userName].totalTareas += 1;
-
     totalEstimadoGlobal += estimado;
     totalRealGlobal += real;
-
     return acc;
   }, {});
 
@@ -165,6 +162,7 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
   const completed = activeTasks.filter(t => t.status?.status === 'Completado').length;
   const progressPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
 
+  // Gráfica de progreso general
   const sprintProgressData = [
     { name: 'Sprint', completado: progressPercent, restante: 100 - progressPercent }
   ];
@@ -183,6 +181,7 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
     }
   }
 
+  // Gráfica de efectividad
   let efectividadValor = targetReal > 0 
     ? Math.round((targetEstimado / targetReal) * 100) 
     : 0;
@@ -197,18 +196,15 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
     { name: 'Efectividad', valor: barraEfectividadVisual, restante: 100 - barraEfectividadVisual }
   ];
 
-
-// 5. BURNDOWN CHART DINÁMICO 
+  // Burndown Chart
   const burndownData = useMemo(() => {
     if (totalEstimadoGlobal === 0) return [];
 
-    
     if (!sprintFilter || sprintFilter === 'all') {
       if (sprints.length === 0) return [];
-      
+
       const data = [{ name: 'Inicio', ideal: totalEstimadoGlobal, real: totalEstimadoGlobal }];
       const idealStep = totalEstimadoGlobal / sprints.length;
-      
       let cumulativeObj = 0;
       let cumulativeReal = 0;
 
@@ -222,15 +218,10 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
             cumulativeReal += (task.realTime || 0);
           }
         });
-
-       
+      
         const idealPoint = Math.max(0, Math.round(totalEstimadoGlobal - (idealStep * (index + 1))));
-        
-       
         const remainingObj = Math.max(0, totalEstimadoGlobal - cumulativeObj);
-        
         let realPoint = remainingObj; 
-        
 
         if (cumulativeReal > 0 && cumulativeObj > 0) {
           const efficiency = cumulativeObj / cumulativeReal;
@@ -284,12 +275,13 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
       return data;
     }
   }, [items, sprints, sprintTasksMap, totalEstimadoGlobal, sprintFilter, activeTasks]);
+
   return (
     <>
     <Box sx={{ pt: 3, px: 3, pb: 4, maxWidth: '100%', margin: '0 auto' }}>
       <Box className="dashboard-grid">
         
-        {/* --- FILA 1: ESTADO Y PROGRESO --- */}
+        {/* --- FILA 1: ESTADO, PROGRESO Y TAREAS TOTALES --- */}
         <Box className="base-card" sx={{ gridColumn: 'span 1' }}>
           <Typography variant="h6" sx={{ mb: 1 }}>Estado General</Typography>
           {loading ? <CircularProgress /> : (
@@ -339,7 +331,7 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
           </ResponsiveContainer>
         </Box>
 
-        {/* --- BURNDOWN CHART --- */}
+        {/* --- FILA 2: BURNDOWN CHART --- */}
         <Box className="base-card" sx={{ gridColumn: 'span 4' }}>
           <Typography variant="h6" sx={{ mb: 2 }}>Burndown Chart</Typography>
           <ResponsiveContainer width="100%" height={300}>
@@ -368,7 +360,7 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
           </ResponsiveContainer>
         </Box>
 
-        {/* --- FILA 2: HORAS Y EFECTIVIDAD --- */}
+        {/* --- FILA 3: HORAS Y EFECTIVIDAD --- */}
         <Box className="base-card" sx={{ gridColumn: 'span 3' }}>
           <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h6">Horas Estimadas vs Horas Reales</Typography>
@@ -422,7 +414,7 @@ function Dashboard({ selectedProjectId, sprintFilter }) {
           </ResponsiveContainer>
         </Box>
 
-        {/* --- FILA 3: LISTADO DE TAREAS --- */}
+        {/* --- FILA 4: LISTADO DE TAREAS --- */}
         <Box className="base-card" sx={{ gridColumn: 'span 4', alignItems: 'flex-start', justifyContent: 'flex-start', p: 3 }}>
           <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
             <Typography variant="h6" fontWeight="bold">

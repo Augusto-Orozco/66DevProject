@@ -123,7 +123,7 @@ const Roadmap = ({ selectedProjectId }) => {
   };
 
   // Cálculos para indicadores
-  const today = new Date();
+  const today = useMemo(() => new Date(), []);
   const activeSprints = sprints.filter(s => {
     const start = new Date(s.startDate || s.START_DATE);
     const end = new Date(s.endDate || s.END_DATE);
@@ -164,7 +164,7 @@ const Roadmap = ({ selectedProjectId }) => {
       display: 'flex', 
       flexDirection: 'column', 
       minHeight: '100vh', 
-      backgroundColor: '#f8f9fa' 
+      backgroundColor: '#F1EFED' 
     }}>
       <Box sx={{ p: 4, flexGrow: 1 }}>
         <Box sx={{ mb: 4, mt: 2 }}>
