@@ -6,7 +6,7 @@ import Dashboard from '../pages/dashboard'
 import DashDevs from '../pages/DashDevs'
 import Navbar from '../components/Navbar'
 import Sprints from '../pages/Sprints'
-import Roadmap from '../pages/Roadmap'
+import Roadmap from '../pages/RoadMap'
 import Desarrolladores from '../pages/Desarrolladores'
 import Cambios from '../pages/Cambios'
 
