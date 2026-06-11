@@ -29,21 +29,25 @@ function Navbar({ user, selectedProjectId, setSelectedProjectId, sprintFilter, s
 
   // Fetch de proyectos
   useEffect(() => {
+    if (!user?.userId) return;
     // Solo el administrador ve todos los proyectos existentes
     const needsFiltering = ['Developer', 'Manager', 'Leader'].includes(user?.roleName);
-    const url = (needsFiltering && user?.userId) 
+    const url = needsFiltering 
                 ? `/projects/user/${user.userId}` 
                 : '/projects';
     fetch(url)
       .then(res => res.json())
       .then(data => {
         setProjects(data);
-        if (data.length > 0 && !selectedProjectId) {
-          setSelectedProjectId(data[0].projectId);
-        }
       })
       .catch(err => console.error("Error al cargar proyectos:", err));
-  }, [user?.userId, user?.roleName, selectedProjectId, setSelectedProjectId]);
+  }, [user?.userId, user?.roleName]);
+
+  useEffect(() => {
+    if (projects.length > 0 && !selectedProjectId) {
+      setSelectedProjectId(projects[0].projectId);
+    }
+  }, [projects, selectedProjectId, setSelectedProjectId]);
 
   // Fetch de sprints por proyecto
   useEffect(() => {

@@ -221,7 +221,7 @@ function DashDevs({ user, selectedProjectId, sprintFilter, setSprintFilter }) {
           </Box>
 
           {/* GRÁFICA TOTAL DE TAREAS */}
-          <Box className="base-card" sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <Box className="base-card" sx={{ display: 'flex', flexDirection: 'column' }}>
             <Typography variant="h6" fontWeight="bold" sx={{ mb: 1 }}>Tareas Totales</Typography>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart layout="vertical" data={chartData.qty} margin={{ top: 5, right: 40, left: 20, bottom: 20 }}>
@@ -238,9 +238,9 @@ function DashDevs({ user, selectedProjectId, sprintFilter, setSprintFilter }) {
           </Box>
 
           {/* PRODUCTIVIDAD */}
-          <Box className="base-card" sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <Box className="base-card" sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <Typography variant="h6" fontWeight="bold" sx={{ width: '100%', mb: 1 }}>Productividad</Typography>
-            <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', flexGrow: 1 }}>
                 
                 <CircularProgress 
                     variant="determinate" 
