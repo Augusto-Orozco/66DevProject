@@ -277,7 +277,12 @@ function Sprints({ selectedProjectId }) {
 
       if (activeIndex === -1) return prev;
 
-      const movingTask = activeItems[activeIndex];
+      const movingTask = { ...activeItems[activeIndex] };
+      if (overContainer === 'backlog') {
+        movingTask.sprintId = null;
+      } else if (overContainer.startsWith('sprint-col-')) {
+        movingTask.sprintId = overContainer.replace('sprint-col-', '');
+      }
 
       const overIndex = overItems.findIndex(
         item => String(item.id) === overId
